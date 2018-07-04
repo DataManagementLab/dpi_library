@@ -1,0 +1,6 @@
+syntax = "proto3";
+package istore2;
+
+message HelloMessage {
+    string name = 1;
+}

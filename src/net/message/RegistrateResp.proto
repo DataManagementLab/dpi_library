@@ -1,0 +1,13 @@
+
+syntax = "proto3";
+package istore2;
+
+message RegistrateResponse {
+	uint32 nodeid = 1;
+    uint32 return = 2;
+}
+
+
+message UpdateNIDResp {
+	 uint32 return = 1;
+}

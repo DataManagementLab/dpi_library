@@ -1,0 +1,8 @@
+syntax = "proto3";
+package istore2;
+
+message LoadDataRequest {
+    string table = 1;
+    string file = 2;
+    string schema = 3;
+}

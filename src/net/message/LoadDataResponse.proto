@@ -1,0 +1,11 @@
+
+syntax = "proto3";
+package istore2;
+
+message LoadDataResponse {
+	uint64 remoteptr = 1;
+    repeated string cname = 2;
+    repeated uint32 ctype = 3;
+    repeated uint64 clength = 4;
+    uint32 return = 5;
+}
