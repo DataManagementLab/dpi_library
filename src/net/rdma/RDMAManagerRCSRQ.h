@@ -5,7 +5,7 @@
 
 #include "RDMAManagerRC.h"
 
-namespace istore2 {
+namespace dpi {
 
 struct sharedrq_t{
     ibv_srq* shared_rq;
@@ -39,6 +39,6 @@ class RDMAManagerRCSRQ : public RDMAManagerRC {
     size_t m_srqCounter = 0;
 };
 
-} /* namespace istore2 */
+} /* namespace dpi */
 
 #endif /* SRC_NET_RDMA_RDMAMANAGERRCSRQ_H_ */

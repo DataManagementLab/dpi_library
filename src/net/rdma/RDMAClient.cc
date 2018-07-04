@@ -8,7 +8,7 @@
 
 #include <iterator>
 
-using namespace istore2;
+using namespace dpi;
 
 RDMAClient::RDMAClient(rdma_transport_t transport) {
   m_countWR = 0;
@@ -541,7 +541,7 @@ bool RDMAClient::pollReceiveMCast(struct ib_addr_t ibAddr) {
   return m_rdmaManager->pollReceiveMCast(ibAddr);
 }
 
-bool istore2::RDMAClient::fetchAndAdd(const string& connection, size_t remoteOffset,
+bool dpi::RDMAClient::fetchAndAdd(const string& connection, size_t remoteOffset,
                                       void* localData, size_t value_to_add, size_t size,
                                       bool signaled) {
     signaled = checkSignaled(signaled);
@@ -552,7 +552,7 @@ bool istore2::RDMAClient::fetchAndAdd(const string& connection, size_t remoteOff
 
 }
 
-bool istore2::RDMAClient::fetchAndAdd(const NodeID& nodeid, size_t remoteOffset, void* localData,
+bool dpi::RDMAClient::fetchAndAdd(const NodeID& nodeid, size_t remoteOffset, void* localData,
                                       size_t value_to_add, size_t size, bool signaled) {
     signaled = checkSignaled(signaled);
     return m_rdmaManager->remoteFetchAndAdd(m_nodeIDsIBaddr[nodeid], remoteOffset, localData,value_to_add, size,

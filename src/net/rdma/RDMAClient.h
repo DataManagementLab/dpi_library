@@ -12,7 +12,7 @@
 #include <unordered_map>
 #include <list>
 
-namespace istore2 {
+namespace dpi {
 
 class RDMAClient {
  public:

@@ -3,7 +3,7 @@
 #include "ProtoClient.h"
 #include "../message/MessageErrors.h"
 
-using namespace istore2;
+using namespace dpi;
 
 ProtoClient::ProtoClient(string address, int port) {
   m_address = address;

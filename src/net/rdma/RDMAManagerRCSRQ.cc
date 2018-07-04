@@ -2,7 +2,7 @@
 
 #include "RDMAManagerRCSRQ.h"
 
-namespace istore2 {
+namespace dpi {
 
 RDMAManagerRCSRQ::RDMAManagerRCSRQ()
         : RDMAManagerRC(Config::EXP_STORAGE_RDMA_MEMSIZE) {
@@ -197,7 +197,7 @@ bool RDMAManagerRCSRQ::pollReceive(size_t srq_id, ib_addr_t& ret_ibaddr, bool& d
     return false;
 }
 
-} /* namespace istore2 */
+} /* namespace dpi */
 
 void RDMAManagerRCSRQ::destroyQPs() {
     Logging::debug(__FILE__, __LINE__, "RDMAManagerRCSRQ::destroyQPs: DESTROY");

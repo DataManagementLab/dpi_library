@@ -2,7 +2,7 @@
 
 #include "ProtoSocket.h"
 
-using namespace istore2;
+using namespace dpi;
 
 ProtoSocket::ProtoSocket(string addr, int port, int sockType)
     : m_sockType(sockType),

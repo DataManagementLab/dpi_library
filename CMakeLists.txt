@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(istore2)
+project(dpi)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 

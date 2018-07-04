@@ -17,7 +17,7 @@
 
 using google::protobuf::Any;
 
-namespace istore2 {
+namespace dpi {
 
 class ProtoServer : public Thread {
  public:
@@ -39,6 +39,6 @@ class ProtoServer : public Thread {
   mutex m_handleLock;
 };
 
-}  // end namespace istore2
+}  // end namespace dpi
 
 #endif /* NET_PROTOSERVER_H_ */

@@ -3,7 +3,7 @@
 #ifndef MYTEST_H_
 #define MYTEST_H_
 
-namespace istore2 {
+namespace dpi {
 
 class Test {
  public:

@@ -13,7 +13,7 @@
 #include "Thread.h"
 
 
-namespace istore2{
+namespace dpi{
 
 
 template <typename INPUT, typename RESULT >

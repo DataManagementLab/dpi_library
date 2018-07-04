@@ -6,7 +6,7 @@
 #include "./Config.h"
 #include <endian.h>
 
-namespace istore2 {
+namespace dpi {
 
 class Network {
  public:

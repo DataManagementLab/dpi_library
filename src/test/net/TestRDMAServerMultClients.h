@@ -8,7 +8,7 @@
 #include "../../net/rdma/RDMAClient.h"
 
 
-using namespace istore2;
+using namespace dpi;
 
 class TestRDMAServerMultClients : public CppUnit::TestFixture {
 ISTORE_UNIT_TEST_SUITE (TestRDMAServerMultClients);

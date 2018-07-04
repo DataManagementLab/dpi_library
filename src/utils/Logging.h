@@ -8,7 +8,7 @@
 #include <iostream>
 #include <string>
 
-namespace istore2 {
+namespace dpi {
 
 class Logging {
  public:
@@ -59,6 +59,6 @@ class Logging {
   }
 };
 
-}  // end namespace istore2
+}  // end namespace dpi
 
 #endif /* LOGGING_HPP_ */

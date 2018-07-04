@@ -11,18 +11,18 @@ set(TEST_SRC
 
 add_library(test ${TEST_SRC})
 
-add_executable(istore2_tests TestRunner.cc)
+add_executable(dpi_tests TestRunner.cc)
  
-add_test(NAME istore2_tests COMMAND ${EXECUTABLE_OUTPUT_PATH}/istore2_tests)
+add_test(NAME dpi_tests COMMAND ${EXECUTABLE_OUTPUT_PATH}/dpi_tests)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure 
-DEPENDS istore2_tests)
+DEPENDS dpi_tests)
   
-SET_TARGET_PROPERTIES(istore2_tests PROPERTIES
+SET_TARGET_PROPERTIES(dpi_tests PROPERTIES
    PREFIX ""
    LINK_FLAGS "-Wl,--no-as-needed"
 )
 	
-target_link_libraries(istore2_tests 
+target_link_libraries(dpi_tests 
 	${CPPUNIT_LIBRARY}
 	test_thread
 	test_net

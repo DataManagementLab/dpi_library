@@ -24,7 +24,7 @@
 #define optional_argument 2
 
 static void usage() {
-    cout << "iStore2 -r (test|sever) -n #number" << endl << endl;
+    cout << "dpi -r (test|sever) -n #number" << endl << endl;
     cout << "Tests:" << endl;
     cout << "1: \t thread/TestThread" << endl;
     cout << "2: \t thread/TestHelloServer" << endl;

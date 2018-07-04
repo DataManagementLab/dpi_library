@@ -2,7 +2,7 @@
 
 #include "RDMAServerSRQ.h"
 
-namespace istore2 {
+namespace dpi {
 
 RDMAServerSRQ::RDMAServerSRQ() {
     // TODO Auto-generated constructor stub
@@ -87,4 +87,4 @@ bool RDMAServerSRQ::connectQueueSRQ(RDMAConnRequest* connRequest, RDMAConnRespon
       return true;
 }
 
-} /* namespace istore2 */
+} /* namespace dpi */

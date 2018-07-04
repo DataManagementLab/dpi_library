@@ -5,7 +5,7 @@
 
 #include <sched.h>
 
-using namespace istore2;
+using namespace dpi;
 
 Thread::Thread() {
   m_thread = nullptr;

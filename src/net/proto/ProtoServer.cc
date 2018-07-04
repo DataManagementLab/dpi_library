@@ -3,7 +3,7 @@
 #include "ProtoServer.h"
 #include "../../utils/Network.h"
 
-using namespace istore2;
+using namespace dpi;
 
 ProtoServer::ProtoServer(string name, int port)
     : m_port(port),

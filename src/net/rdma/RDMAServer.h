@@ -16,7 +16,7 @@
 #include <list>
 #include <mutex>
 
-namespace istore2 {
+namespace dpi {
 
 class RDMAServer : public ProtoServer {
  public:

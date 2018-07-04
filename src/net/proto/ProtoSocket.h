@@ -13,7 +13,7 @@
 
 using google::protobuf::Any;
 
-namespace istore2 {
+namespace dpi {
 
 class ProtoSocket {
  public:
@@ -45,6 +45,6 @@ class ProtoSocket {
   zmq::socket_t* m_pSock;
 };
 
-}  // end namespace istore2
+}  // end namespace dpi
 
 #endif

@@ -10,7 +10,7 @@
 #include <rdma/rdma_verbs.h>
 #include <arpa/inet.h>
 
-namespace istore2 {
+namespace dpi {
 
 struct rdma_mcast_conn_t {
     char* mcast_addr;

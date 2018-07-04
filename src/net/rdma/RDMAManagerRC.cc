@@ -572,7 +572,7 @@ bool RDMAManagerRC::modifyQPToRTS(struct ibv_qp *qp) {
     return true;
 }
 
-bool istore2::RDMAManagerRC::remoteFetchAndAdd(struct ib_addr_t& ibAddr, size_t offset,
+bool dpi::RDMAManagerRC::remoteFetchAndAdd(struct ib_addr_t& ibAddr, size_t offset,
                                                const void* memAddr, size_t value_to_add,
                                                size_t size, bool signaled) {
 

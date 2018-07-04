@@ -5,7 +5,7 @@
 
 #include "../../utils/Config.h"
 
-namespace istore2 {
+namespace dpi {
 
 enum MessageErrors
   : unsigned int {

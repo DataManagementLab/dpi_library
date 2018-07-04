@@ -11,7 +11,7 @@
 
 using std::string;
 
-using namespace istore2;
+using namespace dpi;
 
 class TestProtoServer : public CppUnit::TestFixture {
 ISTORE_UNIT_TEST_SUITE(TestProtoServer);

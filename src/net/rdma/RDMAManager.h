@@ -12,7 +12,7 @@
 #include <list>
 #include <mutex>
 
-namespace istore2 {
+namespace dpi {
 
 enum rdma_transport_t {
     rc,

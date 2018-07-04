@@ -3,7 +3,7 @@
 #include "Config.h"
 #include <cmath>
 
-using namespace istore2;
+using namespace dpi;
 
 //TEST
 int Config::HELLO_PORT = 4001;
@@ -111,7 +111,7 @@ void Config::set(string key, string value) {
   }
 }
 
-string istore2::Config::getIP() {
+string dpi::Config::getIP() {
   int fd;
   struct ifreq ifr;
   fd = socket(AF_INET, SOCK_DGRAM, 0);

@@ -7,7 +7,7 @@
 #include "RDMAManagerRCSRQ.h"
 #include "string"
 
-namespace istore2 {
+namespace dpi {
 
 class RDMAServerSRQ : public RDMAServer {
  public:
@@ -52,6 +52,6 @@ class RDMAServerSRQ : public RDMAServer {
 
 };
 
-} /* namespace istore2 */
+} /* namespace dpi */
 
 #endif /* SRC_NET_RDMA_RDMASERVERSRQ_H_ */

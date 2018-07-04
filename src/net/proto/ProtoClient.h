@@ -9,7 +9,7 @@
 #include "ProtoSocket.h"
 
 using google::protobuf::Any;
-namespace istore2 {
+namespace dpi {
 
 class ProtoClient {
  public:
@@ -28,6 +28,6 @@ class ProtoClient {
   ProtoSocket* m_pSocket;bool m_isConnected;
 };
 
-}  // end namespace istore2
+}  // end namespace dpi
 
 #endif /* CLIENT_H_ */

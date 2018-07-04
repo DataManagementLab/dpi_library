@@ -23,7 +23,7 @@
 #include <google/protobuf/message.h>
 using google::protobuf::Any;
 
-namespace istore2 {
+namespace dpi {
 
 enum MessageTypesEnum
   : int {
@@ -104,6 +104,6 @@ class MessageTypes {
 };
 // end class
 
-}// end namespace istore2
+}// end namespace dpi
 
 #endif /* MESSAGETYPES_H_ */

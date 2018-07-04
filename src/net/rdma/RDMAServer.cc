@@ -5,7 +5,7 @@
 #include "../message/MessageTypes.h"
 #include "../../utils/Network.h"
 
-using namespace istore2;
+using namespace dpi;
 
 RDMAServer::RDMAServer(int port, rdma_transport_t transport)
     : RDMAServer("RDMAServer", port, transport) {

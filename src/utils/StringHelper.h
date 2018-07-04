@@ -6,7 +6,7 @@
 
 using namespace std;
 
-namespace istore2 {
+namespace dpi {
 
 class StringHelper {
  public:

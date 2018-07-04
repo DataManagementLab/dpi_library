@@ -6,7 +6,7 @@
 #include "../../utils/Config.h"
 #include "../../thread/Thread.h"
 
-using namespace istore2;
+using namespace dpi;
 
 class TestThread : public CppUnit::TestFixture {
 ISTORE_UNIT_TEST_SUITE(TestThread);

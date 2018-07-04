@@ -7,7 +7,7 @@
 
 #include <unordered_map>
 
-namespace istore2 {
+namespace dpi {
 
 class Timer {
 

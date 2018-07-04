@@ -7,7 +7,7 @@
 
 #include "./RDMAManager.h"
 
-namespace istore2 {
+namespace dpi {
 
 class RDMAManagerRC : public RDMAManager {
 

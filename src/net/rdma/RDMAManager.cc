@@ -10,7 +10,7 @@
 #include <numa.h>
 #endif
 
-using namespace istore2;
+using namespace dpi;
 
 rdma_mem_t RDMAManager::s_nillmem;
 

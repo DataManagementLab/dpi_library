@@ -1,5 +1,5 @@
 syntax = "proto3";
-package istore2;
+package dpi;
 
 message HelloMessage {
     string name = 1;

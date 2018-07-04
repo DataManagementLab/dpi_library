@@ -7,7 +7,7 @@
 #include "../../net/rdma/RDMAServer.h"
 #include "../../net/rdma/RDMAClient.h"
 
-using namespace istore2;
+using namespace dpi;
 
 class TestSimpleUD : public CppUnit::TestFixture
 {

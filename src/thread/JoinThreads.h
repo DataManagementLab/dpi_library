@@ -3,7 +3,7 @@
 #ifndef SRC_THREAD_JOINTHREADS_H_
 #define SRC_THREAD_JOINTHREADS_H_
 
-namespace istore2 {
+namespace dpi {
 
 #include <vector>
 #include <thread>
@@ -31,7 +31,7 @@ private:
 
 
 
-}  // namespace istore2
+}  // namespace dpi
 
 
 

@@ -86,7 +86,7 @@ typedef unsigned long long uint128_t;
 typedef uint64_t NodeID;
 typedef uint64_t Offset;
 
-namespace istore2 {
+namespace dpi {
 
 //Constants
 class Config {
@@ -148,8 +148,8 @@ class Config {
     static string getIP();
 };
 
-}  // end namespace istore2
+}  // end namespace dpi
 
-using namespace istore2;
+using namespace dpi;
 
 #endif /* CONFIG_HPP_ */

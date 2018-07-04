@@ -6,7 +6,7 @@
 #include "../utils/Config.h"
 #include <thread>
 
-namespace istore2 {
+namespace dpi {
 
 class Thread {
  public:
@@ -49,6 +49,6 @@ class Thread {
   bool m_running;
 };
 
-}  // end namespace istore2
+}  // end namespace dpi
 
 #endif /* THREAD_HPP_ */

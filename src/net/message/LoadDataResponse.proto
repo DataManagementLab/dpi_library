@@ -1,6 +1,6 @@
 
 syntax = "proto3";
-package istore2;
+package dpi;
 
 message LoadDataResponse {
 	uint64 remoteptr = 1;

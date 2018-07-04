@@ -9,7 +9,7 @@
 #include <queue>
 
 
-namespace istore2 {
+namespace dpi {
 
 
 
@@ -71,7 +71,7 @@ public:
 };
 
 
-}  // namespace istore2
+}  // namespace dpi
 
 
 #endif /* SRC_THREAD_THREADSAFE_QUEUE_H_ */

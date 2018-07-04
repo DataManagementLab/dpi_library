@@ -6,9 +6,9 @@ add_subdirectory(net)
 add_subdirectory(test)
 
 
-add_executable(istore2 Main.cc)
+add_executable(dpi Main.cc)
 
-target_link_libraries(istore2
+target_link_libraries(dpi
   utils
   net_message
   net_proto
