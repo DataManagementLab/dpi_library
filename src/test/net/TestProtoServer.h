@@ -14,8 +14,8 @@ using std::string;
 using namespace dpi;
 
 class TestProtoServer : public CppUnit::TestFixture {
-ISTORE_UNIT_TEST_SUITE(TestProtoServer);
-  ISTORE_UNIT_TEST(testMsgExchange);ISTORE_UNIT_TEST_SUITE_END()
+DPI_UNIT_TEST_SUITE(TestProtoServer);
+  DPI_UNIT_TEST(testMsgExchange);DPI_UNIT_TEST_SUITE_END()
   ;
  private:
   class HelloServer : public ProtoServer {

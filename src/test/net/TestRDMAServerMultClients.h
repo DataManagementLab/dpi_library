@@ -11,8 +11,8 @@
 using namespace dpi;
 
 class TestRDMAServerMultClients : public CppUnit::TestFixture {
-ISTORE_UNIT_TEST_SUITE (TestRDMAServerMultClients);
-  ISTORE_UNIT_TEST_RC(testSendRecieve);ISTORE_UNIT_TEST_UD (testSendRecieve);ISTORE_UNIT_TEST_SUITE_END ()
+DPI_UNIT_TEST_SUITE (TestRDMAServerMultClients);
+  DPI_UNIT_TEST_RC(testSendRecieve);DPI_UNIT_TEST_UD (testSendRecieve);DPI_UNIT_TEST_SUITE_END ()
   ;
 
  public:

@@ -11,10 +11,10 @@ using namespace dpi;
 
 class TestSimpleUD : public CppUnit::TestFixture
 {
-    ISTORE_UNIT_TEST_SUITE(TestSimpleUD);
-    ISTORE_UNIT_TEST_UD(testSendRecieve);
-    ISTORE_UNIT_TEST_UD(testSendRecieveMgmt);
-    ISTORE_UNIT_TEST_SUITE_END();
+    DPI_UNIT_TEST_SUITE(TestSimpleUD);
+    DPI_UNIT_TEST_UD(testSendRecieve);
+    DPI_UNIT_TEST_UD(testSendRecieveMgmt);
+    DPI_UNIT_TEST_SUITE_END();
 
   public:
     void setUp();

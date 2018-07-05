@@ -34,11 +34,11 @@ using namespace std;
 #define RDMA_TRANSPORT 0 //0=RC, 1=UD
 
 #if RDMA_TRANSPORT==0
-#define ISTORE_UNIT_TEST_RC(test) CPPUNIT_TEST(test)
-#define ISTORE_UNIT_TEST_UD(test)
+#define DPI_UNIT_TEST_RC(test) CPPUNIT_TEST(test)
+#define DPI_UNIT_TEST_UD(test)
 #elif RDMA_TRANSPORT==1
-#define ISTORE_UNIT_TEST_RC(test)
-#define ISTORE_UNIT_TEST_UD(test) CPPUNIT_TEST(test)
+#define DPI_UNIT_TEST_RC(test)
+#define DPI_UNIT_TEST_UD(test) CPPUNIT_TEST(test)
 #endif
 
 
@@ -73,9 +73,9 @@ using namespace std;
 #endif
 
 
-#define ISTORE_UNIT_TEST_SUITE(suite) CPPUNIT_TEST_SUITE(suite)
-#define ISTORE_UNIT_TEST(test) CPPUNIT_TEST(test)
-#define ISTORE_UNIT_TEST_SUITE_END() CPPUNIT_TEST_SUITE_END()
+#define DPI_UNIT_TEST_SUITE(suite) CPPUNIT_TEST_SUITE(suite)
+#define DPI_UNIT_TEST(test) CPPUNIT_TEST(test)
+#define DPI_UNIT_TEST_SUITE_END() CPPUNIT_TEST_SUITE_END()
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -100,8 +100,8 @@ class Config {
     }
 
     //GENERAL
-    const static int ISTORE_MAX_SOCKETS = 1024;
-    const static int ISTORE_SLEEP_INTERVAL = 100 * 1000;
+    const static int DPI_MAX_SOCKETS = 1024;
+    const static int DPI_SLEEP_INTERVAL = 100 * 1000;
 
     //RDMA
     static size_t RDMA_MEMSIZE;

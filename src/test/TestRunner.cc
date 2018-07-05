@@ -21,6 +21,7 @@ int main(int argc, char **argv) {
   runner.addTest(TestRDMAServerManagementQueue::suite());
   runner.addTest(TestRDMAServerMultClients::suite());
   runner.addTest(TestSimpleUD::suite());
+  runner.addTest(TestNodeClient::suite());
 
   // Change the default outputter to a compiler error format outputter
   runner.setOutputter(

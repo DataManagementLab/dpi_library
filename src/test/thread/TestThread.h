@@ -9,9 +9,9 @@
 using namespace dpi;
 
 class TestThread : public CppUnit::TestFixture {
-ISTORE_UNIT_TEST_SUITE(TestThread);
-  ISTORE_UNIT_TEST(testRun);ISTORE_UNIT_TEST_SUITE_END()
-  ;
+DPI_UNIT_TEST_SUITE(TestThread);
+  DPI_UNIT_TEST(testRun);
+  DPI_UNIT_TEST_SUITE_END();
  private:
   class TestingThread : public Thread {
    public:

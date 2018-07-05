@@ -11,9 +11,9 @@
 using namespace dpi;
 
 class TestRDMAServerManagementQueue : public CppUnit::TestFixture {
-ISTORE_UNIT_TEST_SUITE (TestRDMAServerManagementQueue);
-  ISTORE_UNIT_TEST_RC(testWrite);
-  ISTORE_UNIT_TEST_RC(testSendRecieve);ISTORE_UNIT_TEST_UD (testSendRecieve);ISTORE_UNIT_TEST_SUITE_END()
+DPI_UNIT_TEST_SUITE (TestRDMAServerManagementQueue);
+  DPI_UNIT_TEST_RC(testWrite);
+  DPI_UNIT_TEST_RC(testSendRecieve);DPI_UNIT_TEST_UD (testSendRecieve);DPI_UNIT_TEST_SUITE_END()
   ;
 
  public:

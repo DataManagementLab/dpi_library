@@ -10,11 +10,13 @@
 using namespace dpi;
 
 class TestRDMAServer : public CppUnit::TestFixture {
-ISTORE_UNIT_TEST_SUITE (TestRDMAServer);
-  ISTORE_UNIT_TEST_RC(testWrite);
-  ISTORE_UNIT_TEST_RC(testRemoteAlloc);
-  ISTORE_UNIT_TEST_RC(testRemoteFree);
-  ISTORE_UNIT_TEST_RC(testSendRecieve);ISTORE_UNIT_TEST_UD (testSendRecieve);ISTORE_UNIT_TEST_SUITE_END()
+DPI_UNIT_TEST_SUITE (TestRDMAServer);
+  DPI_UNIT_TEST_RC(testWrite);
+  DPI_UNIT_TEST_RC(testRemoteAlloc);
+  DPI_UNIT_TEST_RC(testRemoteFree);
+  DPI_UNIT_TEST_RC(testSendRecieve);
+  DPI_UNIT_TEST_UD (testSendRecieve);
+  DPI_UNIT_TEST_SUITE_END()
   ;
 
  public:
@@ -30,6 +32,8 @@ ISTORE_UNIT_TEST_SUITE (TestRDMAServer);
   RDMAServer* m_rdmaServer;
   RDMAClient* m_rdmaClient;
   string m_connection;
+
+  
   struct testMsg {
   int id;
   char a;

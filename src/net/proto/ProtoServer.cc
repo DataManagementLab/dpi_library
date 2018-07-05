@@ -32,7 +32,7 @@ bool ProtoServer::startServer() {
     }
     ss << m_name << " starting done  \n";
     Logging::debug(__FILE__, __LINE__, ss.str());
-    usleep(Config::ISTORE_SLEEP_INTERVAL);
+    usleep(Config::DPI_SLEEP_INTERVAL);
   }
 
 

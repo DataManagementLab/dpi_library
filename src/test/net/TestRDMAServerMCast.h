@@ -12,10 +12,10 @@ using namespace dpi;
 class TestRDMAServerMCast : public CppUnit::TestFixture {
 
 
-ISTORE_UNIT_TEST_SUITE (TestRDMAServerMCast);
-  ISTORE_UNIT_TEST_UD (testSendReceive);
-  ISTORE_UNIT_TEST_UD (testSendReceiveWithIbAdress);
-  ISTORE_UNIT_TEST_SUITE_END()
+DPI_UNIT_TEST_SUITE (TestRDMAServerMCast);
+  DPI_UNIT_TEST_UD (testSendReceive);
+  DPI_UNIT_TEST_UD (testSendReceiveWithIbAdress);
+  DPI_UNIT_TEST_SUITE_END()
   ;
 
  public:

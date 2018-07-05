@@ -3,6 +3,7 @@ enable_testing()
 
 add_subdirectory(net)
 add_subdirectory(thread)
+add_subdirectory(dpi)
 
 set(TEST_SRC
 	Test.h
@@ -26,11 +27,13 @@ target_link_libraries(dpi_tests
 	${CPPUNIT_LIBRARY}
 	test_thread
 	test_net
+	test_dpi
 	)
 	
 target_link_libraries(test 
 	${CPPUNIT_LIBRARY}
 	test_thread
 	test_net
+	test_dpi
 	)
 	

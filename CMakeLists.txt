@@ -15,6 +15,6 @@ MESSAGE( STATUS "CMAKE_CXX_FLAGS: " ${CMAKE_CXX_FLAGS} )
 add_subdirectory(src)
 
 file(COPY
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/conf/istore.conf
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/conf/DPI.conf
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin/conf/
 )

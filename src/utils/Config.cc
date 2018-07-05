@@ -70,7 +70,7 @@ void Config::unload() {
 }
 
 void Config::load() {
-  string configFile = "./conf/istore.conf";
+  string configFile = "./conf/DPI.conf";
   ifstream file(configFile.c_str());
 
   string line;
