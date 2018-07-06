@@ -36,6 +36,7 @@ void TestNodeClient::testRemoteAlloc()
        memcpy(buff,&j,sizeof(int));
        m_rdmaClient->write(nodeid, remoteOffset + j*sizeof(int), (void*) buff, sizeof(int), true);
      }
+     
    }
 
    int* rdma_buffer = (int*) m_nodeServer->getBuffer(0);
