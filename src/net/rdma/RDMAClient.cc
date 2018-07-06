@@ -47,6 +47,7 @@ bool RDMAClient::localFree(const void* ptr) {
   return m_rdmaManager->localFree(ptr);
 }
 
+
 bool RDMAClient::remoteAlloc(const string& connection, const size_t size,
                              size_t& offset) {
   if (!connect(connection)) {
@@ -115,12 +116,10 @@ bool RDMAClient::connect(const string& connection, const NodeID nodeID,
         if(nodeID >= m_nodeIDsIBaddr.size() ){
             m_nodeIDsIBaddr.resize(nodeID+1);
             m_nodeIDsIBaddr[nodeID] = retIbAddr;
-            std::cout << "TZCONNECT RESIZE MAP " << nodeID << "Size of ibadrr map " << m_nodeIDsIBaddr.size() << std::endl;
         }else{
             m_nodeIDsIBaddr[nodeID] = retIbAddr;
-            std::cout << "TZCONNECT SET MAP W/O RESIZE" << nodeID << "Size of ibadrr map " << m_nodeIDsIBaddr.size() << std::endl;
         }
-        std::cout << "TZCONNECT " << nodeID << "Size of ibadrr map " << m_nodeIDsIBaddr.size() << std::endl;
+       
     }
     return ret;
 }

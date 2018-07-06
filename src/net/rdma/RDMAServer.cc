@@ -20,7 +20,7 @@ RDMAServer::RDMAServer(string name, int port, rdma_transport_t transport)
 
   switch (transport) {
     case rc:
-      m_rdmaManager = new RDMAManagerRC(Config::EXP_STORAGE_RDMA_MEMSIZE);
+      m_rdmaManager = new RDMAManagerRC(Config::RDMA_MEMSIZE);
       break;
     case ud:
       m_rdmaManager = new RDMAManagerUD();

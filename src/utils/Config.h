@@ -65,7 +65,7 @@ using namespace std;
 #endif
 
 
-//#define DEBUGCODE
+#define DEBUGCODE
 #if defined(DEBUGCODE)
 #define DebugCode( code_fragment) {code_fragment}
 #else
@@ -105,6 +105,9 @@ class Config {
 
     //DPI
     static uint32_t DPI_REGISTRY_PORT;
+    static uint32_t DPI_NODE_PORT;
+    static uint32_t DPI_SCRATCH_PAD_SIZE;
+    static uint32_t DPI_SEGMENT_SIZE;
 
     //RDMA
     static size_t RDMA_MEMSIZE;
@@ -128,9 +131,7 @@ class Config {
     //PERFTEST
     static vector<string> PTEST_MCAST_NODES;
     static size_t PTEST_SCAN_PREFETCH;
-    
-    // used in RDMA_SERVER AND IN RDMA_MANAGERRCSRQ
-    const static size_t EXP_STORAGE_RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 15;
+
 
     // Shared Receive Queue
 

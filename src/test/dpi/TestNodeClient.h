@@ -2,6 +2,7 @@
 
 #include "../../utils/Config.h"
 
+#include "../../dpi/NodeServer.h"
 #include "../../dpi/NodeClient.h"
 #include "../../dpi/RegistryClient.h"
 #include "../../dpi/BufferWriter.h"
@@ -19,5 +20,6 @@ DPI_UNIT_TEST_SUITE(TestNodeClient);
 
 private:
   NodeClient* m_nodeClient;
+  NodeServer* m_nodeServer;
   RegistryClient* m_regClient;
 };
