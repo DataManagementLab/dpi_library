@@ -12,6 +12,10 @@ vector<string> Config::PTEST_MCAST_NODES = { "192.168.1.1:"
 size_t Config::PTEST_SCAN_PREFETCH = 10;
 
 
+//DPI
+
+uint32_t Config::DPI_REGISTRY_PORT = 5300;
+
 
 //RDMA
 size_t Config::RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 3;  //3GB

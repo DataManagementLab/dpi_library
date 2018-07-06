@@ -1,3 +1,11 @@
+/**
+ * @brief 
+ * 
+ * @file NodeServer.h
+ * @author cbinnig, lthostrup, tziegler
+ * @date 2018-07-06
+ */
+
 #pragma once
 
 #include "../utils/Config.h"
@@ -11,8 +19,9 @@ class NodeServer : public RDMAServer
 private:
     /* data */
 public:
-    NodeServer(/* args */){};
-    ~NodeServer(){};
+    NodeServer(/* args */);
+    NodeServer(uint16_t port);
+    ~NodeServer();
 };
 
 }

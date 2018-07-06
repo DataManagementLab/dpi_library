@@ -1,9 +1,13 @@
 
 set(DPI_SRC
     NodeClient.h
+    NodeClient.cc
     NodeServer.h
+    NodeServer.cc
     RegistryClient.h
+    RegistryClient.cc
     RegistryServer.h
+    RegistryServer.cc
     BufferWriter.h
     BuffHandle.h
   ) # Adding headers required for portability reasons http://voices.canonical.com/jussi.pakkanen/2013/03/26/a-list-of-common-cmake-antipatterns/

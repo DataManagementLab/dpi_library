@@ -1,9 +1,19 @@
+/**
+ * @brief 
+ * 
+ * @file RegistryServer.h
+ * @author cbinnig, lthostrup, tziegler
+ * @date 2018-07-06
+ */
+
+
 #pragma once
 
 #include "../utils/Config.h"
 
 #include "../net/proto/ProtoServer.h"
 #include "../net/rdma/RDMAClient.h"
+#include "BuffHandle.h"
 
 
 namespace dpi{
@@ -12,13 +22,13 @@ class RegistryServer : public ProtoServer
 {
 public:
     // Constructor and Destructor
-    RegistryServer(){};
-    RegistryServer(int port){};
+    RegistryServer();
+    RegistryServer(int port);
     RegistryServer(RegistryServer &&) = default;
     RegistryServer(const RegistryServer &) = default;
     RegistryServer &operator=(RegistryServer &&) = default;
     RegistryServer &operator=(const RegistryServer &) = default;
-    ~RegistryServer(){};
+    ~RegistryServer();
 
 
     /**

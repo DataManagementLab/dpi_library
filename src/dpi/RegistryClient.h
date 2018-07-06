@@ -1,3 +1,12 @@
+/**
+ * @brief 
+ * 
+ * @file RegistryClient.h
+ * @author cbinnig, lthostrup, tziegler
+ * @date 2018-07-06
+ */
+
+
 #pragma once
 
 #include "../utils/Config.h"
@@ -13,22 +22,14 @@ class RegistryClient
 {
 
 public:
-    RegistryClient(){};
-    ~RegistryClient(){};
+    RegistryClient();
+    ~RegistryClient();
 
-    BuffHandle* dpi_create_buffer(string& name, NodeID node_id, size_t size){
-        return nullptr;
-    };    
+    BuffHandle* dpi_create_buffer(string& name, NodeID node_id, size_t size);    
 
-    bool dpi_register_buffer(BuffHandle* handle){
-        return true;
-    };    
-    BuffHandle* dpi_retrieve_buffer(string& name){
-        return nullptr;
-    };
-    bool dpi_append_segment(string& name, BuffSegment& segment){
-        return true;
-    }; //TBD
+    bool dpi_register_buffer(BuffHandle* handle);    
+    BuffHandle* dpi_retrieve_buffer(string& name);
+    bool dpi_append_segment(string& name, BuffSegment& segment); //TBD
 
 private: 
     ProtoClient* m_client;

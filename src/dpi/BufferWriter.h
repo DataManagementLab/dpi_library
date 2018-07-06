@@ -1,6 +1,11 @@
-
+/**
+ * @brief 
+ * 
+ * @file BufferWriter.h
+ * @author cbinnig, lthostrup, tziegler
+ * @date 2018-07-06
+ */
 #pragma once
-
 #include "../utils/Config.h"
 #include "../net/rdma/RDMAClient.h"
 #include "RegistryClient.h"
@@ -37,7 +42,7 @@ public:
 
     private:    
     RegistryClient* m_reg_client;
-    RDMAClient* m_rdma_client;
+    RDMAClient* m_rdma_client; // used to issue RDMA req. to the NodeServer
 };
 
 

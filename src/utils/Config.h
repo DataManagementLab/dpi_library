@@ -103,6 +103,9 @@ class Config {
     const static int DPI_MAX_SOCKETS = 1024;
     const static int DPI_SLEEP_INTERVAL = 100 * 1000;
 
+    //DPI
+    static uint32_t DPI_REGISTRY_PORT;
+
     //RDMA
     static size_t RDMA_MEMSIZE;
     static uint32_t RDMA_PORT;
@@ -125,7 +128,6 @@ class Config {
     //PERFTEST
     static vector<string> PTEST_MCAST_NODES;
     static size_t PTEST_SCAN_PREFETCH;
-
     
     // used in RDMA_SERVER AND IN RDMA_MANAGERRCSRQ
     const static size_t EXP_STORAGE_RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 15;

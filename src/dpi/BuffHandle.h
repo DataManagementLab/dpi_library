@@ -1,3 +1,11 @@
+/**
+ * @brief 
+ * 
+ * @file BuffHandle.h
+ * @author cbinnig, lthostrup, tziegler
+ * @date 2018-07-06
+ */
+
 #pragma once
 
 #include "../utils/Config.h"

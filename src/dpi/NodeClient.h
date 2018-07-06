@@ -1,3 +1,12 @@
+/**
+ * @brief 
+ * 
+ * @file NodeClient.h
+ * @author cbinnig, lthostrup, tziegler
+ * @date 2018-07-06
+ */
+
+
 #pragma once
 
 #include "../utils/Config.h"
@@ -11,10 +20,9 @@ class NodeClient
 {
 
 public:
-    NodeClient(/* args */){};
-    ~NodeClient(){};
+    NodeClient(/* args */);
+    ~NodeClient();
         
-    //tempalte fucntion
      template <class T> bool dpi_append(BufferWriter<T>* writer, void* data, size_t size){
           return writer->append(data,size);
      };
