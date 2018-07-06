@@ -29,6 +29,7 @@ class BufferWriter : public base
     }
 };
 
+
 class BufferWriterShared
 {
 
@@ -62,7 +63,7 @@ class BufferWriterShared
     void *m_scratchPad = nullptr;
     size_t m_scratchPadSize = 0;
 
-  private:
+//   private:
     // Scratch Pad
     RegistryClient *m_regClient = nullptr;
     RDMAClient *m_rdmaClient = nullptr; // used to issue RDMA req. to the NodeServer
@@ -90,26 +91,39 @@ class BufferWriterPrivate
             return false;
         }
         else
-        {    
+        {   
+            
+        std::cout << "Append" << '\n';
+        
             if(m_localBufferSegments.size() == 0 ){
                 std::cout << "Allocating first Buffer" << ((int*)data)[0] << '\n';
                 size_t remoteOffset = 0; 
-                assert(m_rdmaClient->remoteAlloc(m_handle->connection, Config::DPI_SEGMENT_SIZE, remoteOffset));
+                if(!m_rdmaClient->remoteAlloc(m_handle->connection, Config::DPI_SEGMENT_SIZE, remoteOffset)){
+                    return false;
+                }                
                 m_localBufferSegments.emplace_back(remoteOffset, Config::DPI_SEGMENT_SIZE,0,0);
             }
-            auto& segment = m_localBufferSegments.back();
-
-            if(segment.size - segment.sizeUsed < size){
+        
+            if(m_localBufferSegments.back().size - m_localBufferSegments.back().sizeUsed < size){
                 std::cout << "Allocating additional Buffer" << ((int*)data)[0] << '\n';
                 size_t remoteOffset = 0; 
-                assert(m_rdmaClient->remoteAlloc(m_handle->connection, Config::DPI_SEGMENT_SIZE, remoteOffset));
+                if(!m_rdmaClient->remoteAlloc(m_handle->connection, Config::DPI_SEGMENT_SIZE, remoteOffset)){
+                    return false;
+                }
+                std::cout << "Allocated additional Buffer" << remoteOffset << '\n';
                 m_localBufferSegments.emplace_back(remoteOffset, Config::DPI_SEGMENT_SIZE,0,0);
-                segment= m_localBufferSegments.back();
             }
             
             memcpy(m_scratchPad, data, size);
-            m_rdmaClient->write(m_handle->node_id, segment.offset + segment.sizeUsed, m_scratchPad, size, true);
-            segment.sizeUsed += size;
+            if(!m_rdmaClient->write(m_handle->node_id, m_localBufferSegments.back().offset + m_localBufferSegments.back().sizeUsed, m_scratchPad, size, true)){
+                return false;
+            }
+            cout << "Offset" << m_localBufferSegments.back().offset << endl;
+            cout << "sizeUsed" << m_localBufferSegments.back().sizeUsed<< endl;
+            cout << "size" << size << endl;
+            cout << "data" << ((int*)m_scratchPad)[0] << endl;
+            m_localBufferSegments.back().sizeUsed = m_localBufferSegments.back().sizeUsed + size;
+            cout << "updated size " << endl;
             return true;
         }
         return false;
@@ -121,7 +135,7 @@ class BufferWriterPrivate
     void *m_scratchPad = nullptr;
     size_t m_scratchPadSize = 0;
 
-  private:
+//   private:
     // Scratch Pad
 
     RegistryClient *m_regClient = nullptr;

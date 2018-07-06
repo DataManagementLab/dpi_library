@@ -10,6 +10,8 @@
 class TestNodeClient : public CppUnit::TestFixture {
 DPI_UNIT_TEST_SUITE(TestNodeClient);
   DPI_UNIT_TEST(testAppendShared);
+  // DPI_UNIT_TEST(testBuffer);
+  // DPI_UNIT_TEST(testRemoteAlloc);
   DPI_UNIT_TEST_SUITE_END()
   ;
 
@@ -17,6 +19,8 @@ DPI_UNIT_TEST_SUITE(TestNodeClient);
   void setUp();
   void tearDown();
   void testAppendShared();
+  void testRemoteAlloc();
+  void testBuffer();
 
 private:
   NodeClient* m_nodeClient;
