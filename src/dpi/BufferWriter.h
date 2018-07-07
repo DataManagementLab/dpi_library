@@ -26,8 +26,19 @@ class BufferWriter : public base
     //Append without use of scratchpad. Bad performance!
     bool append(void *data, size_t size)
     {
-        if (size > this->m_scratchPadSize)
-            return false;
+            while(size > this->m_scratchPadSize){
+                DebugCode(
+                    std::cout << "Size exceeds scratch size" << '\n';
+                    std::cout << "Size " << size << '\n';
+                )
+                // update size move pointer
+               size = size - this->m_scratchPadSize;
+               memcpy(this->m_scratchPad, data, this->m_scratchPadSize);
+               data = ((char*)data + this->m_scratchPadSize); 
+               if(!this->super_append(this->m_scratchPadSize))
+                    return false;
+        }
+
         memcpy(this->m_scratchPad, data, size);
         return this->super_append(size);
     }
@@ -35,8 +46,11 @@ class BufferWriter : public base
     //Append with scratchpad
     bool appendFromScratchpad(size_t size)
     {
-        if (size > this->m_scratchPadSize)
+        if (size > this->m_scratchPadSize){
+            std::cerr << "The size specified exceeds size of scratch pad size" << std::endl;
             return false;
+        }
+
         return this->super_append(size);
     }
 
@@ -90,6 +104,9 @@ class BufferWriterPrivate
     {
         m_rdmaClient = new RDMAClient();
         m_rdmaClient->connect(handle->connection, handle->node_id);
+        TO_BE_IMPLEMENTED(m_regClient = new RegistryClient();
+                          m_regClient->connect(Config::DPI_REGISTRY_SERVER)   
+                         );
         m_scratchPad = m_rdmaClient->localAlloc(m_scratchPadSize);
     };
 
@@ -108,8 +125,11 @@ class BufferWriterPrivate
             {
                 return false;
             }
-            m_localBufferSegments.emplace_back(remoteOffset, Config::DPI_SEGMENT_SIZE, 0, 0);
-        }
+            
+            m_localBufferSegments.emplace_back(remoteOffset, Config::DPI_SEGMENT_SIZE, 0, sizeof(Config::DPI_SEGMENT_HEADER_t));
+            TO_BE_IMPLEMENTED(m_regClient->dpi_append_segment(m_handle->name,m_localBufferSegments.back());)
+
+        }   
         BuffSegment &segment = m_localBufferSegments.back();
 
         if (!m_rdmaClient->write(m_handle->node_id, segment.offset + segment.sizeUsed, m_scratchPad, size, true))
@@ -117,6 +137,8 @@ class BufferWriterPrivate
             return false;
         }
         segment.sizeUsed = segment.sizeUsed + size;
+        // update counter / header once in a while 
+        TO_BE_IMPLEMENTED(m_rdmaClient->write(HEADER));
         return true;
     }
 
@@ -131,9 +153,8 @@ class BufferWriterPrivate
     void *m_scratchPad = nullptr;
     size_t m_scratchPadSize = 0;
 
-    //   private:
-    // Scratch Pad
-
+  private:
+    Config::DPI_SEGMENT_HEADER_t HEADER;
     RegistryClient *m_regClient = nullptr;
     RDMAClient *m_rdmaClient = nullptr; // used to issue RDMA req. to the NodeServer
 };
