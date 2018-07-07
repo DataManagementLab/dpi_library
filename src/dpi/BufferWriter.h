@@ -23,15 +23,20 @@ class BufferWriter : public base
         : base(handle, scratchPadSize){};
     ~BufferWriter(){};
 
+    //Append without use of scratchpad. Bad performance!
     bool append(void *data, size_t size)
     {
+        if (size > this->m_scratchPadSize)
+            return false;
         memcpy(this->m_scratchPad, data, size);
         return this->super_append(size);
     }
     
-    //Append with scrathpad
-    bool append(size_t size)
+    //Append with scratchpad
+    bool appendFromScratchpad(size_t size)
     {
+        if (size > this->m_scratchPadSize)
+            return false;
         return this->super_append(size);
     }
 
@@ -57,15 +62,8 @@ class BufferWriterShared
     };
     bool super_append(size_t size)
     {
-        if (size > m_scratchPadSize)
-        {
-            return false;
-        }
-        else
-        {
-            m_rdmaClient->write(m_handle->node_id, 0, m_scratchPad, size, true);
-            return true;
-        }
+        m_rdmaClient->write(m_handle->node_id, 0, m_scratchPad, size, true);
+        return true;
     }
 
     void *super_getScratchPad()
@@ -102,9 +100,6 @@ class BufferWriterPrivate
 
     bool super_append(size_t size)
     {
-        if (size > m_scratchPadSize)
-            return false;
-
         std::cout << "Append" << '\n';
 
         if (m_localBufferSegments.empty() || m_localBufferSegments.back().size - m_localBufferSegments.back().sizeUsed < size)
@@ -125,6 +120,7 @@ class BufferWriterPrivate
         }
         // cout << "Offset" << segment.offset << endl;
         // cout << "sizeUsed" << segment.sizeUsed << endl;
+        
         // cout << "size" << size << endl;
         // cout << "data" << ((int *)m_scratchPad)[0] << endl;
         segment.sizeUsed = segment.sizeUsed + size;
