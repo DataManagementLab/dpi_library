@@ -103,8 +103,8 @@ void TestNodeClient::testAppendShared_WithScratchpad()
   string connection = "127.0.0.1:5400";
   size_t remoteOffset = 0;
   size_t memSize = sizeof(int);
-
-  size_t numberElements = Config::DPI_SCRATCH_PAD_SIZE/sizeof(int)*2; 
+  int numberSegments = 2;
+  size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t))/sizeof(int)*numberSegments; 
 
   BuffHandle *buffHandle = new BuffHandle(bufferName, 1, connection);
   BufferWriter<BufferWriterPrivate> buffWriter(buffHandle);
@@ -133,9 +133,14 @@ void TestNodeClient::testAppendShared_WithScratchpad()
         std::cout << rdma_buffer[i] << ' ';
   );
 
-  for (int i = 0; i < numberElements; i++)
+  
+  for(int j = 0; j < numberSegments; j++){
+   std::cout << "Segment under test " << j << '\n'; 
+  for (int i = sizeof(Config::DPI_SEGMENT_HEADER_t)/sizeof(int), expected = 0; i < (numberElements / numberSegments); i++, expected++)
   {
-    CPPUNIT_ASSERT(rdma_buffer[i] == i);
+    CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[i]);
+
+  }
   }
 
   // CPPUNIT_ASSERT(m_nodeClient->dpi_append(&buffWriter,(void*) &data, sizeof(int)));

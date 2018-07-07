@@ -113,6 +113,13 @@ class Config {
     static uint32_t DPI_SCRATCH_PAD_SIZE;
     static uint32_t DPI_SEGMENT_SIZE;
 
+    
+    struct DPI_SEGMENT_HEADER_t
+    {
+        uint64_t counter = 0;
+    };
+    
+
     //RDMA
     static size_t RDMA_MEMSIZE;
     static uint32_t RDMA_PORT;

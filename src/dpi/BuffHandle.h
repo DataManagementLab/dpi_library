@@ -19,7 +19,7 @@ struct BuffSegment
     size_t size;
     size_t threshold;
     size_t sizeUsed;
-
+    
     BuffSegment(){};
     
     BuffSegment(size_t offset,size_t size,size_t threshold,size_t sizeUsed) : 

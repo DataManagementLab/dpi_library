@@ -17,7 +17,7 @@ size_t Config::PTEST_SCAN_PREFETCH = 10;
 uint32_t Config::DPI_REGISTRY_PORT = 5300;
 uint32_t Config::DPI_NODE_PORT = 5400;
 uint32_t Config::DPI_SCRATCH_PAD_SIZE = 1024;
-uint32_t Config::DPI_SEGMENT_SIZE = 2048;
+uint32_t Config::DPI_SEGMENT_SIZE = 2048 + sizeof(DPI_SEGMENT_HEADER_t);
 
 //RDMA
 size_t Config::RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 3;  //3GB
