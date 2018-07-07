@@ -72,6 +72,10 @@ using namespace std;
 #define DebugCode( code_fragment)
 #endif
 
+//To be implemented MACRO
+#define TO_BE_IMPLEMENTED(code_fragment)
+
+
 
 #define DPI_UNIT_TEST_SUITE(suite) CPPUNIT_TEST_SUITE(suite)
 #define DPI_UNIT_TEST(test) CPPUNIT_TEST(test)
