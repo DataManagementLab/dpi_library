@@ -15,11 +15,15 @@ DPI_UNIT_TEST_SUITE(TestNodeClient);
   DPI_UNIT_TEST(testAppendPrivate_SizeTooBigForScratchpad);
   DPI_UNIT_TEST(testBuffer);
   DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad_splitData);
+
+  DPI_UNIT_TEST(testAppendShared_AtomicHeaderManipulation);
   DPI_UNIT_TEST_SUITE_END();
 
  public:
   void setUp();
   void tearDown();
+
+  // Private Strategy
   void testAppendPrivate_WithScratchpad();
   void testAppendPrivate_WithoutScratchpad_splitData();
   void testAppendPrivate_WithoutScratchpad();
@@ -27,6 +31,9 @@ DPI_UNIT_TEST_SUITE(TestNodeClient);
   void testAppendPrivate_SizeTooBigForScratchpad();
   void testBuffer();
 
+  // Shared Strategy
+
+  void testAppendShared_AtomicHeaderManipulation();
 
 private:
   NodeClient* m_nodeClient;

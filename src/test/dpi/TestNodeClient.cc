@@ -235,9 +235,35 @@ void TestNodeClient::testAppendPrivate_SizeTooBigForScratchpad()
 
   BuffHandle *buffHandle = m_stub_regClient->dpi_create_buffer(bufferName, 1, connection);
   BufferWriter<BufferWriterPrivate> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, m_stub_regClient);
-
+  
   //ACT
   //ASSERT
   CPPUNIT_ASSERT_MESSAGE("appendFromScratchpad should return false when size is bigger than scratchpad",
                          !buffWriter.appendFromScratchpad(Config::DPI_SCRATCH_PAD_SIZE + 1));
+}
+
+
+void TestNodeClient::testAppendShared_AtomicHeaderManipulation(){
+
+  //ARRANGE
+  string bufferName = "test";
+  string connection = "127.0.0.1:5400";
+  uint64_t expected = 10;
+
+  BuffHandle *buffHandle = m_stub_regClient->dpi_create_buffer(bufferName, 1, connection);
+  BufferWriter<BufferWriterShared> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, m_stub_regClient);
+
+  //ACT
+  buffWriter.modifyCounter(expected,0);
+
+  //ASSERT
+  Config::DPI_SEGMENT_HEADER_t *rdma_buffer = (Config::DPI_SEGMENT_HEADER_t *)m_nodeServer->getBuffer(0);
+  CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[0].counter);
+  CPPUNIT_ASSERT_EQUAL((uint64_t)0, rdma_buffer[0].hasFollowPage);
+
+  //ACT 2
+  buffWriter.setHasFollowPage(0 + sizeof(Config::DPI_SEGMENT_HEADER_t::counter));
+  //ASSERT
+  CPPUNIT_ASSERT_EQUAL((uint64_t)1, rdma_buffer[0].hasFollowPage);
+
 }

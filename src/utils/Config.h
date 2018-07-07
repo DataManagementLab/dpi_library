@@ -117,6 +117,7 @@ class Config {
     struct DPI_SEGMENT_HEADER_t
     {
         uint64_t counter = 0;
+        uint64_t hasFollowPage = 0;
     };
     
 

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "../utils/Config.h"
+#include "../utils/Network.h"
 #include "../net/rdma/RDMAClient.h"
 #include "RegistryClient.h"
 #include "BuffHandle.h"
@@ -20,7 +21,7 @@ class BufferWriter : public base
 {
 
   public:
-    BufferWriter(BuffHandle *handle, size_t scratchPadSize = Config::DPI_SCRATCH_PAD_SIZE, RegistryClient* regClient = nullptr)
+    BufferWriter(BuffHandle *handle, size_t scratchPadSize = Config::DPI_SCRATCH_PAD_SIZE, RegistryClient *regClient = nullptr)
         : base(handle, scratchPadSize, regClient){};
     ~BufferWriter(){};
 
@@ -63,18 +64,18 @@ class BufferWriterShared
 {
 
   public:
-    BufferWriterShared(BuffHandle *handle, size_t scratchPadSize, RegistryClient* regClient = nullptr) : m_handle(handle), m_scratchPadSize(scratchPadSize), m_regClient(regClient)
+    BufferWriterShared(BuffHandle *handle, size_t scratchPadSize, RegistryClient *regClient = nullptr) : m_handle(handle), m_scratchPadSize(scratchPadSize), m_regClient(regClient)
     {
         m_rdmaClient = new RDMAClient();
         m_rdmaClient->connect(handle->connection, handle->node_id);
-        
-        TO_BE_IMPLEMENTED(if(regClient == nullptr){
-                          m_regClient = new RegistryClient();
-                          }
-                          m_regClient->connect(Config::DPI_REGISTRY_SERVER));
+
+        TO_BE_IMPLEMENTED(if (regClient == nullptr) {
+            m_regClient = new RegistryClient();
+        } m_regClient->connect(Config::DPI_REGISTRY_SERVER));
         m_scratchPad = m_rdmaClient->localAlloc(m_scratchPadSize);
+        m_localRDMABuffer = m_rdmaClient->localAlloc(sizeof(uint64_t) * 2);
     };
-    
+
     ~BufferWriterShared()
     {
         if (m_scratchPad != nullptr)
@@ -90,14 +91,12 @@ class BufferWriterShared
     {
         // get head handle check counter and compare to size / treshhold
         // if counter > tresh
-            // request_buffer
-            // check if actual new retrieved do again
+        // request_buffer
+        // check if actual new retrieved do again
         // if counter < tresh && size + counter > tresh && size fits into seg
-            // update counter by size on remote f&a
-            // create new seg
-            // append seg to buffer
-
-        m_rdmaClient->write(m_handle->node_id, 0, m_scratchPad, size, true);
+        // update counter by size on remote f&a
+        // create new seg
+        // append seg to buffer
         return true;
     }
 
@@ -106,14 +105,40 @@ class BufferWriterShared
         return m_scratchPad;
     }
 
+    inline int64_t modifyCounter(int64_t value, size_t offset)
+    {
+        // node id -1 since partitions are mapped to 0
+        while (!m_rdmaClient->fetchAndAdd(m_handle->node_id, offset, (void *)m_localRDMABuffer,
+                                          value, sizeof(uint64_t), true))
+            ;
+
+        return Network::bigEndianToHost(*((uint64_t *)m_localRDMABuffer));
+    }
+
+    inline int64_t setHasFollowPage(size_t offset)
+    {
+        // node id -1 since partitions are mapped to 0
+        while (!m_rdmaClient->compareAndSwap(m_handle->node_id, offset, (void *)m_localRDMABuffer,
+                                          0,1, sizeof(uint64_t), true))
+            ;
+
+        return Network::bigEndianToHost(*((uint64_t *)m_localRDMABuffer));
+    }
+
   protected:
     BuffHandle *m_handle = nullptr;
     void *m_scratchPad = nullptr;
     size_t m_scratchPadSize = 0;
 
+    // helper Methods to atomic update
+    // fetch add to counter
+
+    // c&s to hasFollowPage
+
   private:
     // Scratch Pad
     RegistryClient *m_regClient = nullptr;
+    void *m_localRDMABuffer = nullptr;
     RDMAClient *m_rdmaClient = nullptr; // used to issue RDMA req. to the NodeServer
 };
 
@@ -121,14 +146,13 @@ class BufferWriterPrivate
 {
 
   public:
-    BufferWriterPrivate(BuffHandle *handle, size_t scratchPadSize, RegistryClient* regClient = nullptr) : m_handle(handle), m_scratchPadSize(scratchPadSize), m_regClient(regClient)
+    BufferWriterPrivate(BuffHandle *handle, size_t scratchPadSize, RegistryClient *regClient = nullptr) : m_handle(handle), m_scratchPadSize(scratchPadSize), m_regClient(regClient)
     {
         m_rdmaClient = new RDMAClient();
         m_rdmaClient->connect(handle->connection, handle->node_id);
-        TO_BE_IMPLEMENTED(if(m_regClient == nullptr){
-                          m_regClient = new RegistryClient();
-                          }
-                          m_regClient->connect(Config::DPI_REGISTRY_SERVER));
+        TO_BE_IMPLEMENTED(if (m_regClient == nullptr) {
+            m_regClient = new RegistryClient();
+        } m_regClient->connect(Config::DPI_REGISTRY_SERVER));
         m_scratchPad = m_rdmaClient->localAlloc(m_scratchPadSize);
     };
 
