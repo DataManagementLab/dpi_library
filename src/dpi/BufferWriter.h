@@ -100,11 +100,9 @@ class BufferWriterPrivate
 
     bool super_append(size_t size)
     {
-        std::cout << "Append" << '\n';
 
         if (m_localBufferSegments.empty() || m_localBufferSegments.back().size - m_localBufferSegments.back().sizeUsed < size)
-        {
-            std::cout << "Allocating new buffer" << '\n';
+        {       
             size_t remoteOffset = 0;
             if (!m_rdmaClient->remoteAlloc(m_handle->connection, Config::DPI_SEGMENT_SIZE, remoteOffset))
             {
@@ -118,11 +116,6 @@ class BufferWriterPrivate
         {
             return false;
         }
-        // cout << "Offset" << segment.offset << endl;
-        // cout << "sizeUsed" << segment.sizeUsed << endl;
-        
-        // cout << "size" << size << endl;
-        // cout << "data" << ((int *)m_scratchPad)[0] << endl;
         segment.sizeUsed = segment.sizeUsed + size;
         return true;
     }
