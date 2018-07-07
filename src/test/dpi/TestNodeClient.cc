@@ -60,7 +60,7 @@ void TestNodeClient::testAppendShared_WithoutScratchpad()
   for (uint32_t j = 0; j < numberSegments; j++)
   {
     int expected = 0;
-    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements / numberSegments); i++, expected++)
+    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements / numberSegments); i++ )
     {
       CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[i]);
       expected++;
@@ -95,7 +95,7 @@ void TestNodeClient::testAppendShared_WithoutScratchpad_splitData()
   for (uint32_t j = 0; j < numberSegments; j++)
   {
     int expected = 0;
-    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements / numberSegments); i++, expected++)
+    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements / numberSegments); i++ )
     {
       CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[i]);
       expected++;
@@ -137,7 +137,7 @@ void TestNodeClient::testAppendShared_WithScratchpad()
   for (uint32_t j = 0; j < numberSegments; j++)
   {
     int expected = 0;
-    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements / numberSegments); i++, expected++)
+    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements / numberSegments); i++ )
     {
       CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[i]);
       expected++;
@@ -208,7 +208,7 @@ void TestNodeClient::testAppendShared_MultipleClients_WithScratchpad()
   for (uint32_t j = 0; j < numberSegments1; j++)
   {
     int expected = 0;
-    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements1 / numberSegments1); i++, expected++)
+    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements1 / numberSegments1); i++ )
     {
       CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[i]);
       expected++;
@@ -219,7 +219,7 @@ void TestNodeClient::testAppendShared_MultipleClients_WithScratchpad()
   for (uint32_t j = 0; j < numberSegments2; j++)
   {
     int expected = 0;
-    for (uint32_t i = numberSegments1 * Config::DPI_SEGMENT_SIZE + sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements2 / numberSegments2); i++, expected++)
+    for (uint32_t i = numberSegments1 * Config::DPI_SEGMENT_SIZE + sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements2 / numberSegments2); i++ )
     {
       CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[i]);
       expected++;
