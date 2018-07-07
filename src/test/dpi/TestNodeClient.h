@@ -14,7 +14,6 @@ DPI_UNIT_TEST_SUITE(TestNodeClient);
   DPI_UNIT_TEST(testAppendShared_MultipleClients_WithScratchpad);
   DPI_UNIT_TEST(testAppendShared_SizeTooBigForScratchpad);
   DPI_UNIT_TEST(testBuffer);
-  DPI_UNIT_TEST(testRemoteAlloc);
   DPI_UNIT_TEST(testAppendShared_WithoutScratchpad_splitData);
   DPI_UNIT_TEST_SUITE_END()
   ;
@@ -27,7 +26,6 @@ DPI_UNIT_TEST_SUITE(TestNodeClient);
   void testAppendShared_WithoutScratchpad();
   void testAppendShared_MultipleClients_WithScratchpad();
   void testAppendShared_SizeTooBigForScratchpad();
-  void testRemoteAlloc();
   void testBuffer();
 
 

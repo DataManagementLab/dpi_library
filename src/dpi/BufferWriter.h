@@ -29,11 +29,8 @@ class BufferWriter : public base
     {
         while (size > this->m_scratchPadSize)
         {
-            DebugCode(
-                std::cout << "Size exceeds scratch size" << '\n';
-                std::cout << "Size " << size << '\n';)
-                // update size move pointer
-                size = size - this->m_scratchPadSize;
+            // update size move pointer
+            size = size - this->m_scratchPadSize;
             memcpy(this->m_scratchPad, data, this->m_scratchPadSize);
             data = ((char *)data + this->m_scratchPadSize);
             if (!this->super_append(this->m_scratchPadSize))
@@ -125,24 +122,24 @@ class BufferWriterPrivate
     bool super_append(size_t size)
     {
 
-        if (m_localBufferSegments.empty() || m_localBufferSegments.back().size - m_localBufferSegments.back().sizeUsed < size)
+        if (m_localBufferSegments.empty() || m_localBufferSegments.back().size - m_sizeUsed< size)
         {
             size_t remoteOffset = 0;
             if (!m_rdmaClient->remoteAlloc(m_handle->connection, Config::DPI_SEGMENT_SIZE, remoteOffset))
             {
                 return false;
             }
-
-            m_localBufferSegments.emplace_back(remoteOffset, Config::DPI_SEGMENT_SIZE, 0, sizeof(Config::DPI_SEGMENT_HEADER_t));
+            m_sizeUsed = sizeof(Config::DPI_SEGMENT_HEADER_t);
+            m_localBufferSegments.emplace_back(remoteOffset, Config::DPI_SEGMENT_SIZE, 0);
             TO_BE_IMPLEMENTED(m_regClient->dpi_append_segment(m_handle->name, m_localBufferSegments.back());)
         }
         BuffSegment &segment = m_localBufferSegments.back();
 
-        if (!m_rdmaClient->write(m_handle->node_id, segment.offset + segment.sizeUsed, m_scratchPad, size, true))
+        if (!m_rdmaClient->write(m_handle->node_id, segment.offset + m_sizeUsed, m_scratchPad, size, true))
         {
             return false;
         }
-        segment.sizeUsed = segment.sizeUsed + size;
+        m_sizeUsed = m_sizeUsed + size;
         // update counter / header once in a while
         TO_BE_IMPLEMENTED(m_rdmaClient->write(HEADER));
         return true;
@@ -160,6 +157,7 @@ class BufferWriterPrivate
     size_t m_scratchPadSize = 0;
 
   private:
+    size_t m_sizeUsed = 0;
     Config::DPI_SEGMENT_HEADER_t HEADER;
     RegistryClient *m_regClient = nullptr;
     RDMAClient *m_rdmaClient = nullptr; // used to issue RDMA req. to the NodeServer

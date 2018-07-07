@@ -18,12 +18,11 @@ struct BuffSegment
     size_t offset;
     size_t size;
     size_t threshold;
-    size_t sizeUsed;
-    
+
     BuffSegment(){};
     
-    BuffSegment(size_t offset,size_t size,size_t threshold,size_t sizeUsed) : 
-    offset(offset), size(size), threshold(threshold), sizeUsed(sizeUsed)  {};
+    BuffSegment(size_t offset,size_t size,size_t threshold) : 
+    offset(offset), size(size), threshold(threshold){};
 };
 struct BuffHandle
 {
