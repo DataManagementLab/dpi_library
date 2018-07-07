@@ -5,7 +5,7 @@ void TestNodeClient::setUp()
 {
 
   m_nodeClient = new NodeClient();
-  m_regClient = new RegistryClient();
+  m_stub_regClient = new RegistryClientStub();
   m_nodeServer = new NodeServer();
   CPPUNIT_ASSERT(m_nodeServer->startServer());
 };
@@ -13,7 +13,7 @@ void TestNodeClient::setUp()
 void TestNodeClient::tearDown()
 {
   delete m_nodeClient;
-  delete m_regClient;
+  delete m_stub_regClient;
   if (m_nodeServer->running())
   {
     m_nodeServer->stopServer();
@@ -45,9 +45,8 @@ void TestNodeClient::testAppendPrivate_WithoutScratchpad()
   uint32_t numberSegments = 2;
   size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int) * numberSegments;
 
-  RegistryClient* regClient = new RegistryClientStub();
-  BuffHandle *buffHandle = regClient->dpi_create_buffer(bufferName, 1, connection);
-  BufferWriter<BufferWriterPrivate> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, regClient);
+  BuffHandle *buffHandle = m_stub_regClient->dpi_create_buffer(bufferName, 1, connection);
+  BufferWriter<BufferWriterPrivate> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, m_stub_regClient);
 
   //ACT
   for (uint32_t i = 0; i < numberElements; i++)
@@ -78,8 +77,8 @@ void TestNodeClient::testAppendPrivate_WithoutScratchpad_splitData()
   size_t numberElements = (Config::DPI_SCRATCH_PAD_SIZE / sizeof(int)) * 4;
   uint32_t numberSegments = (numberElements * sizeof(int)) / (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t));
   size_t memSize = numberElements * sizeof(int);
-  BuffHandle *buffHandle = new BuffHandle(bufferName, 1, connection);
-  BufferWriter<BufferWriterPrivate> buffWriter(buffHandle);
+  BuffHandle *buffHandle = m_stub_regClient->dpi_create_buffer(bufferName, 1, connection);
+  BufferWriter<BufferWriterPrivate> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, m_stub_regClient);
 
   int *data = new int[numberElements];
 
@@ -113,8 +112,8 @@ void TestNodeClient::testAppendPrivate_WithScratchpad()
   uint32_t numberSegments = 2;
   size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int) * numberSegments;
 
-  BuffHandle *buffHandle = new BuffHandle(bufferName, 1, connection);
-  BufferWriter<BufferWriterPrivate> buffWriter(buffHandle);
+  BuffHandle *buffHandle = m_stub_regClient->dpi_create_buffer(bufferName, 1, connection);
+  BufferWriter<BufferWriterPrivate> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, m_stub_regClient);
 
   int *scratchPad = (int *)buffWriter.getScratchPad();
 
@@ -158,8 +157,8 @@ void TestNodeClient::testAppendPrivate_MultipleClients_WithScratchpad()
   uint32_t numberSegments1 = 2;
   size_t numberElements1 = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int) * numberSegments1;
 
-  BuffHandle *buffHandle1 = new BuffHandle(bufferName, 1, connection);
-  BufferWriter<BufferWriterPrivate> buffWriter1(buffHandle1);
+  BuffHandle *buffHandle = m_stub_regClient->dpi_create_buffer(bufferName, 1, connection);
+  BufferWriter<BufferWriterPrivate> buffWriter1(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, m_stub_regClient);
 
   int *scratchPad1 = (int *)buffWriter1.getScratchPad();
 
@@ -167,8 +166,8 @@ void TestNodeClient::testAppendPrivate_MultipleClients_WithScratchpad()
   uint32_t numberSegments2 = 2;
   size_t numberElements2 = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int) * numberSegments2;
 
-  BuffHandle *buffHandle2 = new BuffHandle(bufferName, 1, connection);
-  BufferWriter<BufferWriterPrivate> buffWriter2(buffHandle2);
+  BuffHandle *buffHandle2 = m_stub_regClient->dpi_create_buffer(bufferName, 1, connection);
+  BufferWriter<BufferWriterPrivate> buffWriter2(buffHandle2, Config::DPI_SCRATCH_PAD_SIZE, m_stub_regClient);
 
   int *scratchPad2 = (int *)buffWriter2.getScratchPad();
 
@@ -234,8 +233,8 @@ void TestNodeClient::testAppendPrivate_SizeTooBigForScratchpad()
   string bufferName = "test";
   string connection = "127.0.0.1:5400";
 
-  BuffHandle *buffHandle = new BuffHandle(bufferName, 1, connection);
-  BufferWriter<BufferWriterPrivate> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE);
+  BuffHandle *buffHandle = m_stub_regClient->dpi_create_buffer(bufferName, 1, connection);
+  BufferWriter<BufferWriterPrivate> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, m_stub_regClient);
 
   //ACT
   //ASSERT

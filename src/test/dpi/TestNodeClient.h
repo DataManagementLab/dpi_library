@@ -31,33 +31,45 @@ DPI_UNIT_TEST_SUITE(TestNodeClient);
 private:
   NodeClient* m_nodeClient;
   NodeServer* m_nodeServer;
-  RegistryClient* m_regClient;
-};
+  RegistryClient* m_stub_regClient;
+
 
 class RegistryClientStub : public RegistryClient
 {
 public:
-  virtual BuffHandle* dpi_create_buffer(string& name, NodeID node_id, string& connection)
+
+  BuffHandle* dpi_create_buffer(string& name, NodeID node_id, string& connection)
   {
     std::cout << "Created buffer" << '\n';
+    (void) name;
     m_buffHandle = new BuffHandle(name, node_id, connection);
     return m_buffHandle;
   }
 
-  virtual bool dpi_register_buffer(BuffHandle* handle)
+  bool dpi_register_buffer(BuffHandle* handle)
   {
     m_buffHandle = handle;
+    return true;
   }
-  virtual BuffHandle* dpi_retrieve_buffer(string& name)
+  BuffHandle* dpi_retrieve_buffer(string& name)
   {
+    (void) name;
     return m_buffHandle;
   }
-  virtual bool dpi_append_segment(string& name, BuffSegment& segment)
+  bool dpi_append_segment(string& name, BuffSegment& segment)
   {
     //Implement locking if stub should support concurrent appending of segments.
-    m_buffHandle->segments.push_back(segment);
+    (void) name;
+    BuffSegment seg;
+    seg.offset = segment.offset;
+    seg.size = segment.size;
+    seg.threshold = segment.threshold;
+    m_buffHandle->segments.push_back(seg);
+    return true;
   }
 
 private:
   BuffHandle* m_buffHandle = nullptr; //For this stub we just have one buffHandle
+};
+
 };

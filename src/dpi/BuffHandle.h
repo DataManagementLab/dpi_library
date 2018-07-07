@@ -28,7 +28,7 @@ struct BuffHandle
 {
     string name;
     NodeID node_id;
-    string& connection;
+    string connection;
     std::vector<BuffSegment> segments;
 
     BuffHandle(string name, NodeID node_id, string connection):name(name), node_id(node_id), connection(connection){};

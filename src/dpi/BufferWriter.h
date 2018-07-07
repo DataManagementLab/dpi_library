@@ -125,7 +125,7 @@ class BufferWriterPrivate
     {
         m_rdmaClient = new RDMAClient();
         m_rdmaClient->connect(handle->connection, handle->node_id);
-        TO_BE_IMPLEMENTED(if(regClient == nullptr){
+        TO_BE_IMPLEMENTED(if(m_regClient == nullptr){
                           m_regClient = new RegistryClient();
                           }
                           m_regClient->connect(Config::DPI_REGISTRY_SERVER));
@@ -155,7 +155,7 @@ class BufferWriterPrivate
             }
             m_sizeUsed = sizeof(Config::DPI_SEGMENT_HEADER_t);
             m_localBufferSegments.emplace_back(remoteOffset, Config::DPI_SEGMENT_SIZE, 0);
-            TO_BE_IMPLEMENTED(m_regClient->dpi_append_segment(m_handle->name, m_localBufferSegments.back());)
+            m_regClient->dpi_append_segment(m_handle->name, m_localBufferSegments.back());
         }
         BuffSegment &segment = m_localBufferSegments.back();
 

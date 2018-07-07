@@ -23,7 +23,7 @@ class RegistryClient
 
 public:
     RegistryClient();
-    ~RegistryClient();
+    virtual ~RegistryClient();
 
     virtual BuffHandle* dpi_create_buffer(string& name, NodeID node_id, string& connection);
 
