@@ -4,7 +4,7 @@
  RegistryClient::RegistryClient(){};
     RegistryClient::~RegistryClient(){};
 
-    BuffHandle* RegistryClient::dpi_create_buffer(string& name, NodeID node_id, size_t size){
+    BuffHandle* RegistryClient::dpi_create_buffer(string& name, NodeID node_id, string& connection){
         return nullptr;
     };    
 

@@ -34,7 +34,7 @@ void TestNodeClient::testBuffer()
   }
 };
 
-void TestNodeClient::testAppendShared_WithoutScratchpad()
+void TestNodeClient::testAppendPrivate_WithoutScratchpad()
 {
   //ARRANGE
   string bufferName = "test";
@@ -45,8 +45,9 @@ void TestNodeClient::testAppendShared_WithoutScratchpad()
   uint32_t numberSegments = 2;
   size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int) * numberSegments;
 
-  BuffHandle *buffHandle = new BuffHandle(bufferName, 1, connection);
-  BufferWriter<BufferWriterPrivate> buffWriter(buffHandle);
+  RegistryClient* regClient = new RegistryClientStub();
+  BuffHandle *buffHandle = regClient->dpi_create_buffer(bufferName, 1, connection);
+  BufferWriter<BufferWriterPrivate> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, regClient);
 
   //ACT
   for (uint32_t i = 0; i < numberElements; i++)
@@ -56,7 +57,7 @@ void TestNodeClient::testAppendShared_WithoutScratchpad()
 
   int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
 
-  //ASSERT
+  //ASSERT 
   for (uint32_t j = 0; j < numberSegments; j++)
   {
     int expected = 0;
@@ -68,7 +69,7 @@ void TestNodeClient::testAppendShared_WithoutScratchpad()
   }
 };
 
-void TestNodeClient::testAppendShared_WithoutScratchpad_splitData()
+void TestNodeClient::testAppendPrivate_WithoutScratchpad_splitData()
 {
   string bufferName = "test";
   string connection = "127.0.0.1:5400";
@@ -103,7 +104,7 @@ void TestNodeClient::testAppendShared_WithoutScratchpad_splitData()
   }
 };
 
-void TestNodeClient::testAppendShared_WithScratchpad()
+void TestNodeClient::testAppendPrivate_WithScratchpad()
 {
   //ARRANGE
   string bufferName = "test";
@@ -147,7 +148,7 @@ void TestNodeClient::testAppendShared_WithScratchpad()
   // CPPUNIT_ASSERT(m_nodeClient->dpi_append(&buffWriter,(void*) &data, sizeof(int)));
 };
 
-void TestNodeClient::testAppendShared_MultipleClients_WithScratchpad()
+void TestNodeClient::testAppendPrivate_MultipleClients_WithScratchpad()
 {
   //ARRANGE
   string bufferName = "test";
@@ -227,7 +228,7 @@ void TestNodeClient::testAppendShared_MultipleClients_WithScratchpad()
   }
 };
 
-void TestNodeClient::testAppendShared_SizeTooBigForScratchpad()
+void TestNodeClient::testAppendPrivate_SizeTooBigForScratchpad()
 {
   //ARRANGE
   string bufferName = "test";

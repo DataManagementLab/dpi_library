@@ -25,11 +25,11 @@ public:
     RegistryClient();
     ~RegistryClient();
 
-    BuffHandle* dpi_create_buffer(string& name, NodeID node_id, size_t size);    
+    virtual BuffHandle* dpi_create_buffer(string& name, NodeID node_id, string& connection);
 
-    bool dpi_register_buffer(BuffHandle* handle);    
-    BuffHandle* dpi_retrieve_buffer(string& name);
-    bool dpi_append_segment(string& name, BuffSegment& segment); //TBD
+    virtual bool dpi_register_buffer(BuffHandle* handle);    
+    virtual BuffHandle* dpi_retrieve_buffer(string& name);
+    virtual bool dpi_append_segment(string& name, BuffSegment& segment); //TBD
 
 private: 
     ProtoClient* m_client;
