@@ -9,14 +9,15 @@
 
 class TestNodeClient : public CppUnit::TestFixture {
 DPI_UNIT_TEST_SUITE(TestNodeClient);
-  DPI_UNIT_TEST(testAppendPrivate_WithScratchpad);
-  DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad);
-  DPI_UNIT_TEST(testAppendPrivate_MultipleClients_WithScratchpad);
-  DPI_UNIT_TEST(testAppendPrivate_SizeTooBigForScratchpad);
-  DPI_UNIT_TEST(testBuffer);
-  DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad_splitData);
+  // DPI_UNIT_TEST(testAppendPrivate_WithScratchpad);
+  // DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad);
+  // DPI_UNIT_TEST(testAppendPrivate_MultipleClients_WithScratchpad);
+  // DPI_UNIT_TEST(testAppendPrivate_SizeTooBigForScratchpad);
+  // DPI_UNIT_TEST(testBuffer);
+  // DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad_splitData);
 
-  DPI_UNIT_TEST(testAppendShared_AtomicHeaderManipulation);
+  // DPI_UNIT_TEST(testAppendShared_AtomicHeaderManipulation);
+  DPI_UNIT_TEST(testAppendShared_WithScratchpad);
   DPI_UNIT_TEST_SUITE_END();
 
  public:
@@ -34,6 +35,7 @@ DPI_UNIT_TEST_SUITE(TestNodeClient);
   // Shared Strategy
 
   void testAppendShared_AtomicHeaderManipulation();
+  void testAppendShared_WithScratchpad();
 
 private:
   NodeClient* m_nodeClient;
@@ -61,7 +63,11 @@ public:
   BuffHandle* dpi_retrieve_buffer(string& name)
   {
     (void) name;
-    return m_buffHandle;
+    BuffHandle*  copy_buffHandle = new BuffHandle(m_buffHandle->name, m_buffHandle->node_id, m_buffHandle->connection);
+    for(auto segment : m_buffHandle->segments){
+      copy_buffHandle->segments.push_back(segment);
+    }
+    return copy_buffHandle;
   }
   bool dpi_append_segment(string& name, BuffSegment& segment)
   {

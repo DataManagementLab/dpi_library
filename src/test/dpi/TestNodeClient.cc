@@ -56,11 +56,11 @@ void TestNodeClient::testAppendPrivate_WithoutScratchpad()
 
   int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
 
-  //ASSERT 
+  //ASSERT
   for (uint32_t j = 0; j < numberSegments; j++)
   {
     int expected = 0;
-    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements / numberSegments); i++ )
+    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements / numberSegments); i++)
     {
       CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[i]);
       expected++;
@@ -95,7 +95,7 @@ void TestNodeClient::testAppendPrivate_WithoutScratchpad_splitData()
   for (uint32_t j = 0; j < numberSegments; j++)
   {
     int expected = 0;
-    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements / numberSegments); i++ )
+    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements / numberSegments); i++)
     {
       CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[i]);
       expected++;
@@ -137,7 +137,7 @@ void TestNodeClient::testAppendPrivate_WithScratchpad()
   for (uint32_t j = 0; j < numberSegments; j++)
   {
     int expected = 0;
-    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements / numberSegments); i++ )
+    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements / numberSegments); i++)
     {
       CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[i]);
       expected++;
@@ -208,7 +208,7 @@ void TestNodeClient::testAppendPrivate_MultipleClients_WithScratchpad()
   for (uint32_t j = 0; j < numberSegments1; j++)
   {
     int expected = 0;
-    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements1 / numberSegments1); i++ )
+    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements1 / numberSegments1); i++)
     {
       CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[i]);
       expected++;
@@ -219,7 +219,7 @@ void TestNodeClient::testAppendPrivate_MultipleClients_WithScratchpad()
   for (uint32_t j = 0; j < numberSegments2; j++)
   {
     int expected = 0;
-    for (uint32_t i = numberSegments1 * Config::DPI_SEGMENT_SIZE + sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements2 / numberSegments2); i++ )
+    for (uint32_t i = numberSegments1 * Config::DPI_SEGMENT_SIZE + sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements2 / numberSegments2); i++)
     {
       CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[i]);
       expected++;
@@ -235,35 +235,80 @@ void TestNodeClient::testAppendPrivate_SizeTooBigForScratchpad()
 
   BuffHandle *buffHandle = m_stub_regClient->dpi_create_buffer(bufferName, 1, connection);
   BufferWriter<BufferWriterPrivate> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, m_stub_regClient);
-  
+
   //ACT
   //ASSERT
   CPPUNIT_ASSERT_MESSAGE("appendFromScratchpad should return false when size is bigger than scratchpad",
                          !buffWriter.appendFromScratchpad(Config::DPI_SCRATCH_PAD_SIZE + 1));
 }
 
-
-void TestNodeClient::testAppendShared_AtomicHeaderManipulation(){
+void TestNodeClient::testAppendShared_AtomicHeaderManipulation()
+{
 
   //ARRANGE
   string bufferName = "test";
   string connection = "127.0.0.1:5400";
   uint64_t expected = 10;
+  int64_t fetched = 0;
 
   BuffHandle *buffHandle = m_stub_regClient->dpi_create_buffer(bufferName, 1, connection);
   BufferWriter<BufferWriterShared> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, m_stub_regClient);
 
   //ACT
-  buffWriter.modifyCounter(expected,0);
+  auto fetchedCounter = buffWriter.modifyCounter(expected, 0);
 
   //ASSERT
   Config::DPI_SEGMENT_HEADER_t *rdma_buffer = (Config::DPI_SEGMENT_HEADER_t *)m_nodeServer->getBuffer(0);
   CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[0].counter);
+  CPPUNIT_ASSERT_EQUAL(fetched, fetchedCounter);
   CPPUNIT_ASSERT_EQUAL((uint64_t)0, rdma_buffer[0].hasFollowPage);
 
   //ACT 2
-  buffWriter.setHasFollowPage(0 + sizeof(Config::DPI_SEGMENT_HEADER_t::counter));
+  auto fetchedFollowPage = buffWriter.setHasFollowPage(0 + sizeof(Config::DPI_SEGMENT_HEADER_t::counter));
+
   //ASSERT
   CPPUNIT_ASSERT_EQUAL((uint64_t)1, rdma_buffer[0].hasFollowPage);
+  CPPUNIT_ASSERT_EQUAL(fetched, fetchedFollowPage);
+}
 
+void TestNodeClient::testAppendShared_WithScratchpad()
+{
+  //ARRANGE
+  string bufferName = "test";
+  string connection = "127.0.0.1:5400";
+  size_t remoteOffset = 0;
+  uint32_t numberSegments = 4;
+  size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int) * numberSegments;
+
+  // Registry buff handle
+  BuffHandle *buffHandle = m_stub_regClient->dpi_create_buffer(bufferName, 1, connection);
+  BuffHandle *buffHandlePrivateToWriter = new BuffHandle(bufferName, 1, connection);
+
+  BufferWriter<BufferWriterShared> buffWriter(buffHandlePrivateToWriter, Config::DPI_SCRATCH_PAD_SIZE, m_stub_regClient);
+
+  int *scratchPad = (int *)buffWriter.getScratchPad();
+
+  for (uint32_t i = 0; i <= numberElements; i++)
+  {
+    scratchPad[0] = i;
+    CPPUNIT_ASSERT(buffWriter.appendFromScratchpad(sizeof(int)));
+  }
+
+  int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
+
+  DebugCode(
+      std::cout << "Buffer " << '\n';
+      for (int i = 0; i < numberElements; i++)
+          std::cout
+      << rdma_buffer[i] << ' ';);
+
+  for (uint32_t j = 0; j < numberSegments; j++)
+  {
+    int expected = 0;
+    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / sizeof(int); i < (numberElements / numberSegments); i++)
+    {
+      CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[i]);
+      expected++;
+    }
+  }
 }
