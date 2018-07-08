@@ -288,6 +288,7 @@ void TestBufferWriter::testAppendShared_WithScratchpad()
 
   int *scratchPad = (int *)buffWriter.getScratchPad();
 
+  //ACT
   for (uint32_t i = 0; i <= numberElements; i++)
   {
     scratchPad[0] = i;
@@ -302,6 +303,7 @@ void TestBufferWriter::testAppendShared_WithScratchpad()
           std::cout
       << rdma_buffer[i] << ' ';);
 
+  //ASSERT
   for (uint32_t j = 0; j < numberSegments; j++)
   {
     int expected = 0;
@@ -312,3 +314,63 @@ void TestBufferWriter::testAppendShared_WithScratchpad()
     }
   }
 }
+
+void TestBufferWriter::testAppendShared_MultipleConcurrentClients()
+{
+  //ARRANGE
+  string connection = "127.0.0.1:5400";
+  string bufferName = "test";
+  std::vector<int> expectedResult;
+  std::vector<int> result;
+
+  std::vector<std::tuple<int*, int>> *dataToWrite = new std::vector<std::tuple<int*, int>>();
+  int numberElements = 0;
+
+  //Create data for clients to send -- Two sends
+  for(size_t i = 0; i < 4; i++)
+  {
+    //Data has half the size of a segment
+    numberElements = (Config::DPI_SEGMENT_SIZE/4 - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int);
+    int* dataPtr = (int*) calloc(numberElements, sizeof(int)); 
+    
+    //Fill data
+    for(size_t j = 0; j < numberElements; j++)
+    {
+      dataPtr[j] = j;
+      expectedResult.push_back(j);
+      // std::cout << " " << dataPtr[j] << '\n';
+    }
+    
+    dataToWrite->emplace_back(dataPtr, numberElements);
+  }
+  
+
+  BuffHandle *buffHandle = m_stub_regClient->dpi_create_buffer(bufferName, 1, connection);
+  BufferWriterSharedClient* client1 = new BufferWriterSharedClient(m_nodeServer, m_stub_regClient, dataToWrite);
+  BufferWriterSharedClient* client2 = new BufferWriterSharedClient(m_nodeServer, m_stub_regClient, dataToWrite);
+
+  //ACT
+  client1->start();
+  client2->start();
+  client1->join();
+  client2->join();
+
+  //ASSERT
+  int *rdma_buffer = (int *)m_nodeServer->getBuffer(0);
+
+  std::cout << "Buffer " << '\n';
+  for (int i = 0; i < Config::DPI_SEGMENT_SIZE*2; i++)
+  {
+    std::cout << rdma_buffer[i] << ' ';
+    result.push_back((int)rdma_buffer[i]); //Somehow ignore the header... or add the header to the expected result
+  }
+  std::sort(expectedResult.begin(), expectedResult.end());
+  std::sort(result.begin(), result.end());
+
+  CPPUNIT_ASSERT_EQUAL(expectedResult.size(), result.size());
+  
+  for(size_t i = 0; i < expectedResult.size(); i++)
+  {
+    CPPUNIT_ASSERT_EQUAL(expectedResult[i], result[i]);
+  }
+} 

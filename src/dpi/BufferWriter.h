@@ -94,16 +94,16 @@ class BufferWriterShared
 
         if (m_handle->segments.empty())
         {
-                std::cout << "Empty Segment" << '\n';
-                size_t remoteOffset = 0;
-                if (!m_rdmaClient->remoteAlloc(m_handle->connection, Config::DPI_SEGMENT_SIZE, remoteOffset))
-                {
-                    return false;
-                }
-                std::cout << "remoteOffset" << remoteOffset << '\n';
-                BuffSegment newSegment(remoteOffset, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t), Config::DPI_SEGMENT_SIZE * 0.8);
-                m_handle->segments.push_back(newSegment);
-                m_regClient->dpi_append_segment(m_handle->name, newSegment);
+            std::cout << "Empty Segment" << '\n';
+            size_t remoteOffset = 0;
+            if (!m_rdmaClient->remoteAlloc(m_handle->connection, Config::DPI_SEGMENT_SIZE, remoteOffset))
+            {
+                return false;
+            }
+            std::cout << "remoteOffset" << remoteOffset << '\n';
+            BuffSegment newSegment(remoteOffset, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t), Config::DPI_SEGMENT_SIZE * 0.8);
+            m_handle->segments.push_back(newSegment);
+            m_regClient->dpi_append_segment(m_handle->name, newSegment);
         }
         auto segment = m_handle->segments.back();
         std::cout << "Segment " << segment.offset << '\n';

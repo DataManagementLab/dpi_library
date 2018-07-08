@@ -17,7 +17,7 @@ DPI_UNIT_TEST_SUITE(TestBufferWriter);
   // DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad_splitData);
 
   // DPI_UNIT_TEST(testAppendShared_AtomicHeaderManipulation);
-  DPI_UNIT_TEST(testAppendShared_WithScratchpad);
+  DPI_UNIT_TEST(testAppendShared_MultipleConcurrentClients);  
 DPI_UNIT_TEST_SUITE_END();
 
  public:
@@ -33,9 +33,9 @@ DPI_UNIT_TEST_SUITE_END();
   void testBuffer();
 
   // Shared Strategy
-
   void testAppendShared_AtomicHeaderManipulation();
   void testAppendShared_WithScratchpad();
+  void testAppendShared_MultipleConcurrentClients();
 
 private:
   NodeClient* m_nodeClient;
@@ -83,6 +83,34 @@ public:
 
 private:
   BuffHandle* m_buffHandle = nullptr; //For this stub we just have one buffHandle
+};
+ 
+class BufferWriterSharedClient : public Thread
+{
+  NodeServer* nodeServer = nullptr;
+  RegistryClient* regClient = nullptr;
+  std::vector<std::tuple<int*, int>> *dataToWrite = nullptr; //tuple<ptr to data, size in bytes>
+
+public: 
+  BufferWriterSharedClient(NodeServer* nodeServer, RegistryClient* regClient, std::vector<std::tuple<int*, int>> *dataToWrite) : 
+    Thread(), nodeServer(nodeServer), regClient(regClient), dataToWrite(dataToWrite) {}
+
+  virtual void run() 
+  {
+    //ARRANGE
+    string bufferName = "test";
+    string connection = "127.0.0.1:5400";
+
+    BuffHandle *buffHandle = new BuffHandle(bufferName, 1, connection);
+    BufferWriter<BufferWriterShared> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, regClient);
+
+    //ACT
+    for(int i = 0; i < dataToWrite->size(); i++)
+    {
+      std::cout << "Size: " << std::get<1>(dataToWrite->operator[](i)) << '\n';
+      buffWriter.append(std::get<0>(dataToWrite->operator[](i)), std::get<1>(dataToWrite->operator[](i))*sizeof(int));
+    }
+  }
 };
 
 };
