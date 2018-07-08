@@ -14,27 +14,35 @@
 #include "MemoryResourceResponse.pb.h"
 #include "LoadDataRequest.pb.h"
 #include "LoadDataResponse.pb.h"
+#include "DPICreateBufferRequest.pb.h"
+#include "DPICreateBufferResponse.pb.h"
+#include "DPIRetrieveBufferRequest.pb.h"
+#include "DPIRetrieveBufferResponse.pb.h"
+#include "DPIAppendBufferRequest.pb.h"
+#include "DPIAppendBufferResponse.pb.h"
 
 #include "ErrorMessage.pb.h"
 #include "RegistrateReq.pb.h"
 #include "RegistrateResp.pb.h"
 
-#include  <google/protobuf/any.pb.h>
+#include <google/protobuf/any.pb.h>
 #include <google/protobuf/message.h>
 using google::protobuf::Any;
 
-namespace dpi {
+namespace dpi
+{
 
-enum MessageTypesEnum
-  : int {
-    MEMORY_RESOURCE_REQUEST,
+enum MessageTypesEnum : int
+{
+  MEMORY_RESOURCE_REQUEST,
   MEMORY_RESOURCE_RELEASE,
 };
 
-
-class MessageTypes {
- public:
-  static Any createMemoryResourceRequest(size_t size) {
+class MessageTypes
+{
+public:
+  static Any createMemoryResourceRequest(size_t size)
+  {
     MemoryResourceRequest resReq;
     resReq.set_size(size);
     resReq.set_type(MessageTypesEnum::MEMORY_RESOURCE_REQUEST);
@@ -43,8 +51,9 @@ class MessageTypes {
     return anyMessage;
   }
 
-  static Any createMemoryResourceRequest(const size_t size, const string& name,
-                                         bool persistent) {
+  static Any createMemoryResourceRequest(const size_t size, const string &name,
+                                         bool persistent)
+  {
     MemoryResourceRequest resReq;
     resReq.set_size(size);
     resReq.set_type(MessageTypesEnum::MEMORY_RESOURCE_REQUEST);
@@ -56,7 +65,8 @@ class MessageTypes {
     return anyMessage;
   }
 
-  static Any createMemoryResourceRelease(size_t size, size_t offset) {
+  static Any createMemoryResourceRelease(size_t size, size_t offset)
+  {
     MemoryResourceRequest resReq;
     resReq.set_size(size);
     resReq.set_offset(offset);
@@ -65,45 +75,8 @@ class MessageTypes {
     anyMessage.PackFrom(resReq);
     return anyMessage;
   }
-
-
-  static Any createUpdateNID(
-      const map<uint32_t, pair<string, uint32_t>>& nodeIDs) {
-
-    UpdateNIDReq updateReq;
-    for (auto& kv : nodeIDs) {
-      updateReq.add_nodeid(kv.first);
-      updateReq.add_connection(kv.second.first);
-      updateReq.add_type(kv.second.second);
-    }
-    Any anyMessage;
-    anyMessage.PackFrom(updateReq);
-    return anyMessage;
-  }
-
-//  uint64 buffer = 1;
-//    uint32 rkey = 2;
-//    uint32 qp_num = 3;
-//    uint32 lid = 4;
-//    repeated uint32 gid = 5 [packed=true];
-//    uint32 psn = 6;
-
-  // static RDMAConnRequest getRDMAFromCN(ComputeNodeRDMAConnRequest& cnrr ){
-  //     RDMAConnRequest ret;
-  //     ret.CopyFrom((cnrr.rdmaconn()));
-  //     return ret;
-  // }
-
-  // static ComputeNodeRDMAConnRequest setCNFromRDMA(RDMAConnRequest* conreq ){
-  //     ComputeNodeRDMAConnRequest ret;
-  //     ret.mutable_rdmaconn()->CopyFrom(*conreq);
-  //     return ret;
-  // }
-
-
 };
 // end class
-
 }// end namespace dpi
 
 #endif /* MESSAGETYPES_H_ */

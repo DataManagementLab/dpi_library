@@ -1,0 +1,14 @@
+syntax = "proto3";
+package dpi;
+
+message DPIRetrieveBufferResponse {
+	message Segment {
+        uint64 offset = 1;
+        uint64 size = 2;
+        uint64 threshold = 3;
+    }
+    string name = 1;
+    uint64 node_id = 2;
+    repeated Segment segment = 3;
+    uint32 return = 4;
+}

@@ -6,59 +6,60 @@
  * @date 2018-07-06
  */
 
-
 #pragma once
 
 #include "../utils/Config.h"
 
 #include "../net/proto/ProtoServer.h"
 #include "../net/rdma/RDMAClient.h"
+#include "../message/MessageTypes.h"
+#include "../message/MessageErrors.h"
 #include "BuffHandle.h"
 
-
-namespace dpi{
+namespace dpi
+{
 
 class RegistryServer : public ProtoServer
 {
 public:
-    // Constructor and Destructor
-    RegistryServer();
-    RegistryServer(int port);
-    RegistryServer(RegistryServer &&) = default;
-    RegistryServer(const RegistryServer &) = default;
-    RegistryServer &operator=(RegistryServer &&) = default;
-    RegistryServer &operator=(const RegistryServer &) = default;
-    ~RegistryServer();
+  // Constructors and Destructors
+  RegistryServer();
+  RegistryServer(int port);
+  RegistryServer(RegistryServer &&) = default;
+  RegistryServer(const RegistryServer &) = default;
+  RegistryServer &operator=(RegistryServer &&) = default;
+  RegistryServer &operator=(const RegistryServer &) = default;
+  ~RegistryServer();
 
-
-    /**
+  /**
      * @brief handle messages 
      *  
      * @param sendMsg the incoming message
      * @param respMsg the response message
      */
-    void handle(Any* sendMsg, Any* respMsg);
+  void handle(Any *sendMsg, Any *respMsg);
 
 private:
-    // Members
-    RDMAClient* m_rdma_client;
+  // Members
+  RDMAClient *m_rdmaClient;
+  map<string, BuffHandle> m_bufferHandles;
 
-    // Methods
-    
-    /**
-     * @brief Allocates a new dpi buffer on node with node_id
+  // Methods
+
+  /**
+     * @brief Creates a new dpi buffer and allocates on segment on node with node_id
      * 
      * @param name of the buffer (unique)
      * @param node_id of the server where the buffer is allocated
      * @param size in bytes of the buffer
      */
-    bool dpi_register_buffer(BuffHandle* handle);
+  bool dpi_register_buffer(BuffHandle *buffHandle);
 
-    BuffHandle* dpi_create_buffer(string& name, NodeID node_id, size_t size);
-    
-    BuffHandle* dpi_retrieve_buffer(string& name);
+  BuffHandle *dpi_create_buffer(string &name, NodeID node_id, size_t size, size_t threshold);
 
-    bool dpi_append_segment(string& name, BuffSegment* segment);
+  BuffHandle *dpi_retrieve_buffer(string &name);
+
+  bool dpi_append_segment(string &name, BuffSegment *segment);
 };
 
-} // end of namespace
+} // namespace dpi

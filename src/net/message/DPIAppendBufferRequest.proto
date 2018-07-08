@@ -1,0 +1,12 @@
+syntax = "proto3";
+package dpi;
+
+message DPIAppendBufferRequest {
+    message Segment {
+        uint64 offset = 1;
+        uint64 size = 2;
+        uint64 threshold = 3;
+    }
+    string name = 1;
+    repeated Segment segment = 2;
+}

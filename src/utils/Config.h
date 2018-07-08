@@ -33,45 +33,54 @@ using namespace std;
 
 #define RDMA_TRANSPORT 0 //0=RC, 1=UD
 
-#if RDMA_TRANSPORT==0
+#if RDMA_TRANSPORT == 0
 #define DPI_UNIT_TEST_RC(test) CPPUNIT_TEST(test)
 #define DPI_UNIT_TEST_UD(test)
-#elif RDMA_TRANSPORT==1
+#elif RDMA_TRANSPORT == 1
 #define DPI_UNIT_TEST_RC(test)
 #define DPI_UNIT_TEST_UD(test) CPPUNIT_TEST(test)
 #endif
 
-
 //#define DEBUGCODEANOTHER
 #if defined(DEBUGCODEANOTHER)
 
-#define DEBUG_WRITE(outputStream, className,funcName,message) do { \
-    std::string header = std::string("[") + className + "::" + funcName + "] "; \
-    outputStream  << std::left << header << message << std::endl; \
-} while( false )
+#define DEBUG_WRITE(outputStream, className, funcName, message)                     \
+    do                                                                              \
+    {                                                                               \
+        std::string header = std::string("[") + className + "::" + funcName + "] "; \
+        outputStream << std::left << header << message << std::endl;                \
+    } while (false)
 
-#define RESULT_WRITE(outputStream,message) do { \
-    outputStream  << std::left << message << std::endl; \
-} while( false )
+#define RESULT_WRITE(outputStream, message)                \
+    do                                                     \
+    {                                                      \
+        outputStream << std::left << message << std::endl; \
+    } while (false)
 
-#define DEBUG_OUT(x) do { \
-  if (debugging_enabled) { std::cout << x << std::endl; } \
-} while (0);
+#define DEBUG_OUT(x)                     \
+    do                                   \
+    {                                    \
+        if (debugging_enabled)           \
+        {                                \
+            std::cout << x << std::endl; \
+        }                                \
+    } while (0);
 
 #else
-#define DEBUG_WRITE(outputStream, className,funcName,message)
-#define RESULT_WRITE(outputStream,message)
+#define DEBUG_WRITE(outputStream, className, funcName, message)
+#define RESULT_WRITE(outputStream, message)
 #define DEBUG_OUT(x)
 #endif
 
-
 //#define DEBUGCODE
 #if defined(DEBUGCODE)
-#define DebugCode( code_fragment) {code_fragment}
+#define DebugCode(code_fragment) \
+    {                            \
+        code_fragment            \
+    }
 #else
-#define DebugCode( code_fragment)
+#define DebugCode(code_fragment)
 #endif
-
 
 #define DPI_UNIT_TEST_SUITE(suite) CPPUNIT_TEST_SUITE(suite)
 #define DPI_UNIT_TEST(test) CPPUNIT_TEST(test)
@@ -86,16 +95,20 @@ typedef unsigned long long uint128_t;
 typedef uint64_t NodeID;
 typedef uint64_t Offset;
 
-namespace dpi {
+namespace dpi
+{
 
 //Constants
-class Config {
- public:
-    Config() {
+class Config
+{
+  public:
+    Config()
+    {
         load();
     }
 
-    ~Config() {
+    ~Config()
+    {
         unload();
     }
 
@@ -105,6 +118,7 @@ class Config {
 
     //DPI
     static uint32_t DPI_REGISTRY_PORT;
+    static vector<string> DPI_NODES;
 
     //RDMA
     static size_t RDMA_MEMSIZE;
@@ -120,7 +134,7 @@ class Config {
     static vector<int> THREAD_CPUS;
 
     //LOGGING
-    static int LOGGING_LEVEL;  //0=all, 1=ERR, 2=DBG, 3=INF, (>=4)=NONE
+    static int LOGGING_LEVEL; //0=all, 1=ERR, 2=DBG, 3=INF, (>=4)=NONE
 
     //TEST
     static int HELLO_PORT;
@@ -128,29 +142,29 @@ class Config {
     //PERFTEST
     static vector<string> PTEST_MCAST_NODES;
     static size_t PTEST_SCAN_PREFETCH;
-    
+
     // used in RDMA_SERVER AND IN RDMA_MANAGERRCSRQ
     const static size_t EXP_STORAGE_RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 15;
 
     // Shared Receive Queue
 
-    const static size_t MAX_NUM_SRQ = 15;  //this is the number of shared receive queues per server
+    const static size_t MAX_NUM_SRQ = 15; //this is the number of shared receive queues per server
     // e.g. 10 means that up to 10 clients they get their own SRQ
     // After 10 new clients are added round robin wise
-    const static size_t MAX_NUM_RPC_MSG = 4096;  // Number of RDMA send MSGs RPCHandler can recv
-    
- private:
+    const static size_t MAX_NUM_RPC_MSG = 4096; // Number of RDMA send MSGs RPCHandler can recv
+
+  private:
     static void load();
     static void unload();
 
     static void set(string key, string value);
-    static void init_vector(vector<string>& values, string csv_list);
-    static void init_vector(vector<int>& values, string csv_list);
+    static void init_vector(vector<string> &values, string csv_list);
+    static void init_vector(vector<int> &values, string csv_list);
 
     static string getIP();
 };
 
-}  // end namespace dpi
+} // end namespace dpi
 
 using namespace dpi;
 
