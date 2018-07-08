@@ -7,8 +7,8 @@
 #include "../../dpi/RegistryClient.h"
 #include "../../dpi/BufferWriter.h"
 
-class TestNodeClient : public CppUnit::TestFixture {
-DPI_UNIT_TEST_SUITE(TestNodeClient);
+class TestBufferWriter : public CppUnit::TestFixture {
+DPI_UNIT_TEST_SUITE(TestBufferWriter);
   // DPI_UNIT_TEST(testAppendPrivate_WithScratchpad);
   // DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad);
   // DPI_UNIT_TEST(testAppendPrivate_MultipleClients_WithScratchpad);
@@ -18,7 +18,7 @@ DPI_UNIT_TEST_SUITE(TestNodeClient);
 
   // DPI_UNIT_TEST(testAppendShared_AtomicHeaderManipulation);
   DPI_UNIT_TEST(testAppendShared_WithScratchpad);
-  DPI_UNIT_TEST_SUITE_END();
+DPI_UNIT_TEST_SUITE_END();
 
  public:
   void setUp();

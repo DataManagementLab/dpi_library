@@ -10,7 +10,7 @@
 #include "net/TestRDMAServerManagementQueue.h"
 #include "net/TestRDMAServerMultClients.h"
 #include "thread/TestThread.h"
-#include "dpi/TestNodeClient.h"
+#include "dpi/TestBufferWriter.h"
 
 
 #endif /* TESTS_H_ */

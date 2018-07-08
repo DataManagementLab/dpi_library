@@ -34,7 +34,7 @@ static void usage()
     cout << "103: \t net/TestRDMAManagementQueue" << endl;
     cout << "104: \t net/TestSimpleUD" << endl;
     cout << "105: \t net/TestRDMAServerMCast" << endl;
-    cout << "201: \t dpi/TestNodeClient" << endl;
+    cout << "201: \t dpi/TestBufferWriter" << endl;
     cout << endl;
 
     cout << "Server:" << endl;
@@ -92,7 +92,7 @@ static void runtest(int t)
         runner.addTest(TestRDMAServerMCast::suite());
         break;
     case 201:
-        runner.addTest(TestNodeClient::suite());
+        runner.addTest(TestBufferWriter::suite());
         break;
     default:
         cout << "No test with number " << t << " exists." << endl;
