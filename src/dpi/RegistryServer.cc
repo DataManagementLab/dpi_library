@@ -3,16 +3,17 @@
 RegistryServer::RegistryServer() : ProtoServer("Registry Server", Config::DPI_REGISTRY_PORT)
 {
     m_rdmaClient = new RDMAClient();
-};
-
-RegistryServer::RegistryServer(int port) : ProtoServer("Registry Server", port)
-{
-    m_rdmaClient = new RDMAClient();
+    for(size_t i=0; i<Config::DPI_NODES.size(); ++i){
+        m_rdmaClient->connect(Config::DPI_NODES[i]);
+    }
 };
 
 RegistryServer::~RegistryServer()
 {
-    delete m_rdmaClient;
+    if(m_rdmaClient!=nullptr){
+        delete m_rdmaClient;
+        m_rdmaClient=nullptr;
+    }
 };
 
 void RegistryServer::handle(Any *anyReq, Any *anyResp)
@@ -25,12 +26,22 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
 
         string name = createBuffReq.name();
         BuffHandle *buffHandle = dpi_create_buffer(name, createBuffReq.node_id(), createBuffReq.size(), createBuffReq.threshold());
+        
         if (buffHandle == nullptr)
         {
             createBuffResp.set_return_(MessageErrors::DPI_CREATE_BUFFHANDLE_FAILED);
         }
         else
         {
+            createBuffResp.set_name(name);
+            createBuffResp.set_node_id(buffHandle->node_id);
+            for (BuffSegment buffSegment : buffHandle->segments)
+            {
+                DPICreateBufferResponse_Segment *segmentResp = createBuffResp.add_segment();
+                segmentResp->set_offset(buffSegment.offset);
+                segmentResp->set_size(buffSegment.size);
+                segmentResp->set_threshold(buffSegment.threshold);
+            }
             createBuffResp.set_return_(MessageErrors::NO_ERROR);
         }
 
@@ -69,20 +80,30 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
         DPIAppendBufferResponse appendBuffResp;
         anyReq->UnpackTo(&appendBuffReq);
 
+        bool registerSuccess = true;
         string name = appendBuffReq.name();
-        bool success = true;
-        for (size_t i = 0; i < appendBuffReq.segment_size(); ++i)
+        if (appendBuffReq.register_())
         {
-            DPIAppendBufferRequest_Segment segmentReq = appendBuffReq.segment(i);
-            BuffSegment segment(segmentReq.offset(), segmentReq.size(), segmentReq.threshold());
-            if (!dpi_append_segment(name, &segment))
+            BuffHandle buffHandle(name, appendBuffReq.node_id());
+            registerSuccess = dpi_register_buffer(&buffHandle);
+        }
+
+        bool appendSuccess = true;
+        if (registerSuccess)
+        {
+            for (size_t i = 0; i < appendBuffReq.segment_size(); ++i)
             {
-                success = false;
-                break;
+                DPIAppendBufferRequest_Segment segmentReq = appendBuffReq.segment(i);
+                BuffSegment segment(segmentReq.offset(), segmentReq.size(), segmentReq.threshold());
+                if (!dpi_append_segment(name, &segment))
+                {
+                    appendSuccess = false;
+                    break;
+                }
             }
         }
 
-        if (success)
+        if (registerSuccess && appendSuccess)
         {
             appendBuffResp.set_return_(MessageErrors::NO_ERROR);
         }
@@ -148,7 +169,6 @@ BuffHandle *RegistryServer::dpi_retrieve_buffer(string &name)
 
 bool RegistryServer::dpi_append_segment(string &name, BuffSegment *segment)
 {
-    //register buffer if it does not exist
     if (m_bufferHandles.find(name) == m_bufferHandles.end())
     {
         return false;

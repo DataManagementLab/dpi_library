@@ -1,5 +1,3 @@
-
-
 //CPPUnit
 #include <cppunit/ui/text/TestRunner.h>
 #include <cppunit/BriefTestProgressListener.h>
@@ -17,15 +15,19 @@
 #include "./test/Tests.h"
 #include "./test/Test.h"
 #include "./thread/Thread.h"
+#include "./dpi/RegistryServer.h"
 
 #define no_argument 0
 #define required_argument 1
-#define optional_argument 2 
+#define optional_argument 2
 
 static void usage()
 {
-    cout << "dpi -r (test|sever) -n #number" << endl
-         << endl;
+    cout << "dpi -r (test|server) -n #number" << endl;
+    cout << endl;
+    cout << "Servers:" << endl;
+    cout << "1: \t dpi/RegistryServer" << endl;
+    cout << endl;
     cout << "Tests:" << endl;
     cout << "1: \t thread/TestThread" << endl;
     cout << "2: \t thread/TestHelloServer" << endl;
@@ -35,9 +37,7 @@ static void usage()
     cout << "104: \t net/TestSimpleUD" << endl;
     cout << "105: \t net/TestRDMAServerMCast" << endl;
     cout << "201: \t dpi/TestNodeClient" << endl;
-    cout << endl;
-
-    cout << "Server:" << endl;
+    cout << "202: \t dpi/TestRegistryClient" << endl;
 }
 
 static void runtest(int t)
@@ -94,6 +94,9 @@ static void runtest(int t)
     case 201:
         runner.addTest(TestNodeClient::suite());
         break;
+    case 202:
+        runner.addTest(TestRegistryClient::suite());
+        break;
     default:
         cout << "No test with number " << t << " exists." << endl;
         return;
@@ -120,6 +123,9 @@ static void runserver(int s, int p)
     ProtoServer *server = nullptr;
     switch (s)
     {
+    case 1:
+        server = new RegistryServer();
+        break;
     default:
         cout << "No server with number " << s << " exists." << endl;
         return;

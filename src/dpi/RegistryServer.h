@@ -24,7 +24,6 @@ class RegistryServer : public ProtoServer
 public:
   // Constructors and Destructors
   RegistryServer();
-  RegistryServer(int port);
   RegistryServer(RegistryServer &&) = default;
   RegistryServer(const RegistryServer &) = default;
   RegistryServer &operator=(RegistryServer &&) = default;

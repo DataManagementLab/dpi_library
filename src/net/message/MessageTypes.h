@@ -41,6 +41,59 @@ enum MessageTypesEnum : int
 class MessageTypes
 {
 public:
+  static Any createDPICreateBufferRequest(string &name, NodeID node_id, size_t size, size_t threshold)
+  {
+    DPICreateBufferRequest createBufferReq;
+    createBufferReq.set_name(name);
+    createBufferReq.set_node_id(node_id);
+    createBufferReq.set_size(size);
+    createBufferReq.set_threshold(threshold);
+    Any anyMessage;
+    anyMessage.PackFrom(createBufferReq);
+    return anyMessage;
+  }
+
+  static Any createDPIAppendBufferRequest(string &name, size_t offset, size_t size, size_t threshold)
+  {
+    DPIAppendBufferRequest appendBufferReq;
+    appendBufferReq.set_name(name);
+    appendBufferReq.set_register_(false);
+
+    DPIAppendBufferRequest_Segment *segmentReq = appendBufferReq.add_segment();
+    segmentReq->set_offset(offset);
+    segmentReq->set_size(size);
+    segmentReq->set_threshold(threshold);
+    Any anyMessage;
+    anyMessage.PackFrom(appendBufferReq);
+    return anyMessage;
+  }
+
+  static Any createDPIRegisterBufferRequest(string &name, NodeID node_id, size_t offset, size_t size, size_t threshold)
+  {
+    DPIAppendBufferRequest appendBufferReq;
+    appendBufferReq.set_name(name);
+    appendBufferReq.set_node_id(node_id);
+    appendBufferReq.set_register_(true);
+
+    DPIAppendBufferRequest_Segment *segmentReq = appendBufferReq.add_segment();
+    segmentReq->set_offset(offset);
+    segmentReq->set_size(size);
+    segmentReq->set_threshold(threshold);
+    Any anyMessage;
+    anyMessage.PackFrom(appendBufferReq);
+    return anyMessage;
+  }
+
+  static Any createDPIRetrieveBufferRequest(string &name)
+  {
+    DPIRetrieveBufferRequest retrieveBufferReq;
+    retrieveBufferReq.set_name(name);
+
+    Any anyMessage;
+    anyMessage.PackFrom(retrieveBufferReq);
+    return anyMessage;
+  }
+
   static Any createMemoryResourceRequest(size_t size)
   {
     MemoryResourceRequest resReq;
@@ -51,7 +104,7 @@ public:
     return anyMessage;
   }
 
-  static Any createMemoryResourceRequest(const size_t size, const string &name,
+  static Any createMemoryResourceRequest(size_t size, string &name,
                                          bool persistent)
   {
     MemoryResourceRequest resReq;
@@ -77,6 +130,6 @@ public:
   }
 };
 // end class
-}// end namespace dpi
+} // end namespace dpi
 
 #endif /* MESSAGETYPES_H_ */

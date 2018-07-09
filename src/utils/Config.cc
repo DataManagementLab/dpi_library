@@ -13,12 +13,13 @@ size_t Config::PTEST_SCAN_PREFETCH = 10;
 
 
 //DPI
+string Config::DPI_REGISTRY_SERVER = "127.0.0.1";
 uint32_t Config::DPI_REGISTRY_PORT = 5300;
-vector<string> Config::DPI_NODES = {  "192.168.1.1:"
+vector<string> Config::DPI_NODES = {  "127.0.0.1:"
     + to_string(Config::RDMA_PORT) };
 
 //RDMA
-size_t Config::RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 3;  //3GB
+size_t Config::RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 1;  //1GB
 uint32_t Config::RDMA_NUMAREGION = 1;
 uint32_t Config::RDMA_DEVICE = 1;
 uint32_t Config::RDMA_IBPORT = 1;
@@ -112,6 +113,12 @@ void Config::set(string key, string value) {
     Config::RDMA_IBPORT = stoi(value);
   } else if (key.compare("THREAD_CPUS") == 0) {
     init_vector(Config::THREAD_CPUS, value);
+  } else if (key.compare("DPI_REGISTRY_SERVER") == 0) {
+    Config::DPI_REGISTRY_SERVER = string(value.c_str());
+  } else if (key.compare("DPI_REGISTRY_PORT") == 0) {
+    Config::DPI_REGISTRY_PORT = stoi(value);
+  }else if (key.compare("DPI_NODES") == 0) {
+    init_vector(Config::DPI_NODES, value);
   }
 }
 

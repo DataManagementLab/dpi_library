@@ -117,6 +117,7 @@ class Config
     const static int DPI_SLEEP_INTERVAL = 100 * 1000;
 
     //DPI
+    static string DPI_REGISTRY_SERVER;
     static uint32_t DPI_REGISTRY_PORT;
     static vector<string> DPI_NODES;
 

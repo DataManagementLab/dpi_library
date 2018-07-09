@@ -6,18 +6,18 @@
 #include "../../dpi/RegistryClient.h"
 #include "../../dpi/BufferWriter.h"
 
-class TestNodeClient : public CppUnit::TestFixture {
-DPI_UNIT_TEST_SUITE(TestNodeClient);
+class TestNodeClient : public CppUnit::TestFixture
+{
+  DPI_UNIT_TEST_SUITE(TestNodeClient);
   DPI_UNIT_TEST(testAppendShared);
-  DPI_UNIT_TEST_SUITE_END()
-  ;
+  DPI_UNIT_TEST_SUITE_END();
 
- public:
+public:
   void setUp();
   void tearDown();
   void testAppendShared();
 
 private:
-  NodeClient* m_nodeClient;
-  RegistryClient* m_regClient;
+  NodeClient *m_nodeClient;
+  RegistryClient *m_regClient;
 };

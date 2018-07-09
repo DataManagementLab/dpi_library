@@ -11,6 +11,6 @@
 #include "net/TestRDMAServerMultClients.h"
 #include "thread/TestThread.h"
 #include "dpi/TestNodeClient.h"
-
+#include "dpi/TestRegistryClient.h"
 
 #endif /* TESTS_H_ */

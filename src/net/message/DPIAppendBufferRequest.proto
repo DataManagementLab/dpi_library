@@ -8,5 +8,7 @@ message DPIAppendBufferRequest {
         uint64 threshold = 3;
     }
     string name = 1;
-    repeated Segment segment = 2;
+    uint64 node_id = 2;
+    repeated Segment segment = 3;
+    bool register = 4;
 }
