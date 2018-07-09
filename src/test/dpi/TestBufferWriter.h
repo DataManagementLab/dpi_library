@@ -2,21 +2,21 @@
 
 #include "../../utils/Config.h"
 
-#include "../../dpi/NodeServer.h"
+#include "../../dpi/NodeServer.h" 
 #include "../../dpi/NodeClient.h"
 #include "../../dpi/RegistryClient.h"
 #include "../../dpi/BufferWriter.h"
 
 class TestBufferWriter : public CppUnit::TestFixture {
 DPI_UNIT_TEST_SUITE(TestBufferWriter);
-  DPI_UNIT_TEST(testAppendPrivate_WithScratchpad);
-  DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad);
-  DPI_UNIT_TEST(testAppendPrivate_MultipleClients_WithScratchpad);
-  DPI_UNIT_TEST(testAppendPrivate_SizeTooBigForScratchpad);
-  DPI_UNIT_TEST(testBuffer);
-  DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad_splitData);
+  // DPI_UNIT_TEST(testAppendPrivate_WithScratchpad);
+  // DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad);
+  // DPI_UNIT_TEST(testAppendPrivate_MultipleClients_WithScratchpad);
+  // DPI_UNIT_TEST(testAppendPrivate_SizeTooBigForScratchpad);
+  // DPI_UNIT_TEST(testBuffer);
+  // DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad_splitData);
 
-  DPI_UNIT_TEST(testAppendShared_AtomicHeaderManipulation);
+  // DPI_UNIT_TEST(testAppendShared_AtomicHeaderManipulation);
   DPI_UNIT_TEST(testAppendShared_MultipleConcurrentClients);  
 DPI_UNIT_TEST_SUITE_END();
 
