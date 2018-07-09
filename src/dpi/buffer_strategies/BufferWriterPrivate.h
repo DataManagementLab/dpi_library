@@ -24,11 +24,12 @@ class BufferWriterPrivate : public BufferWriterInterface
     };
 
     // ToDo flag to change signaled.
-    bool super_append(size_t size)
+    bool super_append(size_t size, size_t scratchPadOffset = 0)
     {
 
-        if (m_localBufferSegments.empty() || m_localBufferSegments.back().size - m_sizeUsed < size)
+        if (m_localBufferSegments.empty())
         {
+
             if (!allocRemoteSegment())
             {
                 std::cout << "Failed to allocate new segment" << '\n';
@@ -38,6 +39,24 @@ class BufferWriterPrivate : public BufferWriterInterface
             m_localBufferSegments.emplace_back(m_handle->segments.back().offset, m_handle->segments.back().size, m_handle->segments.back().threshold);
         }
         BuffSegment segment = m_localBufferSegments.back();
+
+        if (m_localBufferSegments.back().size < m_sizeUsed + size)
+        {
+            size_t firstPartSize = segment.size - m_sizeUsed;
+            size_t rest = m_sizeUsed + size - segment.size;
+
+            if (!writeToSegment(segment, m_sizeUsed, firstPartSize, scratchPadOffset))
+            {
+                return false;
+            }
+            if (!allocRemoteSegment())
+            {
+                return false;
+            }
+            m_sizeUsed = 0;
+            m_localBufferSegments.emplace_back(m_handle->segments.back().offset, m_handle->segments.back().size, m_handle->segments.back().threshold);
+            return super_append(size, firstPartSize);
+        }
 
         if (!writeToSegment(segment, m_sizeUsed, size))
         {
@@ -51,11 +70,12 @@ class BufferWriterPrivate : public BufferWriterInterface
     }
 
   protected:
-    vector<BuffSegment> m_localBufferSegments;
+    vector<BuffSegment>
+        m_localBufferSegments;
 
   private:
     size_t m_sizeUsed = 0;
     Config::DPI_SEGMENT_HEADER_t HEADER;
-};
+}; // namespace dpi
 
 } // namespace dpi

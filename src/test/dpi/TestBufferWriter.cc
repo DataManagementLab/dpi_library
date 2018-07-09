@@ -266,14 +266,14 @@ void TestBufferWriter::testAppendShared_AtomicHeaderManipulation()
   //ACT 2
   auto fetchedFollowPage = buffWriter.setHasFollowSegment(0 + sizeof(Config::DPI_SEGMENT_HEADER_t::counter));
 
-  //ASSERT
+  //ASSERT 2
   CPPUNIT_ASSERT_EQUAL((uint64_t)1, rdma_buffer[0].hasFollowPage);
   CPPUNIT_ASSERT_EQUAL(fetched, fetchedFollowPage);
 
-    //ACT 2
+    //ACT 3
   fetchedFollowPage = buffWriter.setHasFollowSegment(0 + sizeof(Config::DPI_SEGMENT_HEADER_t::counter));
 
-  //ASSERT
+  //ASSERT 3
   CPPUNIT_ASSERT_EQUAL((uint64_t)1, rdma_buffer[0].hasFollowPage);
   CPPUNIT_ASSERT_EQUAL((int64_t)1, fetchedFollowPage);
 

@@ -24,7 +24,7 @@ class BufferWriterShared : public BufferWriterInterface
         TO_BE_IMPLEMENTED(delete m_regClient;)
     };
 
-    bool super_append(size_t size)
+    bool super_append(size_t size, size_t scratchPadOffset = 0)
     {
         if (m_handle->segments.empty())
         {
@@ -42,7 +42,7 @@ class BufferWriterShared : public BufferWriterInterface
         if (nextOffset < segment.threshold)
         {
             std::cout << "Case 1" << '\n';
-            if (!writeToSegment(segment, writeOffset, size))
+            if (!writeToSegment(segment, writeOffset, size, scratchPadOffset))
             {
                 return false;
             }
@@ -51,7 +51,7 @@ class BufferWriterShared : public BufferWriterInterface
         else if (writeOffset > segment.threshold && nextOffset <= segment.size)
         {
             std::cout << "Case 2" << '\n';
-            if (!writeToSegment(segment, writeOffset, size))
+            if (!writeToSegment(segment, writeOffset, size, scratchPadOffset))
             {
                 return false;
             }
@@ -68,34 +68,51 @@ class BufferWriterShared : public BufferWriterInterface
                     return false;
                 }
             }
-            if (!writeToSegment(segment, writeOffset, size))
+            if (!writeToSegment(segment, writeOffset, size, scratchPadOffset))
             {
                 return false;
             }
         }
-        // To be modified
-        // Case 4: Data exceeds segment
-        else if (nextOffset > segment.size)
+        // To do split it up
+        // Case 4: Data exceeds segment but some still fit into the old segment
+        // split up
+        else if (nextOffset > segment.size && writeOffset < segment.size)
         {
-            std::cout << "Case 4" << '\n';
-            auto resetCounter = modifyCounter(-size, segment.offset);
             auto hasFollowPage = setHasFollowSegment(segment.offset + sizeof(Config::DPI_SEGMENT_HEADER_t::counter));
+            std::cout << "Case 4" << '\n';
+            size_t firstPartSize = segment.size - writeOffset;
+            size_t rest = nextOffset - segment.size;
+
+            if (!writeToSegment(segment, writeOffset, firstPartSize, scratchPadOffset))
+            {
+                return false;
+            }
+
+            auto resetCounter = modifyCounter(-rest, segment.offset);
+
             if (hasFollowPage == 0)
             {
+                //write to segment
                 std::cout << "Case 4.1" << '\n';
+
                 if (!allocRemoteSegment())
                 {
                     return false;
                 }
-                return super_append(size);
+                return super_append(size, firstPartSize);
             }
             else
             {
-
                 std::cout << "Case 4.2" << '\n';
                 m_handle = m_regClient->dpi_retrieve_buffer(m_handle->name);
                 return super_append(size);
             }
+        }
+        // counter exceeded segment size therefore retrieve and start over
+        else if (writeOffset < segment.size)
+        {
+            m_handle = m_regClient->dpi_retrieve_buffer(m_handle->name);
+            return super_append(size);
         }
         else
         {

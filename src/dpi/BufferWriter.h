@@ -39,7 +39,6 @@ class BufferWriter : public base
             if (!this->super_append(this->m_scratchPadSize))
                 return false;
         }
-
         memcpy(this->m_scratchPad, data, size);
         return this->super_append(size);
     }
@@ -52,7 +51,6 @@ class BufferWriter : public base
             std::cerr << "The size specified exceeds size of scratch pad size" << std::endl;
             return false;
         }
-
         return this->super_append(size);
     }
 

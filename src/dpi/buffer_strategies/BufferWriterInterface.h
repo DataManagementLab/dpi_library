@@ -25,7 +25,7 @@ class BufferWriterInterface
         } m_regClient->connect(Config::DPI_REGISTRY_SERVER));
     };
 
-    virtual bool super_append(size_t size) = 0;
+    virtual bool super_append(size_t size, size_t scratchPadOffset = 0) = 0;
 
   protected:
     void setScratchpad(void *scratchPad)
@@ -46,9 +46,9 @@ class BufferWriterInterface
         return true;
     }
 
-    bool writeToSegment(BuffSegment &segment, size_t offset, size_t size)
+    bool writeToSegment(BuffSegment &segment, size_t offset, size_t size , size_t scratchPadOffset = 0)
     {
-        return m_rdmaClient->write(m_handle->node_id, segment.offset + offset + sizeof(Config::DPI_SEGMENT_HEADER_t), m_scratchPad, size, true);
+        return m_rdmaClient->write(m_handle->node_id, segment.offset + offset + sizeof(Config::DPI_SEGMENT_HEADER_t), m_scratchPad + scratchPadOffset, size, true);
     }
 
     BuffHandle *m_handle = nullptr;
