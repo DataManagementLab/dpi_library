@@ -35,6 +35,7 @@ class BufferWriterShared : public BufferWriterInterface
             }
         }
         auto segment = m_handle->segments.back();
+        std::cout << "Segment offset: " << segment.offset << '\n';
         auto writeOffset = modifyCounter(size, segment.offset);
         int64_t nextOffset = writeOffset + size;
 

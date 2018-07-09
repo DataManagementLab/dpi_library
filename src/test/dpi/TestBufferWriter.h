@@ -11,7 +11,7 @@ class TestBufferWriter : public CppUnit::TestFixture {
 DPI_UNIT_TEST_SUITE(TestBufferWriter);
   // DPI_UNIT_TEST(testAppendPrivate_WithScratchpad);
   // DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad);
-  // DPI_UNIT_TEST(testAppendPrivate_MultipleClients_WithScratchpad);
+  // DPI_UNIT_TEST(testAppendPrivate_MultipleClients_WithScratchpad); 
   // DPI_UNIT_TEST(testAppendPrivate_SizeTooBigForScratchpad);
   // DPI_UNIT_TEST(testBuffer);
   // DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad_splitData);
@@ -57,7 +57,11 @@ public:
 
   bool dpi_register_buffer(BuffHandle* handle)
   {
-    m_buffHandle = handle;
+    BuffHandle* copy_buffHandle = new BuffHandle(handle->name, handle->node_id, handle->connection);
+    for(auto segment : handle->segments){
+      copy_buffHandle->segments.push_back(segment); 
+    }
+    m_buffHandle = copy_buffHandle;
     return true;
   }
   BuffHandle* dpi_retrieve_buffer(string& name)

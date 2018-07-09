@@ -377,9 +377,11 @@ void TestBufferWriter::testAppendShared_MultipleConcurrentClients()
   std::cout << "Buffer " << '\n';
   for (int i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int)*3; i++) //Read 2 segments (3 is created but only the first 2 are filled)
   {
-    std::cout << rdma_buffer[i] << ' ';
-    result.push_back((int)rdma_buffer[i]); //Somehow ignore the header... or add the header to the expected result
+    std::cout << rdma_buffer[i] << ' '; 
+    result.push_back(rdma_buffer[i]); //Somehow ignore the header... or add the header to the expected result
   }
+  CPPUNIT_ASSERT_EQUAL(expectedSegments, m_stub_regClient->dpi_retrieve_buffer(bufferName)->segments.size());
+
   CPPUNIT_ASSERT_EQUAL(expectedSegments, m_stub_regClient->dpi_retrieve_buffer(bufferName)->segments.size());
 
   //Insert header to expected (order does not matter since we sort it)  
