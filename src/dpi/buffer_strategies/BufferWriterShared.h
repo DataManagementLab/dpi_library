@@ -113,7 +113,8 @@ class BufferWriterShared : public BufferWriterInterface
         }
         // counter exceeded segment size therefore retrieve and start over
         else if (writeOffset >= segment.size)
-        {
+        {   
+            auto resetCounter = modifyCounter(-size, segment.offset);
             m_handle = m_regClient->dpi_retrieve_buffer(m_handle->name);
             return super_append(size);
         }
