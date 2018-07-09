@@ -63,9 +63,10 @@ public:
   BuffHandle* dpi_retrieve_buffer(string& name)
   {
     (void) name;
+    //Copy a new BuffHandle to emulate distributed setting (Or else one nodes changes to the BuffHandle would affect another nodes BuffHandle without retrieving the buffer first)
     BuffHandle*  copy_buffHandle = new BuffHandle(m_buffHandle->name, m_buffHandle->node_id, m_buffHandle->connection);
     for(auto segment : m_buffHandle->segments){
-      copy_buffHandle->segments.push_back(segment);
+      copy_buffHandle->segments.push_back(segment); 
     }
     return copy_buffHandle;
   }
@@ -73,27 +74,41 @@ public:
   {
     //Implement locking if stub should support concurrent appending of segments.
     (void) name;
+    appendSegMutex.lock();
     BuffSegment seg;
     seg.offset = segment.offset;
     seg.size = segment.size;
     seg.threshold = segment.threshold;
     m_buffHandle->segments.push_back(seg);
+    appendSegMutex.unlock();
+    
     return true;
   }
 
 private:
   BuffHandle* m_buffHandle = nullptr; //For this stub we just have one buffHandle
+  std::mutex appendSegMutex;
 };
  
+struct TestData
+{
+  int a;
+  int b;
+  int c;
+  int d;
+  TestData(int a, int b, int c, int d) : a(a), b(b), c(c), d(d){}
+};
+
 class BufferWriterSharedClient : public Thread
 {
   NodeServer* nodeServer = nullptr;
   RegistryClient* regClient = nullptr;
-  std::vector<std::tuple<int*, int>> *dataToWrite = nullptr; //tuple<ptr to data, size in bytes>
+  std::vector<TestData> *dataToWrite = nullptr; //tuple<ptr to data, size in bytes>
+  BuffHandle* buffHandle = nullptr;
 
 public: 
-  BufferWriterSharedClient(NodeServer* nodeServer, RegistryClient* regClient, std::vector<std::tuple<int*, int>> *dataToWrite) : 
-    Thread(), nodeServer(nodeServer), regClient(regClient), dataToWrite(dataToWrite) {}
+  BufferWriterSharedClient(NodeServer* nodeServer, RegistryClient* regClient, BuffHandle* buffHandle, std::vector<TestData> *dataToWrite) : 
+    Thread(), nodeServer(nodeServer), regClient(regClient), buffHandle(buffHandle), dataToWrite(dataToWrite) {}
 
   virtual void run() 
   {
@@ -101,16 +116,15 @@ public:
     string bufferName = "test";
     string connection = "127.0.0.1:5400";
 
-    BuffHandle *buffHandle = new BuffHandle(bufferName, 1, connection);
     BufferWriter<BufferWriterShared> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, regClient);
 
     //ACT
     for(int i = 0; i < dataToWrite->size(); i++)
     {
-      std::cout << "Size: " << std::get<1>(dataToWrite->operator[](i)) << '\n';
-      buffWriter.append(std::get<0>(dataToWrite->operator[](i)), std::get<1>(dataToWrite->operator[](i))*sizeof(int));
+      buffWriter.append(&dataToWrite->operator[](i), sizeof(TestData));
     }
   }
 };
+
 
 };

@@ -320,34 +320,39 @@ void TestBufferWriter::testAppendShared_MultipleConcurrentClients()
   //ARRANGE
   string connection = "127.0.0.1:5400";
   string bufferName = "test";
+  int nodeId = 1;
   std::vector<int> expectedResult;
   std::vector<int> result;
 
-  std::vector<std::tuple<int*, int>> *dataToWrite = new std::vector<std::tuple<int*, int>>();
-  int numberElements = 0;
+  std::vector<TestData> *dataToWrite = new std::vector<TestData>();
+  
+  int numberElements = (Config::DPI_SEGMENT_SIZE/4 - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int);
 
-  //Create data for clients to send -- Two sends
-  for(size_t i = 0; i < 4; i++)
+  //Create data for clients to send
+  for(size_t i = 0; i < numberElements; i++)
   {
-    //Data has half the size of a segment
-    numberElements = (Config::DPI_SEGMENT_SIZE/4 - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int);
-    int* dataPtr = (int*) calloc(numberElements, sizeof(int)); 
-    
-    //Fill data
-    for(size_t j = 0; j < numberElements; j++)
-    {
-      dataPtr[j] = j;
-      expectedResult.push_back(j);
-      // std::cout << " " << dataPtr[j] << '\n';
-    }
-    
-    dataToWrite->emplace_back(dataPtr, numberElements);
+    //number of elements in each send for each client
+    dataToWrite->emplace_back(i,i,i,i);
   }
   
-
-  BuffHandle *buffHandle = m_stub_regClient->dpi_create_buffer(bufferName, 1, connection);
-  BufferWriterSharedClient* client1 = new BufferWriterSharedClient(m_nodeServer, m_stub_regClient, dataToWrite);
-  BufferWriterSharedClient* client2 = new BufferWriterSharedClient(m_nodeServer, m_stub_regClient, dataToWrite);
+  //Create BuffHandle in advance and remote_alloc the first segment. (Flow needs to be discussed so it is the same between strategies)
+  //Do this because the Shared strategy needs to be passed a BuffHandle that already contains a segment, or else both clients will start by making one each.
+  BuffHandle *buffHandle = new BuffHandle(bufferName, nodeId, connection);
+  RDMAClient* rdmaClient = new RDMAClient();
+  rdmaClient->connect(connection);
+  size_t remoteOffset = 0;
+  rdmaClient->remoteAlloc(connection, Config::DPI_SEGMENT_SIZE, remoteOffset);
+  BuffSegment newSegment(remoteOffset, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t), Config::DPI_SEGMENT_SIZE * 0.8);
+  buffHandle->segments.push_back(newSegment);
+  
+  m_stub_regClient->dpi_register_buffer(buffHandle);
+  //Need to create a buffHandle for each client, to emulate distributed setting    
+  BuffHandle* copy_buffHandle = new BuffHandle(buffHandle->name, buffHandle->node_id, buffHandle->connection);
+  for(auto segment : buffHandle->segments){
+    copy_buffHandle->segments.push_back(segment); 
+  }
+  BufferWriterSharedClient* client1 = new BufferWriterSharedClient(m_nodeServer, m_stub_regClient, buffHandle, dataToWrite);
+  BufferWriterSharedClient* client2 = new BufferWriterSharedClient(m_nodeServer, m_stub_regClient, copy_buffHandle, dataToWrite);
 
   //ACT
   client1->start();
@@ -358,16 +363,31 @@ void TestBufferWriter::testAppendShared_MultipleConcurrentClients()
   //ASSERT
   int *rdma_buffer = (int *)m_nodeServer->getBuffer(0);
 
+  //Assert 3 segments was created
+  const size_t expectedSegments = 3;
+  CPPUNIT_ASSERT_EQUAL(expectedSegments, m_stub_regClient->dpi_retrieve_buffer(bufferName)->segments.size());
+
   std::cout << "Buffer " << '\n';
-  for (int i = 0; i < Config::DPI_SEGMENT_SIZE*2; i++)
+  for (int i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int)*3; i++) //Read 2 segments (3 is created but only the first 2 are filled)
   {
     std::cout << rdma_buffer[i] << ' ';
     result.push_back((int)rdma_buffer[i]); //Somehow ignore the header... or add the header to the expected result
   }
+
+  //Insert header to expected (order does not matter since we sort it)  
+  for(size_t i = 0; i < 2; i++)
+  {
+    expectedResult.push_back(Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t));
+    expectedResult.push_back(0);
+    expectedResult.push_back(1);//Should have followingSegment
+    expectedResult.push_back(0);
+  }
+  
+
   std::sort(expectedResult.begin(), expectedResult.end());
   std::sort(result.begin(), result.end());
 
-  CPPUNIT_ASSERT_EQUAL(expectedResult.size(), result.size());
+  CPPUNIT_ASSERT_EQUAL(expectedResult.size()*2, result.size());
   
   for(size_t i = 0; i < expectedResult.size(); i++)
   {
