@@ -33,16 +33,18 @@ class BufferWriterInterface
         m_scratchPad = scratchPad;
     }
 
-    bool allocRemoteSegment()
+    bool allocRemoteSegment(BuffSegment& newSegment_ret)
     {
         size_t remoteOffset = 0;
         if (!m_rdmaClient->remoteAlloc(m_handle->connection, Config::DPI_SEGMENT_SIZE, remoteOffset))
         {
             return false;
         }
-        BuffSegment newSegment(remoteOffset, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t), Config::DPI_SEGMENT_SIZE * 0.8);
-        m_handle->segments.push_back(newSegment);
-        m_regClient->dpi_append_segment(m_handle->name, newSegment);
+        newSegment_ret.offset = remoteOffset;
+        newSegment_ret.size = Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t);
+        newSegment_ret.threshold = Config::DPI_SEGMENT_SIZE * 0.8;
+    
+        m_regClient->dpi_append_segment(m_handle->name, newSegment_ret);
         return true;
     }
 

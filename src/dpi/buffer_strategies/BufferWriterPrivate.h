@@ -29,12 +29,13 @@ class BufferWriterPrivate : public BufferWriterInterface
 
         if (m_localBufferSegments.empty())
         {
-
-            if (!allocRemoteSegment())
-            {
-                std::cout << "Failed to allocate new segment" << '\n';
+            BuffSegment newSegment;
+            if (!allocRemoteSegment(newSegment))
+            {   
+                 std::cout << "Failed to allocate new segment" << '\n';
                 return false;
             }
+            m_handle->segments.push_back(newSegment);
             m_sizeUsed = 0;
             m_localBufferSegments.emplace_back(m_handle->segments.back().offset, m_handle->segments.back().size, m_handle->segments.back().threshold);
         }
@@ -49,10 +50,12 @@ class BufferWriterPrivate : public BufferWriterInterface
             {
                 return false;
             }
-            if (!allocRemoteSegment())
+            BuffSegment newSegment;
+            if (!allocRemoteSegment(newSegment))
             {
                 return false;
             }
+            m_handle->segments.push_back(newSegment);
             m_sizeUsed = 0;
             m_localBufferSegments.emplace_back(m_handle->segments.back().offset, m_handle->segments.back().size, m_handle->segments.back().threshold);
             return super_append(size, firstPartSize);
