@@ -29,7 +29,8 @@ class BufferWriterShared : public BufferWriterInterface
         if (m_handle->segments.empty())
         {
             std::cout << "Empty Segment" << '\n';
-            if (!allocRemoteSegment())
+            BuffSegment newSegment;
+            if (!allocRemoteSegment(newSegment))
             {
                 return false;
             }
@@ -63,7 +64,8 @@ class BufferWriterShared : public BufferWriterInterface
             auto hasFollowPage = setHasFollowSegment(segment.offset + sizeof(Config::DPI_SEGMENT_HEADER_t::counter));
             if (hasFollowPage == 0)
             {
-                if (!allocRemoteSegment())
+                BuffSegment newSegment;
+                if (!allocRemoteSegment(newSegment))
                 {
                     return false;
                 }
@@ -94,8 +96,8 @@ class BufferWriterShared : public BufferWriterInterface
             {
                 //write to segment
                 std::cout << "Case 4.1" << '\n';
-
-                if (!allocRemoteSegment())
+                BuffSegment newSegment;
+                if (!allocRemoteSegment(newSegment))
                 {
                     return false;
                 }
@@ -109,7 +111,7 @@ class BufferWriterShared : public BufferWriterInterface
             }
         }
         // counter exceeded segment size therefore retrieve and start over
-        else if (writeOffset < segment.size)
+        else if (writeOffset >= segment.size)
         {
             m_handle = m_regClient->dpi_retrieve_buffer(m_handle->name);
             return super_append(size);
