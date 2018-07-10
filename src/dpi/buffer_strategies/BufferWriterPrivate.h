@@ -33,7 +33,7 @@ class BufferWriterPrivate : public BufferWriterInterface
             BuffSegment newSegment;
             if (!allocRemoteSegment(newSegment))
             {   
-                 std::cout << "Failed to allocate new segment" << '\n';
+                 std::cout << "Failed to allocate new segment" << '\n'; //todo: should do a fatal log
                 return false;
             }
             m_handle->segments.push_back(newSegment);
@@ -71,7 +71,7 @@ class BufferWriterPrivate : public BufferWriterInterface
 
         if (!writeToSegment(segment, m_sizeUsed, size))
         {
-            std::cout << "failed to write to segmnet" << '\n';
+            std::cout << "failed to write to segmnet" << '\n'; //todo: should do a fatal log
             return false;
         }
         m_sizeUsed = m_sizeUsed + size;
