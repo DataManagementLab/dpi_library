@@ -106,7 +106,7 @@ class Config {
     //GENERAL
     const static int DPI_MAX_SOCKETS = 1024;
     const static int DPI_SLEEP_INTERVAL = 100 * 1000;
-
+    constexpr static double DPI_SEGMENT_THRESHOLD_FACTOR = 0.8;
     //DPI
     static uint32_t DPI_REGISTRY_PORT;
     static uint32_t DPI_NODE_PORT;
@@ -138,7 +138,7 @@ class Config {
     static uint32_t RDMA_MAX_WR;
     const static uint32_t RDMA_MAX_SGE = 1;
     const static size_t RDMA_UD_OFFSET = 40;
-
+    
     //THREAD
     static vector<int> THREAD_CPUS;
 

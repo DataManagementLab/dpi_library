@@ -21,7 +21,6 @@ class BufferWriterShared : public BufferWriterInterface
         }
         m_scratchPad = nullptr;
         delete m_rdmaClient;
-        TO_BE_IMPLEMENTED(delete m_regClient;)
     };
 
     bool super_append(size_t size, size_t scratchPadOffset = 0)
@@ -38,7 +37,7 @@ class BufferWriterShared : public BufferWriterInterface
         auto segment = m_handle->segments.back();
         std::cout << "Segment offset: " << segment.offset << '\n';
         auto writeOffset = modifyCounter(size, segment.offset);
-        int64_t nextOffset = writeOffset + size;
+        uint64_t nextOffset = writeOffset + size;
 
         // Case 1: Data fits below threshold
         if (nextOffset < segment.threshold)
@@ -91,7 +90,7 @@ class BufferWriterShared : public BufferWriterInterface
                 return false;
             }
 
-            auto resetCounter = modifyCounter(-rest, segment.offset);
+            modifyCounter(-rest, segment.offset);
 
             if (hasFollowSegment == 0)
             {
@@ -126,7 +125,7 @@ class BufferWriterShared : public BufferWriterInterface
         return true;
     }
 
-    inline int64_t modifyCounter(int64_t value, size_t segmentOffset)
+    inline uint64_t modifyCounter(int64_t value, size_t segmentOffset)
     {
 
         while (!m_rdmaClient->fetchAndAdd(m_handle->node_id, segmentOffset + Config::DPI_SEGMENT_HEADER_META::getCounterOffset, 
@@ -136,7 +135,7 @@ class BufferWriterShared : public BufferWriterInterface
         return Network::bigEndianToHost(m_rdmaHeader->counter);
     }
 
-    inline int64_t setHasFollowSegment(size_t segmentOffset)
+    inline uint64_t setHasFollowSegment(size_t segmentOffset)
     {
         while (!m_rdmaClient->compareAndSwap(m_handle->node_id, segmentOffset + Config::DPI_SEGMENT_HEADER_META::getHasFollowSegmentOffset, (void *)&m_rdmaHeader->hasFollowSegment,
                                              0, 1, sizeof(uint64_t), true))

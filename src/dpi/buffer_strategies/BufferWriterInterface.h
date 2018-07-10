@@ -42,7 +42,7 @@ class BufferWriterInterface
         }
         newSegment_ret.offset = remoteOffset;
         newSegment_ret.size = Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t);
-        newSegment_ret.threshold = Config::DPI_SEGMENT_SIZE * 0.8;
+        newSegment_ret.threshold = Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR;
     
         m_regClient->dpi_append_segment(m_handle->name, newSegment_ret);
         return true;
@@ -50,7 +50,8 @@ class BufferWriterInterface
 
     bool writeToSegment(BuffSegment &segment, size_t offset, size_t size , size_t scratchPadOffset = 0)
     {
-        return m_rdmaClient->write(m_handle->node_id, segment.offset + offset + sizeof(Config::DPI_SEGMENT_HEADER_t), m_scratchPad + scratchPadOffset, size, true);
+        void* scratch_tmp = (void*) ((char*)m_scratchPad + scratchPadOffset);
+        return m_rdmaClient->write(m_handle->node_id, segment.offset + offset + sizeof(Config::DPI_SEGMENT_HEADER_t), scratch_tmp , size, true);
     }
 
     BuffHandle *m_handle = nullptr;

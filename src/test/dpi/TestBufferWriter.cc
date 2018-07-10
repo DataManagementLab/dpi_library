@@ -114,6 +114,8 @@ void TestBufferWriter::testAppendPrivate_WithScratchpad()
   size_t remoteOffset = 0;
   uint32_t numberSegments = 2;
   size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int) * numberSegments;
+  uint64_t expectedCounter =  (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t));
+  uint64_t expectedhasFollowSegment = 1;
 
   BuffHandle *buffHandle = m_stub_regClient->dpi_create_buffer(bufferName, 1, connection);
   BufferWriter<BufferWriterPrivate> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, m_stub_regClient);
@@ -134,8 +136,13 @@ void TestBufferWriter::testAppendPrivate_WithScratchpad()
     scratchPad[scratchIter] = i;
     scratchIter++;
   }
-
+  
+  Config::DPI_SEGMENT_HEADER_t* header = ( Config::DPI_SEGMENT_HEADER_t*)m_nodeServer->getBuffer(remoteOffset);
   int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
+
+  CPPUNIT_ASSERT_EQUAL(expectedCounter, header[0].counter);
+  CPPUNIT_ASSERT_EQUAL(expectedhasFollowSegment, header[0].hasFollowSegment);
+
 
   for (uint32_t j = 0; j < numberSegments; j++)
   {
@@ -252,7 +259,7 @@ void TestBufferWriter::testAppendShared_AtomicHeaderManipulation()
   string bufferName = "test";
   string connection = "127.0.0.1:5400";
   uint64_t expected = 10;
-  int64_t fetched = 0;
+  uint64_t fetched = 0;
 
   BuffHandle *buffHandle = m_stub_regClient->dpi_create_buffer(bufferName, 1, connection);
   BufferWriter<BufferWriterShared> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, m_stub_regClient);
@@ -278,7 +285,7 @@ void TestBufferWriter::testAppendShared_AtomicHeaderManipulation()
 
   //ASSERT 3
   CPPUNIT_ASSERT_EQUAL((uint64_t)1, rdma_buffer[0].hasFollowSegment);
-  CPPUNIT_ASSERT_EQUAL((int64_t)1, fetchedFollowPage);
+  CPPUNIT_ASSERT_EQUAL((uint64_t)1, fetchedFollowPage);
 
 }
 
@@ -353,7 +360,7 @@ void TestBufferWriter::testAppendShared_MultipleConcurrentClients()
   rdmaClient->connect(connection);
   size_t remoteOffset = 0;
   rdmaClient->remoteAlloc(connection, Config::DPI_SEGMENT_SIZE, remoteOffset);
-  BuffSegment newSegment(remoteOffset, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t), Config::DPI_SEGMENT_SIZE * 0.8);
+  BuffSegment newSegment(remoteOffset, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t), Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR);
   buffHandle->segments.push_back(newSegment);
   
   m_stub_regClient->dpi_register_buffer(buffHandle);

@@ -10,7 +10,9 @@ class BufferWriterPrivate : public BufferWriterInterface
 {
 
   public:
-    BufferWriterPrivate(BuffHandle *handle, size_t scratchPadSize, RegistryClient *regClient = nullptr) : BufferWriterInterface(handle, scratchPadSize, regClient){};
+    BufferWriterPrivate(BuffHandle *handle, size_t scratchPadSize, RegistryClient *regClient = nullptr) : BufferWriterInterface(handle, scratchPadSize, regClient){
+        m_rdmaHeader = (Config::DPI_SEGMENT_HEADER_t *)m_rdmaClient->localAlloc(sizeof(Config::DPI_SEGMENT_HEADER_t));
+    };
 
     ~BufferWriterPrivate()
     {
@@ -20,7 +22,6 @@ class BufferWriterPrivate : public BufferWriterInterface
         }
         m_scratchPad = nullptr;
         delete m_rdmaClient;
-        TO_BE_IMPLEMENTED(delete m_regClient;)
     };
 
     // ToDo flag to change signaled.
@@ -44,20 +45,27 @@ class BufferWriterPrivate : public BufferWriterInterface
         if (m_localBufferSegments.back().size < m_sizeUsed + size)
         {
             size_t firstPartSize = segment.size - m_sizeUsed;
-            size_t rest = m_sizeUsed + size - segment.size;
 
             if (!writeToSegment(segment, m_sizeUsed, firstPartSize, scratchPadOffset))
             {
                 return false;
             }
+            m_rdmaHeader->counter = segment.size;
+            
             BuffSegment newSegment;
             if (!allocRemoteSegment(newSegment))
             {
                 return false;
             }
+            m_rdmaHeader->hasFollowSegment = 1;
+            writeHeaderToRemote(segment.offset);
+            m_rdmaHeader->hasFollowSegment = 0;
             m_handle->segments.push_back(newSegment);
             m_sizeUsed = 0;
+            m_rdmaHeader->hasFollowSegment = 0;
+            m_rdmaHeader->counter = 0;
             m_localBufferSegments.emplace_back(m_handle->segments.back().offset, m_handle->segments.back().size, m_handle->segments.back().threshold);
+            
             return super_append(size, firstPartSize);
         }
 
@@ -68,7 +76,8 @@ class BufferWriterPrivate : public BufferWriterInterface
         }
         m_sizeUsed = m_sizeUsed + size;
         // update counter / header once in a while
-        TO_BE_IMPLEMENTED(m_rdmaClient->write(HEADER));
+        m_rdmaHeader->counter = m_sizeUsed;
+        writeHeaderToRemote(segment.offset);
         return true;
     }
 
@@ -76,9 +85,15 @@ class BufferWriterPrivate : public BufferWriterInterface
     vector<BuffSegment>
         m_localBufferSegments;
 
+  inline bool writeHeaderToRemote( size_t segmentOffset)
+    {
+
+        return m_rdmaClient->write(m_handle->node_id, segmentOffset , (void*)m_rdmaHeader, sizeof(Config::DPI_SEGMENT_HEADER_t), true);
+    }
+
   private:
     size_t m_sizeUsed = 0;
-    Config::DPI_SEGMENT_HEADER_t HEADER;
+    Config::DPI_SEGMENT_HEADER_t* m_rdmaHeader;
 }; // namespace dpi
 
 } // namespace dpi
