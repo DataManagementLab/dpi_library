@@ -1,6 +1,9 @@
 #include "TestBufferWriter.h"
 #include "../../net/rdma/RDMAClient.h"
 
+
+std::atomic<int> TestBufferWriter::bar{0};    // Counter of threads, faced barrier.
+std::atomic<int> TestBufferWriter::passed{0}; // Number of barriers, passed by all threads.
 void TestBufferWriter::setUp()
 {
 
@@ -260,21 +263,21 @@ void TestBufferWriter::testAppendShared_AtomicHeaderManipulation()
   //ASSERT
   Config::DPI_SEGMENT_HEADER_t *rdma_buffer = (Config::DPI_SEGMENT_HEADER_t *)m_nodeServer->getBuffer(0);
   CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[0].counter);
-  CPPUNIT_ASSERT_EQUAL(fetched, fetchedCounter);
-  CPPUNIT_ASSERT_EQUAL((uint64_t)0, rdma_buffer[0].hasFollowPage);
+  CPPUNIT_ASSERT_EQUAL(fetched, fetchedCounter); 
+  CPPUNIT_ASSERT_EQUAL((uint64_t)0, rdma_buffer[0].hasFollowSegment);
 
   //ACT 2
-  auto fetchedFollowPage = buffWriter.setHasFollowSegment(0 + sizeof(Config::DPI_SEGMENT_HEADER_t::counter));
+  auto fetchedFollowPage = buffWriter.setHasFollowSegment(0);
 
   //ASSERT 2
-  CPPUNIT_ASSERT_EQUAL((uint64_t)1, rdma_buffer[0].hasFollowPage);
+  CPPUNIT_ASSERT_EQUAL((uint64_t)1, rdma_buffer[0].hasFollowSegment);
   CPPUNIT_ASSERT_EQUAL(fetched, fetchedFollowPage);
 
     //ACT 3
-  fetchedFollowPage = buffWriter.setHasFollowSegment(0 + sizeof(Config::DPI_SEGMENT_HEADER_t::counter));
+  fetchedFollowPage = buffWriter.setHasFollowSegment(0);
 
   //ASSERT 3
-  CPPUNIT_ASSERT_EQUAL((uint64_t)1, rdma_buffer[0].hasFollowPage);
+  CPPUNIT_ASSERT_EQUAL((uint64_t)1, rdma_buffer[0].hasFollowSegment);
   CPPUNIT_ASSERT_EQUAL((int64_t)1, fetchedFollowPage);
 
 }

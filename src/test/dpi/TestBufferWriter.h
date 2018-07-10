@@ -7,6 +7,8 @@
 #include "../../dpi/RegistryClient.h"
 #include "../../dpi/BufferWriter.h"
 
+#include <atomic>
+
 class TestBufferWriter : public CppUnit::TestFixture {
 DPI_UNIT_TEST_SUITE(TestBufferWriter);
   DPI_UNIT_TEST(testAppendPrivate_WithScratchpad);
@@ -36,11 +38,16 @@ DPI_UNIT_TEST_SUITE_END();
   void testAppendShared_WithScratchpad();
   void testAppendShared_MultipleConcurrentClients();
 
+
+  static std::atomic<int> bar;    // Counter of threads, faced barrier.
+  static std::atomic<int> passed; // Number of barriers, passed by all threads.
+  static const int NUMBER_THREADS = 2;
+
+
 private:
   NodeClient* m_nodeClient;
   NodeServer* m_nodeServer;
   RegistryClient* m_stub_regClient;
-
 
 class RegistryClientStub : public RegistryClient
 {
@@ -113,7 +120,7 @@ public:
   BufferWriterSharedClient(NodeServer* nodeServer, RegistryClient* regClient, BuffHandle* buffHandle, std::vector<TestData> *dataToWrite) : 
     Thread(), nodeServer(nodeServer), regClient(regClient), buffHandle(buffHandle), dataToWrite(dataToWrite) {}
 
-  virtual void run() 
+  void run() 
   {
     //ARRANGE
     string bufferName = "test";
@@ -121,13 +128,37 @@ public:
 
     BufferWriter<BufferWriterShared> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, regClient);
 
+    barrier_wait();
+
     //ACT
     for(int i = 0; i < dataToWrite->size(); i++)
     {
       buffWriter.append(&dataToWrite->operator[](i), sizeof(TestData));
     }
   }
-};
 
+    void barrier_wait()
+    {
+        std::cout << "Enter Barrier" << '\n';
+        int passed_old = passed.load(std::memory_order_relaxed);
+
+        if (bar.fetch_add(1) == (NUMBER_THREADS - 1))
+        {
+            // The last thread, faced barrier.
+            bar = 0;
+            // Synchronize and store in one operation.
+            passed.store(passed_old + 1, std::memory_order_release);
+        }
+        else
+        {
+            // Not the last thread. Wait others.
+            while (passed.load(std::memory_order_relaxed) == passed_old)
+            {
+            };
+            // Need to synchronize cache with other threads, passed barrier.
+            std::atomic_thread_fence(std::memory_order_acquire);
+        }
+    }
+};
 
 };

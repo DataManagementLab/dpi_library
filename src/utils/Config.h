@@ -113,13 +113,21 @@ class Config {
     static uint32_t DPI_SCRATCH_PAD_SIZE;
     static uint32_t DPI_SEGMENT_SIZE;
 
-    
+    /**
+     * @brief DPI_SEGMENT_HEADER_t describes the header of a segmnet
+     * NOTE: if modified please adapt the DPI_SEGMENT_HEADER_META and update 
+     *       the offsets accordingly
+     */
     struct DPI_SEGMENT_HEADER_t
     {
         uint64_t counter = 0;
-        uint64_t hasFollowPage = 0;
+        uint64_t hasFollowSegment = 0;
     };
-    
+    struct DPI_SEGMENT_HEADER_META
+    {
+        static const size_t getCounterOffset = 0;
+        static const size_t getHasFollowSegmentOffset = sizeof(DPI_SEGMENT_HEADER_t::counter);
+    };
 
     //RDMA
     static size_t RDMA_MEMSIZE;

@@ -62,8 +62,8 @@ class BufferWriterShared : public BufferWriterInterface
         else if (segment.size >= nextOffset && nextOffset >= segment.threshold && writeOffset <= segment.threshold)
         {
             std::cout << "Case 3" << '\n';
-            auto hasFollowPage = setHasFollowSegment(segment.offset + sizeof(Config::DPI_SEGMENT_HEADER_t::counter));
-            if (hasFollowPage == 0)
+            auto hasFollowSegment = setHasFollowSegment(segment.offset);
+            if (hasFollowSegment == 0)
             {
                 BuffSegment newSegment;
                 if (!allocRemoteSegment(newSegment))
@@ -81,7 +81,7 @@ class BufferWriterShared : public BufferWriterInterface
         // split up
         else if (nextOffset > segment.size && writeOffset < segment.size)
         {
-            auto hasFollowPage = setHasFollowSegment(segment.offset + sizeof(Config::DPI_SEGMENT_HEADER_t::counter));
+            auto hasFollowSegment = setHasFollowSegment(segment.offset);
             std::cout << "Case 4" << '\n';
             size_t firstPartSize = segment.size - writeOffset;
             size_t rest = nextOffset - segment.size;
@@ -93,7 +93,7 @@ class BufferWriterShared : public BufferWriterInterface
 
             auto resetCounter = modifyCounter(-rest, segment.offset);
 
-            if (hasFollowPage == 0)
+            if (hasFollowSegment == 0)
             {
                 //write to segment
                 std::cout << "Case 4.1" << '\n';
@@ -113,7 +113,7 @@ class BufferWriterShared : public BufferWriterInterface
         }
         // counter exceeded segment size therefore retrieve and start over
         else if (writeOffset >= segment.size)
-        {   
+        {
             auto resetCounter = modifyCounter(-size, segment.offset);
             m_handle = m_regClient->dpi_retrieve_buffer(m_handle->name);
             return super_append(size);
@@ -126,23 +126,23 @@ class BufferWriterShared : public BufferWriterInterface
         return true;
     }
 
-    inline int64_t modifyCounter(int64_t value, size_t offset)
+    inline int64_t modifyCounter(int64_t value, size_t segmentOffset)
     {
 
-        while (!m_rdmaClient->fetchAndAdd(m_handle->node_id, offset, (void *)&m_rdmaHeader->counter,
-                                          value, sizeof(uint64_t), true))
+        while (!m_rdmaClient->fetchAndAdd(m_handle->node_id, segmentOffset + Config::DPI_SEGMENT_HEADER_META::getCounterOffset, 
+        (void *)&m_rdmaHeader->counter, value, sizeof(uint64_t), true))
             ;
 
         return Network::bigEndianToHost(m_rdmaHeader->counter);
     }
 
-    inline int64_t setHasFollowSegment(size_t offset)
+    inline int64_t setHasFollowSegment(size_t segmentOffset)
     {
-        while (!m_rdmaClient->compareAndSwap(m_handle->node_id, offset, (void *)&m_rdmaHeader->hasFollowPage,
+        while (!m_rdmaClient->compareAndSwap(m_handle->node_id, segmentOffset + Config::DPI_SEGMENT_HEADER_META::getHasFollowSegmentOffset, (void *)&m_rdmaHeader->hasFollowSegment,
                                              0, 1, sizeof(uint64_t), true))
             ;
 
-        return Network::bigEndianToHost(m_rdmaHeader->hasFollowPage);
+        return Network::bigEndianToHost(m_rdmaHeader->hasFollowSegment);
     }
 
   private:
