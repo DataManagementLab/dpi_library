@@ -92,7 +92,7 @@ bool RegistryClient::dpi_register_buffer(BuffHandle *handle)
 {
     if (handle->segments.size() != 1)
     {
-        Logging::fatal(__FILE__, __LINE__, "Too many segments in handle");
+        Logging::error(__FILE__, __LINE__, "Too many segments in handle");
         return false;
     }
 

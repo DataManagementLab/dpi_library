@@ -145,7 +145,7 @@ class Config
     static size_t PTEST_SCAN_PREFETCH;
 
     // used in RDMA_SERVER AND IN RDMA_MANAGERRCSRQ
-    const static size_t EXP_STORAGE_RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 15;
+    const static size_t EXP_STORAGE_RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 1;
 
     // Shared Receive Queue
 
