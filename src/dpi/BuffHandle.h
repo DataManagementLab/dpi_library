@@ -28,10 +28,14 @@ struct BuffHandle
 {
     string name;
     NodeID node_id;
+    string connection;
     std::vector<BuffSegment> segments;
+
 
     BuffHandle(){};
     BuffHandle(string name, NodeID node_id) : name(name), node_id(node_id){};
+    BuffHandle(string name, NodeID node_id, string connection):name(name), node_id(node_id), connection(connection){};
+
 };
 
 } // namespace dpi

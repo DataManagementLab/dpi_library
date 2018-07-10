@@ -5,7 +5,7 @@
 namespace dpi {
 
 RDMAManagerRCSRQ::RDMAManagerRCSRQ()
-        : RDMAManagerRC(Config::EXP_STORAGE_RDMA_MEMSIZE) {
+        : RDMAManagerRC(Config::RDMA_MEMSIZE) {
     // TODO Auto-generated constructor stub
 
     // No nice solution -> first attempt to make map thread safe

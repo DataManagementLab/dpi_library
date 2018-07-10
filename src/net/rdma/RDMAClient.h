@@ -35,6 +35,7 @@ class RDMAClient {
   void* localAlloc(const size_t& size);
   bool localFree(const void* ptr);
   bool remoteAlloc(const string& connection, const size_t size, size_t& offset);
+  bool remoteAlloc(const NodeID nodeID, const size_t size, size_t& offset);
   bool remoteFree(const string& connection, const size_t size,
                   const size_t offset);
   void* getBuffer(const size_t offset = 0);

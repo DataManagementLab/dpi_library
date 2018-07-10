@@ -72,7 +72,9 @@ using namespace std;
 #define DEBUG_OUT(x)
 #endif
 
-//#define DEBUGCODE
+
+
+#define DEBUGCODE
 #if defined(DEBUGCODE)
 #define DebugCode(code_fragment) \
     {                            \
@@ -82,6 +84,8 @@ using namespace std;
 #define DebugCode(code_fragment)
 #endif
 
+//To be implemented MACRO
+#define TO_BE_IMPLEMENTED(code_fragment)
 #define DPI_UNIT_TEST_SUITE(suite) CPPUNIT_TEST_SUITE(suite)
 #define DPI_UNIT_TEST(test) CPPUNIT_TEST(test)
 #define DPI_UNIT_TEST_SUITE_END() CPPUNIT_TEST_SUITE_END()
@@ -115,11 +119,33 @@ class Config
     //GENERAL
     const static int DPI_MAX_SOCKETS = 1024;
     const static int DPI_SLEEP_INTERVAL = 100 * 1000;
-
+    constexpr static double DPI_SEGMENT_THRESHOLD_FACTOR = 0.8;
     //DPI
     static string DPI_REGISTRY_SERVER;
     static uint32_t DPI_REGISTRY_PORT;
+
     static vector<string> DPI_NODES;
+
+    static uint32_t DPI_NODE_PORT;
+    static uint32_t DPI_SCRATCH_PAD_SIZE;
+    static uint32_t DPI_SEGMENT_SIZE;
+
+    /**
+     * @brief DPI_SEGMENT_HEADER_t describes the header of a segmnet
+     * NOTE: if modified please adapt the DPI_SEGMENT_HEADER_META and update 
+     *       the offsets accordingly
+     */
+    struct DPI_SEGMENT_HEADER_t
+    {
+        uint64_t counter = 0;
+        uint64_t hasFollowSegment = 0;
+    };
+    struct DPI_SEGMENT_HEADER_META
+    {
+        static const size_t getCounterOffset = 0;
+        static const size_t getHasFollowSegmentOffset = sizeof(DPI_SEGMENT_HEADER_t::counter);
+    };
+
 
     //RDMA
     static size_t RDMA_MEMSIZE;
@@ -130,7 +156,7 @@ class Config
     static uint32_t RDMA_MAX_WR;
     const static uint32_t RDMA_MAX_SGE = 1;
     const static size_t RDMA_UD_OFFSET = 40;
-
+    
     //THREAD
     static vector<int> THREAD_CPUS;
 
@@ -143,9 +169,6 @@ class Config
     //PERFTEST
     static vector<string> PTEST_MCAST_NODES;
     static size_t PTEST_SCAN_PREFETCH;
-
-    // used in RDMA_SERVER AND IN RDMA_MANAGERRCSRQ
-    const static size_t EXP_STORAGE_RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 1;
 
     // Shared Receive Queue
 

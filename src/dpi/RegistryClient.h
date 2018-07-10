@@ -24,12 +24,15 @@ class RegistryClient: public ProtoClient
 
   public:
     RegistryClient();
-    ~RegistryClient();
+    virtual ~RegistryClient();
 
-    BuffHandle *dpi_create_buffer(string &name, NodeID node_id, size_t size, size_t threshold);
-    bool dpi_register_buffer(BuffHandle *handle);
-    BuffHandle *dpi_retrieve_buffer(string &name);
-    bool dpi_append_segment(string &name, BuffSegment &segment);
+    virtual BuffHandle *dpi_create_buffer(string &name, NodeID node_id, size_t size, size_t threshold);
+    virtual bool dpi_register_buffer(BuffHandle *handle);
+    virtual BuffHandle *dpi_retrieve_buffer(string &name);
+    virtual bool dpi_append_segment(string &name, BuffSegment &segment);
+
+    virtual BuffHandle* dpi_create_buffer(string& name, NodeID node_id, string& connection){};
+
 
   private:
     bool dpi_append_or_retrieve_segment(Any* sendAny);
