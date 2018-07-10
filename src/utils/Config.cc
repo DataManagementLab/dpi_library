@@ -15,11 +15,12 @@ size_t Config::PTEST_SCAN_PREFETCH = 10;
 //DPI
 string Config::DPI_REGISTRY_SERVER = "127.0.0.1";
 uint32_t Config::DPI_REGISTRY_PORT = 5300;
-vector<string> Config::DPI_NODES = {  "127.0.0.1:"
-    + to_string(Config::RDMA_PORT) };
-
-
 uint32_t Config::DPI_NODE_PORT = 5400;
+vector<string> Config::DPI_NODES = {  "127.0.0.1:"
+    + to_string(Config::DPI_NODE_PORT) };
+
+
+
 uint32_t Config::DPI_SCRATCH_PAD_SIZE = 1024;
 uint32_t Config::DPI_SEGMENT_SIZE = 2048 + sizeof(DPI_SEGMENT_HEADER_t);
 
@@ -124,6 +125,8 @@ void Config::set(string key, string value) {
     Config::DPI_REGISTRY_PORT = stoi(value);
   }else if (key.compare("DPI_NODES") == 0) {
     init_vector(Config::DPI_NODES, value);
+  }else if (key.compare("LOGGING_LEVEL") == 0) {
+    Config::LOGGING_LEVEL = stoi(value);
   }
 }
 

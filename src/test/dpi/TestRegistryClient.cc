@@ -4,11 +4,14 @@ void TestRegistryClient::setUp()
 {
   m_nodeServer = new NodeServer();
   CPPUNIT_ASSERT(m_nodeServer->startServer());
-
+  std::cout << "Start NodeServer" << '\n';
   m_regServer = new RegistryServer();
+  std::cout << "Start RegServer" << '\n';
   CPPUNIT_ASSERT(m_regServer->startServer());
+  std::cout << "Started NodeServer" << '\n';
 
   m_regClient = new RegistryClient();
+  std::cout << "Start RegClient" << '\n';
 }
 
 void TestRegistryClient::tearDown()
