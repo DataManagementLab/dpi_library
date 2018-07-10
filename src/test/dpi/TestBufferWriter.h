@@ -11,14 +11,15 @@
 
 class TestBufferWriter : public CppUnit::TestFixture {
 DPI_UNIT_TEST_SUITE(TestBufferWriter);
-  DPI_UNIT_TEST(testAppendPrivate_WithScratchpad);
-  DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad);
-  DPI_UNIT_TEST(testAppendPrivate_MultipleClients_WithScratchpad); 
-  DPI_UNIT_TEST(testAppendPrivate_SizeTooBigForScratchpad);
-  DPI_UNIT_TEST(testBuffer);
-  DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad_splitData);
-  DPI_UNIT_TEST(testAppendShared_AtomicHeaderManipulation);
-  DPI_UNIT_TEST(testAppendShared_MultipleConcurrentClients);  
+  // DPI_UNIT_TEST(testAppendPrivate_WithScratchpad);
+  // DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad);
+  // DPI_UNIT_TEST(testAppendPrivate_MultipleClients_WithScratchpad); 
+  // DPI_UNIT_TEST(testAppendPrivate_SizeTooBigForScratchpad);
+  // DPI_UNIT_TEST(testBuffer);
+  // DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad_splitData);
+  DPI_UNIT_TEST(testAppendPrivate_MultipleConcurrentClients);    
+  // DPI_UNIT_TEST(testAppendShared_AtomicHeaderManipulation);
+  // DPI_UNIT_TEST(testAppendShared_MultipleConcurrentClients);  
 DPI_UNIT_TEST_SUITE_END();
 
  public:
@@ -31,6 +32,7 @@ DPI_UNIT_TEST_SUITE_END();
   void testAppendPrivate_WithoutScratchpad();
   void testAppendPrivate_MultipleClients_WithScratchpad();
   void testAppendPrivate_SizeTooBigForScratchpad();
+  void testAppendPrivate_MultipleConcurrentClients();
   void testBuffer();
 
   // Shared Strategy
@@ -109,15 +111,17 @@ struct TestData
   TestData(int a, int b, int c, int d) : a(a), b(b), c(c), d(d){}
 };
 
-class BufferWriterSharedClient : public Thread
+template <class DataType, class Strategy>
+class BufferWriterClient : public Thread
 {
   NodeServer* nodeServer = nullptr;
   RegistryClient* regClient = nullptr;
-  std::vector<TestData> *dataToWrite = nullptr; //tuple<ptr to data, size in bytes>
+  std::vector<DataType> *dataToWrite = nullptr; //tuple<ptr to data, size in bytes>
   BuffHandle* buffHandle = nullptr;
 
 public: 
-  BufferWriterSharedClient(NodeServer* nodeServer, RegistryClient* regClient, BuffHandle* buffHandle, std::vector<TestData> *dataToWrite) : 
+
+  BufferWriterClient(NodeServer* nodeServer, RegistryClient* regClient, BuffHandle* buffHandle, std::vector<DataType> *dataToWrite) : 
     Thread(), nodeServer(nodeServer), regClient(regClient), buffHandle(buffHandle), dataToWrite(dataToWrite) {}
 
   void run() 
@@ -126,14 +130,14 @@ public:
     string bufferName = "test";
     string connection = "127.0.0.1:5400";
 
-    BufferWriter<BufferWriterShared> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, regClient);
+    BufferWriter<Strategy> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, regClient);
 
     barrier_wait();
 
     //ACT
     for(int i = 0; i < dataToWrite->size(); i++)
     {
-      buffWriter.append(&dataToWrite->operator[](i), sizeof(TestData));
+      buffWriter.append(&dataToWrite->operator[](i), sizeof(DataType));
     }
   }
 

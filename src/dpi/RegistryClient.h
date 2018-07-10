@@ -25,7 +25,7 @@ public:
     RegistryClient();
     virtual ~RegistryClient();
 
-    virtual BuffHandle* dpi_create_buffer(string& name, NodeID node_id, string& connection);
+    virtual BuffHandle* dpi_create_buffer(string& name, NodeID node_id, string& connection); //Change signature -> add mapping in config (see Carstens config)
 
     virtual bool dpi_register_buffer(BuffHandle* handle);    
     virtual BuffHandle* dpi_retrieve_buffer(string& name);
