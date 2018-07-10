@@ -12,8 +12,6 @@
 #include "RDMAConnResponseMgmt.pb.h"
 #include "MemoryResourceRequest.pb.h"
 #include "MemoryResourceResponse.pb.h"
-#include "LoadDataRequest.pb.h"
-#include "LoadDataResponse.pb.h"
 #include "DPICreateBufferRequest.pb.h"
 #include "DPICreateBufferResponse.pb.h"
 #include "DPIRetrieveBufferRequest.pb.h"
@@ -22,8 +20,7 @@
 #include "DPIAppendBufferResponse.pb.h"
 
 #include "ErrorMessage.pb.h"
-#include "RegistrateReq.pb.h"
-#include "RegistrateResp.pb.h"
+
 
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/message.h>

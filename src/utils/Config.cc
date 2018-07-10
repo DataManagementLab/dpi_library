@@ -7,10 +7,6 @@ using namespace dpi;
 
 //TEST
 int Config::HELLO_PORT = 4001;
-vector<string> Config::PTEST_MCAST_NODES = { "192.168.1.1:"
-    + to_string(Config::RDMA_PORT) };
-size_t Config::PTEST_SCAN_PREFETCH = 10;
-
 
 //DPI
 string Config::DPI_REGISTRY_SERVER = "127.0.0.1";

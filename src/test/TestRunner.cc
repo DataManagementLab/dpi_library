@@ -18,7 +18,6 @@ int main(int argc, char **argv) {
   runner.addTest(TestProtoServer::suite());
   runner.addTest(TestRDMAServer::suite());
   runner.addTest(TestRDMAServerMCast::suite());
-  runner.addTest(TestRDMAServerManagementQueue::suite());
   runner.addTest(TestRDMAServerMultClients::suite());
   runner.addTest(TestSimpleUD::suite());
   runner.addTest(TestBufferWriter::suite());

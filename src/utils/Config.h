@@ -116,14 +116,13 @@ class Config
         unload();
     }
 
-    //GENERAL
+    //DPI
     const static int DPI_MAX_SOCKETS = 1024;
     const static int DPI_SLEEP_INTERVAL = 100 * 1000;
     constexpr static double DPI_SEGMENT_THRESHOLD_FACTOR = 0.8;
-    //DPI
+    
     static string DPI_REGISTRY_SERVER;
     static uint32_t DPI_REGISTRY_PORT;
-
     static vector<string> DPI_NODES;
 
     static uint32_t DPI_NODE_PORT;
@@ -146,7 +145,6 @@ class Config
         static const size_t getHasFollowSegmentOffset = sizeof(DPI_SEGMENT_HEADER_t::counter);
     };
 
-
     //RDMA
     static size_t RDMA_MEMSIZE;
     static uint32_t RDMA_PORT;
@@ -165,17 +163,6 @@ class Config
 
     //TEST
     static int HELLO_PORT;
-
-    //PERFTEST
-    static vector<string> PTEST_MCAST_NODES;
-    static size_t PTEST_SCAN_PREFETCH;
-
-    // Shared Receive Queue
-
-    const static size_t MAX_NUM_SRQ = 15; //this is the number of shared receive queues per server
-    // e.g. 10 means that up to 10 clients they get their own SRQ
-    // After 10 new clients are added round robin wise
-    const static size_t MAX_NUM_RPC_MSG = 4096; // Number of RDMA send MSGs RPCHandler can recv
 
   private:
     static void load();

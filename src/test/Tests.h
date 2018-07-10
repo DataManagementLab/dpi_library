@@ -7,7 +7,6 @@
 #include "net/TestRDMAServer.h"
 #include "net/TestRDMAServerMCast.h"
 #include "net/TestSimpleUD.h"
-#include "net/TestRDMAServerManagementQueue.h"
 #include "net/TestRDMAServerMultClients.h"
 #include "thread/TestThread.h"
 #include "dpi/TestRegistryClient.h"

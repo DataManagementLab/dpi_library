@@ -33,9 +33,8 @@ static void usage()
     cout << "2: \t thread/TestHelloServer" << endl;
     cout << "101: \t net/TestRDMAServer" << endl;
     cout << "102: \t net/TestRDMAServerMultipleClients" << endl;
-    cout << "103: \t net/TestRDMAManagementQueue" << endl;
-    cout << "104: \t net/TestSimpleUD" << endl;
-    cout << "105: \t net/TestRDMAServerMCast" << endl;
+    cout << "103: \t net/TestSimpleUD" << endl;
+    cout << "104: \t net/TestRDMAServerMCast" << endl;
     cout << "201: \t dpi/TestBufferWriter" << endl;
     cout << "202: \t dpi/TestRegistryClient" << endl;
 
@@ -85,12 +84,9 @@ static void runtest(int t)
         runner.addTest(TestRDMAServerMultClients::suite());
         break;
     case 103:
-        runner.addTest(TestRDMAServerManagementQueue::suite());
-        break;
-    case 104:
         runner.addTest(TestSimpleUD::suite());
         break;
-    case 105:
+    case 104:
         runner.addTest(TestRDMAServerMCast::suite());
         break;
     case 201:

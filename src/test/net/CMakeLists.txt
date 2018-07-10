@@ -3,8 +3,6 @@ set(TEST_NET_SRC
   TestRDMAServerMCast.h
   TestRDMAServer.cc
   TestRDMAServer.h
-  TestRDMAServerManagementQueue.cc
-  TestRDMAServerManagementQueue.h
   TestRDMAServerMultClients.cc
   TestRDMAServerMultClients.h
   TestProtoServer.cc

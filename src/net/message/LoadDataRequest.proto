@@ -1,8 +1,0 @@
-syntax = "proto3";
-package dpi;
-
-message LoadDataRequest {
-    string table = 1;
-    string file = 2;
-    string schema = 3;
-}
