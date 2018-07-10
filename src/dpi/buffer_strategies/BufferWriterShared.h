@@ -27,7 +27,7 @@ class BufferWriterShared : public BufferWriterInterface
     {
         if (m_handle->segments.empty())
         {
-            std::cout << "Empty Segment" << '\n';
+            // std::cout << "Empty Segment" << '\n';
             BuffSegment newSegment;
             if (!allocRemoteSegment(newSegment))
             {
@@ -35,14 +35,14 @@ class BufferWriterShared : public BufferWriterInterface
             }
         }
         auto segment = m_handle->segments.back();
-        std::cout << "Segment offset: " << segment.offset << '\n';
+        // std::cout << "Segment offset: " << segment.offset << '\n';
         auto writeOffset = modifyCounter(size, segment.offset);
         uint64_t nextOffset = writeOffset + size;
 
         // Case 1: Data fits below threshold
         if (nextOffset < segment.threshold)
         {
-            std::cout << "Case 1" << '\n';
+            // std::cout << "Case 1" << '\n';
             if (!writeToSegment(segment, writeOffset, size, scratchPadOffset))
             {
                 return false;
@@ -51,7 +51,7 @@ class BufferWriterShared : public BufferWriterInterface
         // Case 2: Data fits in segment but new segment is allocated by someone else
         else if (writeOffset > segment.threshold && nextOffset <= segment.size)
         {
-            std::cout << "Case 2" << '\n';
+            // std::cout << "Case 2" << '\n';
             if (!writeToSegment(segment, writeOffset, size, scratchPadOffset))
             {
                 return false;
@@ -60,7 +60,7 @@ class BufferWriterShared : public BufferWriterInterface
         // Case 3: Data fits in segment and exceeds threshold -> allocating new segment
         else if (segment.size >= nextOffset && nextOffset >= segment.threshold && writeOffset <= segment.threshold)
         {
-            std::cout << "Case 3" << '\n';
+            // std::cout << "Case 3" << '\n';
             auto hasFollowSegment = setHasFollowSegment(segment.offset);
             if (hasFollowSegment == 0)
             {
@@ -81,7 +81,7 @@ class BufferWriterShared : public BufferWriterInterface
         else if (nextOffset > segment.size && writeOffset < segment.size)
         {
             auto hasFollowSegment = setHasFollowSegment(segment.offset);
-            std::cout << "Case 4" << '\n';
+            // std::cout << "Case 4" << '\n';
             size_t firstPartSize = segment.size - writeOffset;
             size_t rest = nextOffset - segment.size;
 
@@ -95,7 +95,7 @@ class BufferWriterShared : public BufferWriterInterface
             if (hasFollowSegment == 0)
             {
                 //write to segment
-                std::cout << "Case 4.1" << '\n';
+                // std::cout << "Case 4.1" << '\n';
                 BuffSegment newSegment;
                 if (!allocRemoteSegment(newSegment))
                 {
@@ -105,7 +105,7 @@ class BufferWriterShared : public BufferWriterInterface
             }
             else
             {
-                std::cout << "Case 4.2" << '\n';
+                // std::cout << "Case 4.2" << '\n';
                 m_handle = m_regClient->dpi_retrieve_buffer(m_handle->name);
                 return super_append(size);
             }
@@ -119,7 +119,7 @@ class BufferWriterShared : public BufferWriterInterface
         }
         else
         {
-            std::cout << "Case 5: Should not happen" << '\n';
+            // std::cout << "Case 5: Should not happen" << '\n';
             return false;
         }
         return true;

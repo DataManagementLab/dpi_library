@@ -129,7 +129,7 @@ void TestBufferWriter::testAppendPrivate_WithScratchpad()
   {
     if ((i % (Config::DPI_SCRATCH_PAD_SIZE / sizeof(int))) == 0 && i > 0)
     {
-      std::cout << "appending at " << i << std::endl;
+      // std::cout << "appending at " << i << std::endl;
       CPPUNIT_ASSERT(buffWriter.appendFromScratchpad(Config::DPI_SCRATCH_PAD_SIZE));
       scratchIter = 0;
     }
@@ -189,7 +189,7 @@ void TestBufferWriter::testAppendPrivate_MultipleClients_WithScratchpad()
   {
     if ((i % (Config::DPI_SCRATCH_PAD_SIZE / sizeof(int))) == 0 && i > 0)
     {
-      std::cout << "appending at " << i << std::endl;
+      // std::cout << "appending at " << i << std::endl;
       CPPUNIT_ASSERT(buffWriter1.appendFromScratchpad(Config::DPI_SCRATCH_PAD_SIZE));
       scratchIter1 = 0;
     }
@@ -203,7 +203,7 @@ void TestBufferWriter::testAppendPrivate_MultipleClients_WithScratchpad()
   {
     if ((i % (Config::DPI_SCRATCH_PAD_SIZE / sizeof(int))) == 0 && i > 0)
     {
-      std::cout << "appending at " << i << std::endl;
+      // std::cout << "appending at " << i << std::endl;
       CPPUNIT_ASSERT(buffWriter2.appendFromScratchpad(Config::DPI_SCRATCH_PAD_SIZE));
       scratchIter2 = 0;
     }
@@ -251,6 +251,8 @@ void TestBufferWriter::testAppendPrivate_SizeTooBigForScratchpad()
   CPPUNIT_ASSERT_MESSAGE("appendFromScratchpad should return false when size is bigger than scratchpad",
                          !buffWriter.appendFromScratchpad(Config::DPI_SCRATCH_PAD_SIZE + 1));
 }
+
+
 
 void TestBufferWriter::testAppendShared_AtomicHeaderManipulation()
 {
@@ -315,11 +317,11 @@ void TestBufferWriter::testAppendShared_WithScratchpad()
 
   int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
 
-  DebugCode(
-      std::cout << "Buffer " << '\n';
-      for (int i = 0; i < numberElements; i++)
-          std::cout
-      << rdma_buffer[i] << ' ';);
+  // DebugCode(
+  //     std::cout << "Buffer " << '\n';
+  //     for (int i = 0; i < numberElements; i++)
+  //         std::cout
+  //     << rdma_buffer[i] << ' ';);
 
   //ASSERT
   for (uint32_t j = 0; j < numberSegments; j++)
@@ -333,6 +335,99 @@ void TestBufferWriter::testAppendShared_WithScratchpad()
   }
 }
 
+void TestBufferWriter::testAppendPrivate_MultipleConcurrentClients()
+{
+  //ARRANGE
+  string connection = "127.0.0.1:5400";
+  string bufferName = "test";
+  int nodeId = 1;
+  uint64_t expectedHasFollowSegment = 0;
+  uint64_t expectedCounter = Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t);
+  std::vector<int> expectedResult;
+  std::vector<int> result;
+  
+  std::vector<TestData> *dataToWrite = new std::vector<TestData>();
+
+  int numberElements = expectedCounter / sizeof(TestData);
+
+  //Create data for clients to send
+  for(size_t i = 0; i < numberElements; i++)
+  {
+    dataToWrite->emplace_back(i,i,i,i);
+    for(size_t t = 0; t < 4; t++)
+    {
+      expectedResult.push_back(i);
+    }    
+  }
+
+
+  m_stub_regClient->dpi_create_buffer(bufferName, nodeId, connection);
+  BuffHandle *buffHandle1 = new BuffHandle(bufferName, nodeId, connection);
+  BuffHandle *buffHandle2 = new BuffHandle(bufferName, nodeId, connection);
+
+  BufferWriterClient<TestData, BufferWriterPrivate>* client1 = new BufferWriterClient<TestData, BufferWriterPrivate>(m_nodeServer, m_stub_regClient, buffHandle1, dataToWrite);
+  BufferWriterClient<TestData, BufferWriterPrivate>* client2 = new BufferWriterClient<TestData, BufferWriterPrivate>(m_nodeServer, m_stub_regClient, buffHandle2, dataToWrite);
+
+  //ACT
+  client1->start();
+  client2->start();
+  client1->join();
+  client2->join();
+
+  //ASSERT  
+  int *rdma_buffer = (int *)m_nodeServer->getBuffer(0);
+
+  // std::cout << "Buffer " << '\n';
+  // for (int i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int)*2; i++)
+  // {
+  //   std::cout << rdma_buffer[i] << ' ';
+  //   // result.push_back(rdma_buffer[i]);
+  // }
+  //Assert client 1
+  for(size_t i = 0; i < buffHandle1->segments.size(); i++)
+  {
+    Config::DPI_SEGMENT_HEADER_t *header = (Config::DPI_SEGMENT_HEADER_t *)m_nodeServer->getBuffer(buffHandle1->segments[i].offset);
+    if (header[0].counter == (uint64_t)0) continue;
+ 
+    CPPUNIT_ASSERT_EQUAL(expectedCounter, header[0].counter);
+    CPPUNIT_ASSERT_EQUAL(expectedHasFollowSegment, header[0].hasFollowSegment);
+    
+    for(size_t j = (buffHandle1->segments[i].offset+sizeof(Config::DPI_SEGMENT_HEADER_t))/sizeof(int); j < (buffHandle1->segments[i].offset + expectedCounter+sizeof(Config::DPI_SEGMENT_HEADER_t))/sizeof(int); j++)
+    {
+      result.push_back(rdma_buffer[j]);
+    }    
+  }
+  CPPUNIT_ASSERT_EQUAL(expectedResult.size(), result.size());
+  for(size_t i = 0; i < expectedResult.size(); i++)
+  {
+    CPPUNIT_ASSERT_EQUAL(expectedResult[i], result[i]);
+  }
+
+  result.clear();
+
+  //Assert client 2
+  for(size_t i = 0; i < buffHandle2->segments.size(); i++)
+  {
+    Config::DPI_SEGMENT_HEADER_t *header = (Config::DPI_SEGMENT_HEADER_t *)m_nodeServer->getBuffer(buffHandle2->segments[i].offset);
+    if (header[0].counter == (uint64_t)0) continue;
+ 
+    CPPUNIT_ASSERT_EQUAL(expectedCounter, header[0].counter);
+    CPPUNIT_ASSERT_EQUAL(expectedHasFollowSegment, header[0].hasFollowSegment);
+    
+    for(size_t j = (buffHandle2->segments[i].offset+sizeof(Config::DPI_SEGMENT_HEADER_t))/sizeof(int); j < (buffHandle2->segments[i].offset + expectedCounter+sizeof(Config::DPI_SEGMENT_HEADER_t))/sizeof(int); j++)
+    {
+      result.push_back(rdma_buffer[j]);
+    }    
+  }
+  CPPUNIT_ASSERT_EQUAL(expectedResult.size(), result.size());
+  for(size_t i = 0; i < expectedResult.size(); i++)
+  {
+    CPPUNIT_ASSERT_EQUAL(expectedResult[i], result[i]);
+  }
+  
+
+}
+
 void TestBufferWriter::testAppendShared_MultipleConcurrentClients()
 {
   //ARRANGE
@@ -341,16 +436,22 @@ void TestBufferWriter::testAppendShared_MultipleConcurrentClients()
   int nodeId = 1;
   std::vector<int> expectedResult;
   std::vector<int> result;
+  uint64_t expectedHasFollowSegment = 1;
+  uint64_t expectedCounter = Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t);
+  const size_t expectedSegments = 3; //Writing 2 full segments, but 3 is created since threshold is passed in the second segment
 
   std::vector<TestData> *dataToWrite = new std::vector<TestData>();
   
-  int numberElements = ((Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(TestData));
+  int numberElements = expectedCounter / sizeof(TestData);
 
   //Create data for clients to send
   for(size_t i = 0; i < numberElements; i++)
   {
-    //number of elements in each send for each client
     dataToWrite->emplace_back(i,i,i,i);
+    for(size_t t = 0; t < 4*2; t++)
+    {
+      expectedResult.push_back(i);
+    }    
   }
   
   //Create BuffHandle in advance and remote_alloc the first segment. (Flow needs to be discussed so it is the same between strategies)
@@ -369,8 +470,8 @@ void TestBufferWriter::testAppendShared_MultipleConcurrentClients()
   for(auto segment : buffHandle->segments){
     copy_buffHandle->segments.push_back(segment); 
   }
-  BufferWriterSharedClient* client1 = new BufferWriterSharedClient(m_nodeServer, m_stub_regClient, buffHandle, dataToWrite);
-  BufferWriterSharedClient* client2 = new BufferWriterSharedClient(m_nodeServer, m_stub_regClient, copy_buffHandle, dataToWrite);
+  BufferWriterClient<TestData, BufferWriterShared>* client1 = new BufferWriterClient<TestData, BufferWriterShared>(m_nodeServer, m_stub_regClient, buffHandle, dataToWrite);
+  BufferWriterClient<TestData, BufferWriterShared>* client2 = new BufferWriterClient<TestData, BufferWriterShared>(m_nodeServer, m_stub_regClient, copy_buffHandle, dataToWrite);
 
   //ACT
   client1->start();
@@ -381,37 +482,35 @@ void TestBufferWriter::testAppendShared_MultipleConcurrentClients()
   //ASSERT
   int *rdma_buffer = (int *)m_nodeServer->getBuffer(0);
 
-  //Assert 3 segments was created
-  const size_t expectedSegments = 3;
-
-  std::cout << "Buffer " << '\n';
-  for (int i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int)*3; i++) //Read 2 segments (3 is created but only the first 2 are filled)
-  {
-    std::cout << rdma_buffer[i] << ' '; 
-    result.push_back(rdma_buffer[i]); //Somehow ignore the header... or add the header to the expected result
-  }
-
+  //Assert number of segments 
   CPPUNIT_ASSERT_EQUAL(expectedSegments, m_stub_regClient->dpi_retrieve_buffer(bufferName)->segments.size());
 
-  //Check content of buffer... :-)
+  // std::cout << "Buffer " << '\n';
+  for (int i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int)*(expectedSegments-1); i++)
+  {
+    //Assert header
+    if (i % (Config::DPI_SEGMENT_SIZE/sizeof(int)) == 0)
+    {
+      Config::DPI_SEGMENT_HEADER_t *header = (Config::DPI_SEGMENT_HEADER_t *)m_nodeServer->getBuffer(i*sizeof(int));
+      CPPUNIT_ASSERT_EQUAL(expectedCounter, header[0].counter);
+      CPPUNIT_ASSERT_EQUAL(expectedHasFollowSegment, header[0].hasFollowSegment);
+      i += 3; //Skip asserted header
+    }
+    else
+    {
+      // std::cout << rdma_buffer[i] << ' ';
+      result.push_back(rdma_buffer[i]);
+    }
 
-  //Insert header to expected (order does not matter since we sort it)  
-  // for(size_t i = 0; i < 2; i++)
-  // {
-  //   expectedResult.push_back(Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t));
-  //   expectedResult.push_back(0);
-  //   expectedResult.push_back(1);//Should have followingSegment
-  //   expectedResult.push_back(0);
-  // }
+  }
+
+  std::sort(expectedResult.begin(), expectedResult.end());
+  std::sort(result.begin(), result.end());
+
+  CPPUNIT_ASSERT_EQUAL(expectedResult.size(), result.size());
   
-
-  // std::sort(expectedResult.begin(), expectedResult.end());
-  // std::sort(result.begin(), result.end());
-
-  // CPPUNIT_ASSERT_EQUAL(expectedResult.size()*2, result.size());
-  
-  // for(size_t i = 0; i < expectedResult.size(); i++)
-  // {
-  //   CPPUNIT_ASSERT_EQUAL(expectedResult[i], result[i]);
-  // }
+  for(size_t i = 0; i < expectedResult.size(); i++)
+  {
+    CPPUNIT_ASSERT_EQUAL(expectedResult[i], result[i]);
+  }
 } 
