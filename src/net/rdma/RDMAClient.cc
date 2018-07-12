@@ -207,10 +207,17 @@ bool managementQueue) {
   return true;
 }
 
-bool RDMAClient::write(const NodeID& nodeid, size_t remoteOffset,
+bool __attribute__((always_inline)) RDMAClient::write(const NodeID& nodeid, size_t remoteOffset,
                                 void* localData, size_t size, bool signaled) {
   signaled = checkSignaled(signaled);
-  return m_rdmaManager->remoteWrite(m_nodeIDsIBaddr.at(nodeid), remoteOffset, localData, size,
+  return m_rdmaManager->remoteWrite(m_nodeIDsIBaddr[nodeid], remoteOffset, localData, size,
+                                    signaled);
+}
+
+bool __attribute__((always_inline)) RDMAClient::writeRC(const NodeID& nodeid, size_t remoteOffset,
+                                void* localData, size_t size, bool signaled) {
+  signaled = checkSignaled(signaled);
+  return (RDMAManagerRC*)m_rdmaManager->remoteWrite(m_nodeIDsIBaddr[nodeid], remoteOffset, localData, size,
                                     signaled);
 }
 

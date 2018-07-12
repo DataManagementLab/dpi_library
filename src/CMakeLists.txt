@@ -5,6 +5,7 @@ add_subdirectory(thread)
 add_subdirectory(net)
 add_subdirectory(test)
 add_subdirectory(dpi)
+add_subdirectory(benchmark)
 
 
 add_executable(dpi_exe Main.cc)
@@ -18,3 +19,12 @@ target_link_libraries(dpi_exe
   dpi
 )
 
+add_executable(dpi_bench BenchmarkMain.cc)
+    
+target_link_libraries(dpi_bench
+  benchmark
+  utils
+  dpi
+  net_proto
+  net_rdma
+)

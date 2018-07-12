@@ -86,7 +86,12 @@ using namespace std;
 
 
 #define DPI_DEBUG_LEVEL 0
+
+#ifdef DPI_DEBUG_LEVEL
 #define DPI_DEBUG(X, ...) if(DPI_DEBUG_LEVEL>0) {fprintf(stdout, X, ##__VA_ARGS__); fflush(stdout);}
+#else
+#define DPI_DEBUG(X, ...) {}
+#endif
 
 //To be implemented MACRO
 #define TO_BE_IMPLEMENTED(code_fragment)

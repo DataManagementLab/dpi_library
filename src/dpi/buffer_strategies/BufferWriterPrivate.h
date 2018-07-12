@@ -28,69 +28,65 @@ class BufferWriterPrivate : public BufferWriterInterface
     bool super_append(size_t size, size_t scratchPadOffset = 0)
     {
 
-        if (m_localBufferSegments.empty())
-        {
-            BufferSegment newSegment;
-            if (!allocRemoteSegment(newSegment))
+        if (m_localBufferSegment == nullptr)
+        {   
+            m_localBufferSegment = new BufferSegment();
+            if (!allocRemoteSegment(*m_localBufferSegment))
             {   
                  std::cout << "Failed to allocate new segment" << '\n'; //todo: should do a fatal log
                 return false;
             }
-            m_handle->segments.push_back(newSegment);
+            m_handle->segments.push_back(*m_localBufferSegment);
             m_sizeUsed = 0;
-            m_localBufferSegments.emplace_back(m_handle->segments.back().offset, m_handle->segments.back().size, m_handle->segments.back().threshold);
         }
-        BufferSegment segment = m_localBufferSegments.back();
 
-        if (m_localBufferSegments.back().size < m_sizeUsed + size)
+        if (m_localBufferSegment->size < m_sizeUsed + size)
         {
-            size_t firstPartSize = segment.size - m_sizeUsed;
+            size_t firstPartSize = m_localBufferSegment->size - m_sizeUsed;
 
-            if (!writeToSegment(segment, m_sizeUsed, firstPartSize, scratchPadOffset))
+            if (!writeToSegment(*m_localBufferSegment, m_sizeUsed, firstPartSize, scratchPadOffset, false))
             {
                 return false;
             }
-            m_rdmaHeader->counter = segment.size;
-            
-            BufferSegment newSegment;
-            if (!allocRemoteSegment(newSegment))
-            {
-                return false;
-            }
+            m_rdmaHeader->counter = m_localBufferSegment->size;
             m_rdmaHeader->hasFollowSegment = 1;
-            writeHeaderToRemote(segment.offset);
+            writeHeaderToRemote(m_localBufferSegment->offset);
+            if (!allocRemoteSegment(*m_localBufferSegment))
+            {
+                return false;
+            }
             m_rdmaHeader->hasFollowSegment = 0;
-            m_handle->segments.push_back(newSegment);
+            m_handle->segments.push_back(*m_localBufferSegment);
             m_sizeUsed = 0;
             m_rdmaHeader->hasFollowSegment = 0;
             m_rdmaHeader->counter = 0;
-            m_localBufferSegments.emplace_back(m_handle->segments.back().offset, m_handle->segments.back().size, m_handle->segments.back().threshold);
             
             return super_append(size, firstPartSize);
         }
 
-        if (!writeToSegment(segment, m_sizeUsed, size))
+        if (!writeToSegment(*m_localBufferSegment, m_sizeUsed, size, 0, false))
         {
             std::cout << "failed to write to segmnet" << '\n'; //todo: should do a fatal log
             return false;
         }
         m_sizeUsed = m_sizeUsed + size;
         // update counter / header once in a while
-        m_rdmaHeader->counter = m_sizeUsed;
-        writeHeaderToRemote(segment.offset);
+
+        //TODO impelment Close
+        // m_rdmaHeader->counter = m_sizeUsed;
+        // writeHeaderToRemote(m_localBufferSegment->offset);
         return true;
     }
 
   protected:
-    vector<BufferSegment>
-        m_localBufferSegments;
+    BufferSegment* m_localBufferSegment = nullptr;
 
-  inline bool writeHeaderToRemote( size_t segmentOffset)
+  inline bool __attribute__((always_inline)) writeHeaderToRemote( size_t segmentOffset)
     {
 
-        return m_rdmaClient->write(m_handle->node_id, segmentOffset , (void*)m_rdmaHeader, sizeof(Config::DPI_SEGMENT_HEADER_t), true);
+        return m_rdmaClient->writeRC(m_handle->node_id, segmentOffset , (void*)m_rdmaHeader, sizeof(Config::DPI_SEGMENT_HEADER_t), true);
     }
-
+   
   private:
     size_t m_sizeUsed = 0;
     Config::DPI_SEGMENT_HEADER_t* m_rdmaHeader;

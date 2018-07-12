@@ -81,6 +81,8 @@ class RDMAClient {
                    size_t size);
   bool write(const NodeID& nodeid, size_t remoteOffset, void* localData,
              size_t size, bool signaled);
+  bool writeRC(const NodeID& nodeid, size_t remoteOffset, void* localData,
+             size_t size, bool signaled);
   bool read(const NodeID& nodeid, size_t remoteOffset, void* localData,
             size_t size, bool signaled);
 
@@ -140,8 +142,8 @@ class RDMAClient {
   bool createManagementQueue(const string& connection,
                              const uint64_t qpNumServer);
 
-  inline bool checkSignaled(bool signaled) {
-    m_countWR++;
+  inline bool __attribute__((always_inline)) checkSignaled(bool signaled) {
+    ++m_countWR;
     if (m_countWR == Config::RDMA_MAX_WR) {
       signaled = true;
       m_countWR = 0;
