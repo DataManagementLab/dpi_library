@@ -12,6 +12,7 @@ RDMAServer::RDMAServer(int port, rdma_transport_t transport)
 }
 RDMAServer::RDMAServer(string name, int port, bool newFunc)
     : ProtoServer(name, port){
+      void(newFunc);
 
 }
 RDMAServer::RDMAServer(string name, int port, rdma_transport_t transport)

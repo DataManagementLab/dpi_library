@@ -55,39 +55,42 @@ class RegistryClientStub : public RegistryClient
 {
 public:
 
-  BuffHandle* dpi_create_buffer(string& name, NodeID node_id, string& connection)
+  BufferHandle* createBuffer(string& name, NodeID node_id, size_t size, size_t threshold)
   {
     std::cout << "Created buffer" << '\n';
     (void) name;
-    m_buffHandle = new BuffHandle(name, node_id, connection);
+    (void) size;
+    (void) threshold;
+ 
+    m_buffHandle = new BufferHandle(name, node_id);
     return m_buffHandle;
   }
 
-  bool dpi_register_buffer(BuffHandle* handle)
+  bool registerBuffer(BufferHandle* handle)
   {
-    BuffHandle* copy_buffHandle = new BuffHandle(handle->name, handle->node_id, handle->connection);
+    BufferHandle* copy_buffHandle = new BufferHandle(handle->name, handle->node_id);
     for(auto segment : handle->segments){
       copy_buffHandle->segments.push_back(segment); 
     }
     m_buffHandle = copy_buffHandle;
     return true;
   }
-  BuffHandle* dpi_retrieve_buffer(string& name)
+  BufferHandle* retrieveBuffer(string& name)
   {
     (void) name;
-    //Copy a new BuffHandle to emulate distributed setting (Or else one nodes changes to the BuffHandle would affect another nodes BuffHandle without retrieving the buffer first)
-    BuffHandle*  copy_buffHandle = new BuffHandle(m_buffHandle->name, m_buffHandle->node_id, m_buffHandle->connection);
+    //Copy a new BufferHandle to emulate distributed setting (Or else one nodes changes to the BufferHandle would affect another nodes BufferHandle without retrieving the buffer first)
+    BufferHandle*  copy_buffHandle = new BufferHandle(m_buffHandle->name, m_buffHandle->node_id);
     for(auto segment : m_buffHandle->segments){
       copy_buffHandle->segments.push_back(segment); 
     }
     return copy_buffHandle;
   }
-  bool dpi_append_segment(string& name, BuffSegment& segment)
+  bool appendSegment(string& name, BufferSegment& segment)
   {
     //Implement locking if stub should support concurrent appending of segments.
     (void) name;
     appendSegMutex.lock();
-    BuffSegment seg;
+    BufferSegment seg;
     seg.offset = segment.offset;
     seg.size = segment.size;
     seg.threshold = segment.threshold;
@@ -98,7 +101,7 @@ public:
   }
 
 private:
-  BuffHandle* m_buffHandle = nullptr; //For this stub we just have one buffHandle
+  BufferHandle* m_buffHandle = nullptr; //For this stub we just have one buffHandle
   std::mutex appendSegMutex;
 };
  
@@ -116,26 +119,24 @@ class BufferWriterClient : public Thread
 {
   NodeServer* nodeServer = nullptr;
   RegistryClient* regClient = nullptr;
+  BufferHandle* buffHandle = nullptr;
   std::vector<DataType> *dataToWrite = nullptr; //tuple<ptr to data, size in bytes>
-  BuffHandle* buffHandle = nullptr;
 
 public: 
 
-  BufferWriterClient(NodeServer* nodeServer, RegistryClient* regClient, BuffHandle* buffHandle, std::vector<DataType> *dataToWrite) : 
+  BufferWriterClient(NodeServer* nodeServer, RegistryClient* regClient, BufferHandle* buffHandle, std::vector<DataType> *dataToWrite) : 
     Thread(), nodeServer(nodeServer), regClient(regClient), buffHandle(buffHandle), dataToWrite(dataToWrite) {}
 
   void run() 
   {
     //ARRANGE
-    string bufferName = "test";
-    string connection = "127.0.0.1:5400";
 
     BufferWriter<Strategy> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, regClient);
 
     barrier_wait();
 
     //ACT
-    for(int i = 0; i < dataToWrite->size(); i++)
+    for(size_t i = 0; i < dataToWrite->size(); i++)
     {
       buffWriter.append(&dataToWrite->operator[](i), sizeof(DataType));
     }

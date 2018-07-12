@@ -8,7 +8,7 @@ class BufferWriterShared : public BufferWriterInterface
 {
 
   public:
-    BufferWriterShared(BuffHandle *handle, size_t scratchPadSize, RegistryClient *regClient = nullptr) : BufferWriterInterface(handle, scratchPadSize, regClient)
+    BufferWriterShared(BufferHandle *handle, size_t scratchPadSize, RegistryClient *regClient = nullptr) : BufferWriterInterface(handle, scratchPadSize, regClient)
     {
         m_rdmaHeader = (Config::DPI_SEGMENT_HEADER_t *)m_rdmaClient->localAlloc(sizeof(Config::DPI_SEGMENT_HEADER_t));
     };
@@ -28,7 +28,7 @@ class BufferWriterShared : public BufferWriterInterface
         if (m_handle->segments.empty())
         {
             // std::cout << "Empty Segment" << '\n';
-            BuffSegment newSegment;
+            BufferSegment newSegment;
             if (!allocRemoteSegment(newSegment))
             {
                 return false;
@@ -64,7 +64,7 @@ class BufferWriterShared : public BufferWriterInterface
             auto hasFollowSegment = setHasFollowSegment(segment.offset);
             if (hasFollowSegment == 0)
             {
-                BuffSegment newSegment;
+                BufferSegment newSegment;
                 if (!allocRemoteSegment(newSegment))
                 {
                     return false;
@@ -96,7 +96,7 @@ class BufferWriterShared : public BufferWriterInterface
             {
                 //write to segment
                 // std::cout << "Case 4.1" << '\n';
-                BuffSegment newSegment;
+                BufferSegment newSegment;
                 if (!allocRemoteSegment(newSegment))
                 {
                     return false;
@@ -106,15 +106,15 @@ class BufferWriterShared : public BufferWriterInterface
             else
             {
                 // std::cout << "Case 4.2" << '\n';
-                m_handle = m_regClient->dpi_retrieve_buffer(m_handle->name);
+                m_handle = m_regClient->retrieveBuffer(m_handle->name);
                 return super_append(size);
             }
         }
         // counter exceeded segment size therefore retrieve and start over
         else if (writeOffset >= segment.size)
         {
-            auto resetCounter = modifyCounter(-size, segment.offset);
-            m_handle = m_regClient->dpi_retrieve_buffer(m_handle->name);
+            modifyCounter(-size, segment.offset);
+            m_handle = m_regClient->retrieveBuffer(m_handle->name);
             return super_append(size);
         }
         else

@@ -25,7 +25,7 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
         anyReq->UnpackTo(&createBuffReq);
 
         string name = createBuffReq.name();
-        BuffHandle *buffHandle = dpi_create_buffer(name, createBuffReq.node_id(), createBuffReq.size(), createBuffReq.threshold());
+        BufferHandle *buffHandle = createBuffer(name, createBuffReq.node_id(), createBuffReq.size(), createBuffReq.threshold());
         
         if (buffHandle == nullptr)
         {
@@ -35,12 +35,12 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
         {
             createBuffResp.set_name(name);
             createBuffResp.set_node_id(buffHandle->node_id);
-            for (BuffSegment buffSegment : buffHandle->segments)
+            for (BufferSegment BufferSegment : buffHandle->segments)
             {
                 DPICreateBufferResponse_Segment *segmentResp = createBuffResp.add_segment();
-                segmentResp->set_offset(buffSegment.offset);
-                segmentResp->set_size(buffSegment.size);
-                segmentResp->set_threshold(buffSegment.threshold);
+                segmentResp->set_offset(BufferSegment.offset);
+                segmentResp->set_size(BufferSegment.size);
+                segmentResp->set_threshold(BufferSegment.threshold);
             }
             createBuffResp.set_return_(MessageErrors::NO_ERROR);
         }
@@ -54,7 +54,7 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
         anyReq->UnpackTo(&retrieveBuffReq);
 
         string name = retrieveBuffReq.name();
-        BuffHandle *buffHandle = dpi_retrieve_buffer(name);
+        BufferHandle *buffHandle = retrieveBuffer(name);
         if (buffHandle == nullptr)
         {
             retrieveBuffResp.set_return_(MessageErrors::DPI_RTRV_BUFFHANDLE_FAILED);
@@ -63,12 +63,12 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
         {
             retrieveBuffResp.set_name(name);
             retrieveBuffResp.set_node_id(buffHandle->node_id);
-            for (BuffSegment buffSegment : buffHandle->segments)
+            for (BufferSegment BufferSegment : buffHandle->segments)
             {
                 DPIRetrieveBufferResponse_Segment *segmentResp = retrieveBuffResp.add_segment();
-                segmentResp->set_offset(buffSegment.offset);
-                segmentResp->set_size(buffSegment.size);
-                segmentResp->set_threshold(buffSegment.threshold);
+                segmentResp->set_offset(BufferSegment.offset);
+                segmentResp->set_size(BufferSegment.size);
+                segmentResp->set_threshold(BufferSegment.threshold);
             }
             retrieveBuffResp.set_return_(MessageErrors::NO_ERROR);
         }
@@ -84,18 +84,18 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
         string name = appendBuffReq.name();
         if (appendBuffReq.register_())
         {
-            BuffHandle buffHandle(name, appendBuffReq.node_id());
-            registerSuccess = dpi_register_buffer(&buffHandle);
+            BufferHandle buffHandle(name, appendBuffReq.node_id());
+            registerSuccess = registerBuffer(&buffHandle);
         }
 
         bool appendSuccess = true;
         if (registerSuccess)
         {
-            for (size_t i = 0; i < appendBuffReq.segment_size(); ++i)
+            for (int64_t i = 0; i < appendBuffReq.segment_size(); ++i)
             {
                 DPIAppendBufferRequest_Segment segmentReq = appendBuffReq.segment(i);
-                BuffSegment segment(segmentReq.offset(), segmentReq.size(), segmentReq.threshold());
-                if (!dpi_append_segment(name, &segment))
+                BufferSegment segment(segmentReq.offset(), segmentReq.size(), segmentReq.threshold());
+                if (!appendSegment(name, &segment))
                 {
                     appendSuccess = false;
                     break;
@@ -122,7 +122,7 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
     }
 }
 
-bool RegistryServer::dpi_register_buffer(BuffHandle *buffHandle)
+bool RegistryServer::registerBuffer(BufferHandle *buffHandle)
 {
     if (m_bufferHandles.find(buffHandle->name) != m_bufferHandles.end())
     {
@@ -132,9 +132,9 @@ bool RegistryServer::dpi_register_buffer(BuffHandle *buffHandle)
     return true;
 }
 
-BuffHandle *RegistryServer::dpi_create_buffer(string &name, NodeID node_id, size_t size, size_t threshold)
+BufferHandle *RegistryServer::createBuffer(string &name, NodeID node_id, size_t size, size_t threshold)
 {
-    if (node_id >= Config::DPI_NODES.size())
+    if (node_id > Config::DPI_NODES.size())
     {
         return nullptr;
     }
@@ -145,20 +145,21 @@ BuffHandle *RegistryServer::dpi_create_buffer(string &name, NodeID node_id, size
     }
 
     size_t offset = 0;
-    string connection = Config::DPI_NODES[node_id];
+    string connection = Config::getIPFromNodeId(node_id);
+    std::cout << "Connection " << connection << '\n';
     if (!m_rdmaClient->remoteAlloc(connection, size, offset))
     {
         return nullptr;
     }
 
-    BuffHandle buffHandle(name, node_id);
-    BuffSegment buffSegment(offset, size, threshold);
-    buffHandle.segments.push_back(buffSegment);
+    BufferHandle buffHandle(name, node_id);
+    BufferSegment BufferSegment(offset, size, threshold);
+    buffHandle.segments.push_back(BufferSegment);
     m_bufferHandles[name] = buffHandle;
     return &m_bufferHandles[name];
 }
 
-BuffHandle *RegistryServer::dpi_retrieve_buffer(string &name)
+BufferHandle *RegistryServer::retrieveBuffer(string &name)
 {
     if (m_bufferHandles.find(name) == m_bufferHandles.end())
     {
@@ -167,7 +168,7 @@ BuffHandle *RegistryServer::dpi_retrieve_buffer(string &name)
     return &m_bufferHandles[name];
 }
 
-bool RegistryServer::dpi_append_segment(string &name, BuffSegment *segment)
+bool RegistryServer::appendSegment(string &name, BufferSegment *segment)
 {
     if (m_bufferHandles.find(name) == m_bufferHandles.end())
     {

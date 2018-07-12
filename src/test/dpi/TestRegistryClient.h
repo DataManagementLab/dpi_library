@@ -4,7 +4,7 @@
 
 #include "../../dpi/RegistryClient.h"
 #include "../../dpi/RegistryServer.h"
-#include "../../dpi/BuffHandle.h"
+#include "../../dpi/BufferHandle.h"
 #include "../../dpi/NodeServer.h"
 
 class TestRegistryClient : public CppUnit::TestFixture

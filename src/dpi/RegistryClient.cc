@@ -13,7 +13,7 @@ RegistryClient::~RegistryClient()
 {
 }
 
-BuffHandle *RegistryClient::dpi_create_buffer(string &name, NodeID node_id, size_t size, size_t threshold)
+BufferHandle *RegistryClient::createBuffer(string &name, NodeID node_id, size_t size, size_t threshold)
 {
     Any sendAny = MessageTypes::createDPICreateBufferRequest(name, node_id, size, threshold);
     Any rcvAny;
@@ -39,18 +39,18 @@ BuffHandle *RegistryClient::dpi_create_buffer(string &name, NodeID node_id, size
         return nullptr;
     }
 
-    BuffHandle *buffHandle = new BuffHandle(name, node_id);
-    for (size_t i = 0; i < createBufferResp.segment_size(); ++i)
+    BufferHandle *buffHandle = new BufferHandle(name, node_id);
+    for (int64_t i = 0; i < createBufferResp.segment_size(); ++i)
     {
         DPICreateBufferResponse_Segment segmentResp = createBufferResp.segment(i);
-        BuffSegment segment(segmentResp.offset(), segmentResp.size(), segmentResp.threshold());
+        BufferSegment segment(segmentResp.offset(), segmentResp.size(), segmentResp.threshold());
         buffHandle->segments.push_back(segment);
     }
 
     return buffHandle;
 }
 
-BuffHandle *RegistryClient::dpi_retrieve_buffer(string &name)
+BufferHandle *RegistryClient::retrieveBuffer(string &name)
 {
     Any sendAny = MessageTypes::createDPIRetrieveBufferRequest(name);
     Any rcvAny;
@@ -77,18 +77,18 @@ BuffHandle *RegistryClient::dpi_retrieve_buffer(string &name)
     }
 
     NodeID node_id = rtrvBufferResp.node_id();
-    BuffHandle *buffHandle = new BuffHandle(name, node_id);
-    for (size_t i = 0; i < rtrvBufferResp.segment_size(); ++i)
+    BufferHandle *buffHandle = new BufferHandle(name, node_id);
+    for (int64_t i = 0; i < rtrvBufferResp.segment_size(); ++i)
     {
         DPIRetrieveBufferResponse_Segment segmentResp = rtrvBufferResp.segment(i);
-        BuffSegment segment(segmentResp.offset(), segmentResp.size(), segmentResp.threshold());
+        BufferSegment segment(segmentResp.offset(), segmentResp.size(), segmentResp.threshold());
         buffHandle->segments.push_back(segment);
     }
 
     return buffHandle;
 }
 
-bool RegistryClient::dpi_register_buffer(BuffHandle *handle)
+bool RegistryClient::registerBuffer(BufferHandle *handle)
 {
     if (handle->segments.size() != 1)
     {
@@ -96,18 +96,18 @@ bool RegistryClient::dpi_register_buffer(BuffHandle *handle)
         return false;
     }
 
-    BuffSegment segment = handle->segments[0];
+    BufferSegment segment = handle->segments[0];
     Any sendAny = MessageTypes::createDPIRegisterBufferRequest(handle->name, handle->node_id, segment.offset, segment.size, segment.threshold);
-    return dpi_append_or_retrieve_segment(&sendAny);
+    return appendOrRetrieveSegment(&sendAny);
 }
 
-bool RegistryClient::dpi_append_segment(string &name, BuffSegment &segment)
+bool RegistryClient::appendSegment(string &name, BufferSegment &segment)
 {
     Any sendAny = MessageTypes::createDPIAppendBufferRequest(name, segment.offset, segment.size, segment.threshold);
-    return dpi_append_or_retrieve_segment(&sendAny);
+    return appendOrRetrieveSegment(&sendAny);
 }
 
-bool RegistryClient::dpi_append_or_retrieve_segment(Any *sendAny)
+bool RegistryClient::appendOrRetrieveSegment(Any *sendAny)
 {
     Any rcvAny;
     if (!this->send(sendAny, &rcvAny))

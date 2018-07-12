@@ -10,7 +10,7 @@ class BufferWriterPrivate : public BufferWriterInterface
 {
 
   public:
-    BufferWriterPrivate(BuffHandle *handle, size_t scratchPadSize, RegistryClient *regClient = nullptr) : BufferWriterInterface(handle, scratchPadSize, regClient){
+    BufferWriterPrivate(BufferHandle *handle, size_t scratchPadSize, RegistryClient *regClient = nullptr) : BufferWriterInterface(handle, scratchPadSize, regClient){
         m_rdmaHeader = (Config::DPI_SEGMENT_HEADER_t *)m_rdmaClient->localAlloc(sizeof(Config::DPI_SEGMENT_HEADER_t));
     };
 
@@ -30,7 +30,7 @@ class BufferWriterPrivate : public BufferWriterInterface
 
         if (m_localBufferSegments.empty())
         {
-            BuffSegment newSegment;
+            BufferSegment newSegment;
             if (!allocRemoteSegment(newSegment))
             {   
                  std::cout << "Failed to allocate new segment" << '\n'; //todo: should do a fatal log
@@ -40,7 +40,7 @@ class BufferWriterPrivate : public BufferWriterInterface
             m_sizeUsed = 0;
             m_localBufferSegments.emplace_back(m_handle->segments.back().offset, m_handle->segments.back().size, m_handle->segments.back().threshold);
         }
-        BuffSegment segment = m_localBufferSegments.back();
+        BufferSegment segment = m_localBufferSegments.back();
 
         if (m_localBufferSegments.back().size < m_sizeUsed + size)
         {
@@ -52,7 +52,7 @@ class BufferWriterPrivate : public BufferWriterInterface
             }
             m_rdmaHeader->counter = segment.size;
             
-            BuffSegment newSegment;
+            BufferSegment newSegment;
             if (!allocRemoteSegment(newSegment))
             {
                 return false;
@@ -82,7 +82,7 @@ class BufferWriterPrivate : public BufferWriterInterface
     }
 
   protected:
-    vector<BuffSegment>
+    vector<BufferSegment>
         m_localBufferSegments;
 
   inline bool writeHeaderToRemote( size_t segmentOffset)

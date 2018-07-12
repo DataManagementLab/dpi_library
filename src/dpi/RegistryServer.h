@@ -14,7 +14,7 @@
 #include "../net/rdma/RDMAClient.h"
 #include "../message/MessageTypes.h"
 #include "../message/MessageErrors.h"
-#include "BuffHandle.h"
+#include "BufferHandle.h"
 
 namespace dpi
 {
@@ -41,7 +41,7 @@ public:
 private:
   // Members
   RDMAClient *m_rdmaClient;
-  map<string, BuffHandle> m_bufferHandles;
+  map<string, BufferHandle> m_bufferHandles;
 
   // Methods
 
@@ -52,13 +52,13 @@ private:
      * @param node_id of the server where the buffer is allocated
      * @param size in bytes of the buffer
      */
-  bool dpi_register_buffer(BuffHandle *buffHandle);
+  bool registerBuffer(BufferHandle *buffHandle);
 
-  BuffHandle *dpi_create_buffer(string &name, NodeID node_id, size_t size, size_t threshold);
+  BufferHandle *createBuffer(string &name, NodeID node_id, size_t size, size_t threshold);
 
-  BuffHandle *dpi_retrieve_buffer(string &name);
+  BufferHandle *retrieveBuffer(string &name);
 
-  bool dpi_append_segment(string &name, BuffSegment *segment);
+  bool appendSegment(string &name, BufferSegment *segment);
 };
 
 } // namespace dpi

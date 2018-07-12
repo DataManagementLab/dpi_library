@@ -84,6 +84,10 @@ using namespace std;
 #define DebugCode(code_fragment)
 #endif
 
+
+#define DPI_DEBUG_LEVEL 0
+#define DPI_DEBUG(X, ...) if(DPI_DEBUG_LEVEL>0) {fprintf(stdout, X, ##__VA_ARGS__); fflush(stdout);}
+
 //To be implemented MACRO
 #define TO_BE_IMPLEMENTED(code_fragment)
 #define DPI_UNIT_TEST_SUITE(suite) CPPUNIT_TEST_SUITE(suite)
@@ -163,6 +167,8 @@ class Config
 
     //TEST
     static int HELLO_PORT;
+
+    static string& getIPFromNodeId(NodeID& nodeid);
 
   private:
     static void load();

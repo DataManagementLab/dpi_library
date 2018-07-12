@@ -14,7 +14,7 @@
 #include "RegistryClient.h"
 #include "buffer_strategies/BufferStrategies.h"
 
-#include "BuffHandle.h"
+#include "BufferHandle.h"
 
 namespace dpi
 {
@@ -23,7 +23,7 @@ class BufferWriter : public base
 {
 
   public:
-    BufferWriter(BuffHandle *handle, size_t scratchPadSize = Config::DPI_SCRATCH_PAD_SIZE, RegistryClient *regClient = nullptr)
+    BufferWriter(BufferHandle *handle, size_t scratchPadSize = Config::DPI_SCRATCH_PAD_SIZE, RegistryClient *regClient = nullptr)
         : base(handle, scratchPadSize, regClient){};
     ~BufferWriter(){};
 

@@ -38,13 +38,13 @@ void TestRegistryClient::tearDown()
 void TestRegistryClient::testCreateBuffer()
 {
   string name = "buffer1";
-  BuffHandle *buffHandle = m_regClient->dpi_create_buffer(name, 0, 1024, 800);
+  BufferHandle *buffHandle = m_regClient->createBuffer(name, 1, 1024, 800);
 
   CPPUNIT_ASSERT(buffHandle != nullptr);
   CPPUNIT_ASSERT_EQUAL(buffHandle->name, name);
 
   CPPUNIT_ASSERT_EQUAL(1, ((int)buffHandle->segments.size()));
-  BuffSegment segment = buffHandle->segments[0];
+  BufferSegment segment = buffHandle->segments[0];
   CPPUNIT_ASSERT_EQUAL(1024, ((int)segment.size));
   CPPUNIT_ASSERT_EQUAL(800, ((int)segment.threshold));
 }
@@ -52,15 +52,15 @@ void TestRegistryClient::testCreateBuffer()
 void TestRegistryClient::testRetrieveBuffer()
 {
   string name = "buffer2";
-  BuffHandle *buffHandle = m_regClient->dpi_create_buffer(name, 0, 1024, 800);
+  BufferHandle *buffHandle = m_regClient->createBuffer(name, 1, 1024, 800);
   CPPUNIT_ASSERT(buffHandle != nullptr);
 
-  buffHandle = m_regClient->dpi_retrieve_buffer(name);
+  buffHandle = m_regClient->retrieveBuffer(name);
   CPPUNIT_ASSERT(buffHandle != nullptr);
   CPPUNIT_ASSERT_EQUAL(buffHandle->name, name);
 
   CPPUNIT_ASSERT_EQUAL(1, ((int)buffHandle->segments.size()));
-  BuffSegment segment = buffHandle->segments[0];
+  BufferSegment segment = buffHandle->segments[0];
   CPPUNIT_ASSERT_EQUAL(1024, ((int)segment.size));
   CPPUNIT_ASSERT_EQUAL(800, ((int)segment.threshold));
 };
@@ -68,12 +68,12 @@ void TestRegistryClient::testRetrieveBuffer()
 void TestRegistryClient::testRegisterBuffer()
 {
   string name = "buffer1";
-  BuffHandle *buffHandle = new BuffHandle(name,1);
-  BuffSegment segment(2000, 1024, 800);
+  BufferHandle *buffHandle = new BufferHandle(name,1);
+  BufferSegment segment(2000, 1024, 800);
   buffHandle->segments.push_back(segment);
-  CPPUNIT_ASSERT( m_regClient->dpi_register_buffer(buffHandle));
+  CPPUNIT_ASSERT( m_regClient->registerBuffer(buffHandle));
 
-  BuffHandle* handle_ret = m_regClient->dpi_retrieve_buffer(name);
+  BufferHandle* handle_ret = m_regClient->retrieveBuffer(name);
   CPPUNIT_ASSERT(handle_ret != nullptr);
   CPPUNIT_ASSERT_EQUAL(handle_ret->name, name);
 
@@ -83,23 +83,23 @@ void TestRegistryClient::testRegisterBuffer()
 void TestRegistryClient::testAppendSegment(){
 
   string name = "buffer2";
-  BuffHandle *buffHandle = m_regClient->dpi_create_buffer(name, 0, 1024, 800);
+  BufferHandle *buffHandle = m_regClient->createBuffer(name, 1, 1024, 800);
   CPPUNIT_ASSERT(buffHandle != nullptr);
 
-  BuffSegment segment(2000, 1024, 800);
-  bool success = m_regClient->dpi_append_segment(name, segment);
+  BufferSegment segment(2000, 1024, 800);
+  bool success = m_regClient->appendSegment(name, segment);
   CPPUNIT_ASSERT(success);
-  buffHandle = m_regClient->dpi_retrieve_buffer(name);
+  buffHandle = m_regClient->retrieveBuffer(name);
   CPPUNIT_ASSERT(buffHandle != nullptr);
   CPPUNIT_ASSERT_EQUAL(buffHandle->name, name);
 
   CPPUNIT_ASSERT_EQUAL(2, ((int)buffHandle->segments.size()));
 
-  BuffSegment segment1 = buffHandle->segments[0];
+  BufferSegment segment1 = buffHandle->segments[0];
   CPPUNIT_ASSERT_EQUAL(1024, ((int)segment1.size));
   CPPUNIT_ASSERT_EQUAL(800, ((int)segment1.threshold));
 
-  BuffSegment segment2 = buffHandle->segments[1];
+  BufferSegment segment2 = buffHandle->segments[1];
   CPPUNIT_ASSERT_EQUAL(2000, ((int)segment2.offset));
   CPPUNIT_ASSERT_EQUAL(1024, ((int)segment2.size));
   CPPUNIT_ASSERT_EQUAL(800, ((int)segment2.threshold));

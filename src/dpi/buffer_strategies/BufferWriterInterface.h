@@ -5,7 +5,7 @@
 #include "../../utils/Network.h"
 #include "../../net/rdma/RDMAClient.h"
 #include "../RegistryClient.h"
-#include "../BuffHandle.h"
+#include "../BufferHandle.h"
 
 
 namespace dpi
@@ -14,10 +14,10 @@ namespace dpi
 class BufferWriterInterface
 {
   public:
-    BufferWriterInterface(BuffHandle *handle, size_t scratchPadSize, RegistryClient *regClient) : m_handle(handle), m_scratchPadSize(scratchPadSize), m_regClient(regClient)
+    BufferWriterInterface(BufferHandle *handle, size_t scratchPadSize, RegistryClient *regClient) : m_handle(handle), m_scratchPadSize(scratchPadSize), m_regClient(regClient)
     {
         m_rdmaClient = new RDMAClient();
-        m_rdmaClient->connect(handle->connection, handle->node_id);
+        m_rdmaClient->connect(Config::getIPFromNodeId(handle->node_id), handle->node_id);
         setScratchpad(m_rdmaClient->localAlloc(m_scratchPadSize));
 
         TO_BE_IMPLEMENTED(if (regClient == nullptr) {
@@ -33,10 +33,10 @@ class BufferWriterInterface
         m_scratchPad = scratchPad;
     }
 
-    bool allocRemoteSegment(BuffSegment& newSegment_ret)
+    bool allocRemoteSegment(BufferSegment& newSegment_ret)
     {
         size_t remoteOffset = 0;
-        if (!m_rdmaClient->remoteAlloc(m_handle->connection, Config::DPI_SEGMENT_SIZE, remoteOffset))
+        if (!m_rdmaClient->remoteAlloc(Config::getIPFromNodeId(m_handle->node_id), Config::DPI_SEGMENT_SIZE, remoteOffset))
         {
             return false;
         }
@@ -44,17 +44,17 @@ class BufferWriterInterface
         newSegment_ret.size = Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t);
         newSegment_ret.threshold = Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR;
     
-        m_regClient->dpi_append_segment(m_handle->name, newSegment_ret);
+        m_regClient->appendSegment(m_handle->name, newSegment_ret);
         return true;
     }
 
-    bool writeToSegment(BuffSegment &segment, size_t offset, size_t size , size_t scratchPadOffset = 0)
+    bool writeToSegment(BufferSegment &segment, size_t offset, size_t size , size_t scratchPadOffset = 0)
     {
         void* scratch_tmp = (void*) ((char*)m_scratchPad + scratchPadOffset);
         return m_rdmaClient->write(m_handle->node_id, segment.offset + offset + sizeof(Config::DPI_SEGMENT_HEADER_t), scratch_tmp , size, true);
     }
 
-    BuffHandle *m_handle = nullptr;
+    BufferHandle *m_handle = nullptr;
     void *m_scratchPad = nullptr;
     size_t m_scratchPadSize = 0;
     RegistryClient *m_regClient = nullptr;

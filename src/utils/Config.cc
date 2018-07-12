@@ -12,8 +12,17 @@ int Config::HELLO_PORT = 4001;
 string Config::DPI_REGISTRY_SERVER = "127.0.0.1";
 uint32_t Config::DPI_REGISTRY_PORT = 5300;
 uint32_t Config::DPI_NODE_PORT = 5400;
+
+/**
+ * @brief Config::DPI_NODES collects the IP adress of each node participating
+ * NOTE: The index of the vector corresponds to nodeid - 1
+ * i.e., each node gets a node id starting at 1 therefore the corresponding 
+ * IP is Config::DPI_NODES[(nodeid:1) - 1] => use the function 
+ * getIPFromNodeId(1) to retrieve the IP
+ */
 vector<string> Config::DPI_NODES = {  "127.0.0.1:"
     + to_string(Config::DPI_NODE_PORT) };
+
 
 
 
@@ -35,6 +44,11 @@ vector<int> Config::THREAD_CPUS = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 20, 21, 22,
 
 //LOGGING
 int Config::LOGGING_LEVEL = 1;
+
+
+string& Config::getIPFromNodeId(NodeID& node_id){
+  return Config::DPI_NODES.at(node_id -1);
+}
 
 
 inline string trim(string str) {
