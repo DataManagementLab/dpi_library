@@ -44,7 +44,7 @@ class BufferWriterPrivate : public BufferWriterInterface
         {
             size_t firstPartSize = m_localBufferSegment->size - m_sizeUsed;
 
-            if (!writeToSegment(*m_localBufferSegment, m_sizeUsed, firstPartSize, scratchPadOffset, false))
+            if (!writeToSegment(*m_localBufferSegment, m_sizeUsed, firstPartSize, scratchPadOffset, true))
             {
                 return false;
             }
@@ -64,7 +64,7 @@ class BufferWriterPrivate : public BufferWriterInterface
             return super_append(size, firstPartSize);
         }
 
-        if (!writeToSegment(*m_localBufferSegment, m_sizeUsed, size, 0, false))
+        if (!writeToSegment(*m_localBufferSegment, m_sizeUsed, size, 0, true))
         {
             std::cout << "failed to write to segmnet" << '\n'; //todo: should do a fatal log
             return false;
@@ -76,6 +76,7 @@ class BufferWriterPrivate : public BufferWriterInterface
 
     bool super_close(){
         m_rdmaHeader->counter = m_sizeUsed;
+        if (m_localBufferSegment == nullptr) return true;
         return writeHeaderToRemote(m_localBufferSegment->offset);
     }
 

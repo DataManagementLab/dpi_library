@@ -54,7 +54,7 @@ class BufferWriterInterface
     }
 
     
-    inline bool __attribute__((always_inline)) writeToSegment(BufferSegment &segment, size_t offset, size_t size , size_t scratchPadOffset = 0, bool signaled=false)
+    inline bool __attribute__((always_inline)) writeToSegment(BufferSegment &segment, size_t offset, size_t size , size_t scratchPadOffset = 0, bool signaled=true)
     {
         void* scratch_tmp = (void*) ((char*)m_scratchPad + scratchPadOffset);
         return m_rdmaClient->writeRC(m_handle->node_id, segment.offset + offset + sizeof(Config::DPI_SEGMENT_HEADER_t), scratch_tmp , size, signaled);

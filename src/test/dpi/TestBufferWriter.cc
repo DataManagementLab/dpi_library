@@ -8,6 +8,7 @@ void TestBufferWriter::setUp()
   //Setup Test DPI
   Config::RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 1;  //1GB
   Config::DPI_SEGMENT_SIZE = (2048 + sizeof(Config::DPI_SEGMENT_HEADER_t));
+  Config::DPI_SCRATCH_PAD_SIZE = 1024;
   Config::DPI_REGISTRY_SERVER = "127.0.0.1";
   Config::DPI_NODES.clear();
   string dpiTestNode = "127.0.0.1:" + to_string(Config::DPI_NODE_PORT);
@@ -106,6 +107,7 @@ void TestBufferWriter::testAppendPrivate_WithoutScratchpad_splitData()
 
   CPPUNIT_ASSERT(buffWriter.append((void *)data, memSize));
 
+  CPPUNIT_ASSERT(buffWriter.close());
   int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
 
   //ASSERT
@@ -150,6 +152,10 @@ void TestBufferWriter::testAppendPrivate_WithScratchpad()
     scratchPad[scratchIter] = i;
     scratchIter++;
   }
+
+  //ASSERT
+
+  CPPUNIT_ASSERT(buffWriter.close());
 
   Config::DPI_SEGMENT_HEADER_t *header = (Config::DPI_SEGMENT_HEADER_t *)m_nodeServer->getBuffer(remoteOffset);
   int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
@@ -224,6 +230,8 @@ void TestBufferWriter::testAppendPrivate_MultipleClients_WithScratchpad()
   }
 
   //ASSERT
+  CPPUNIT_ASSERT(buffWriter1.close());
+  CPPUNIT_ASSERT(buffWriter2.close());
   int *rdma_buffer = (int *)m_nodeServer->getBuffer(0);
 
   //Client 1
@@ -259,6 +267,7 @@ void TestBufferWriter::testAppendPrivate_SizeTooBigForScratchpad()
 
   //ACT
   //ASSERT
+  CPPUNIT_ASSERT(buffWriter.close());
   CPPUNIT_ASSERT_MESSAGE("appendFromScratchpad should return false when size is bigger than scratchpad",
                          !buffWriter.appendFromScratchpad(Config::DPI_SCRATCH_PAD_SIZE + 1));
 }
@@ -295,6 +304,7 @@ void TestBufferWriter::testAppendShared_AtomicHeaderManipulation()
   fetchedFollowPage = buffWriter.setHasFollowSegment(0);
 
   //ASSERT 3
+  CPPUNIT_ASSERT(buffWriter.close());
   CPPUNIT_ASSERT_EQUAL((uint64_t)1, rdma_buffer[0].hasFollowSegment);
   CPPUNIT_ASSERT_EQUAL((uint64_t)1, fetchedFollowPage);
 }
@@ -332,6 +342,7 @@ void TestBufferWriter::testAppendShared_WithScratchpad()
   //     << rdma_buffer[i] << ' ';);
 
   //ASSERT
+  CPPUNIT_ASSERT(buffWriter.close());
   for (uint32_t j = 0; j < numberSegments; j++)
   {
     int expected = 0;
