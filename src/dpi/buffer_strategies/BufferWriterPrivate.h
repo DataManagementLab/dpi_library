@@ -70,12 +70,13 @@ class BufferWriterPrivate : public BufferWriterInterface
             return false;
         }
         m_sizeUsed = m_sizeUsed + size;
-        // update counter / header once in a while
 
-        //TODO impelment Close
-        // m_rdmaHeader->counter = m_sizeUsed;
-        // writeHeaderToRemote(m_localBufferSegment->offset);
         return true;
+    };
+
+    bool super_close(){
+        m_rdmaHeader->counter = m_sizeUsed;
+        return writeHeaderToRemote(m_localBufferSegment->offset);
     }
 
   protected:

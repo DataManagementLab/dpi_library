@@ -24,7 +24,7 @@ namespace dpi
 class DPIAppendBenchmarkThread : public Thread
 {
 public:
-  DPIAppendBenchmarkThread(string &conns, size_t size, size_t iter);
+  DPIAppendBenchmarkThread(NodeID nodeid,string &conns, size_t size, size_t iter);
   ~DPIAppendBenchmarkThread();
   void run();
   bool ready()
@@ -37,9 +37,10 @@ private:
   BufferWriter<BufferWriterPrivate>* m_bufferWriter = nullptr; 
   RegistryClient* m_regClient = nullptr;
   void *m_data;
-  size_t m_size = sizeof(int);
+  size_t m_size;
   size_t m_iter;
   string m_conns;
+  NodeID m_nodeId;
   int m_ctr = 0;
 };
 
@@ -85,7 +86,7 @@ public:
 private:
 
   size_t m_serverPort;
-  size_t m_size = sizeof(int);
+  size_t m_size;
   size_t m_iter;
   size_t m_numThreads;
   string m_conns;

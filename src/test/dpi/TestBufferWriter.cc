@@ -5,6 +5,13 @@ std::atomic<int> TestBufferWriter::bar{0};    // Counter of threads, faced barri
 std::atomic<int> TestBufferWriter::passed{0}; // Number of barriers, passed by all threads.
 void TestBufferWriter::setUp()
 {
+  //Setup Test DPI
+  Config::RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 1;  //1GB
+  Config::DPI_SEGMENT_SIZE = (2048 + sizeof(Config::DPI_SEGMENT_HEADER_t));
+  Config::DPI_REGISTRY_SERVER = "127.0.0.1";
+  Config::DPI_NODES.clear();
+  string dpiTestNode = "127.0.0.1:" + to_string(Config::DPI_NODE_PORT);
+  Config::DPI_NODES.push_back(dpiTestNode);
 
   m_nodeClient = new NodeClient();
   m_stub_regClient = new RegistryClientStub();
@@ -55,8 +62,16 @@ void TestBufferWriter::testAppendPrivate_WithoutScratchpad()
   {
     CPPUNIT_ASSERT(buffWriter.append((void *)&i, memSize));
   }
-  
+
+  CPPUNIT_ASSERT(buffWriter.close());
   int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
+
+      DebugCode(
+      std::cout << "Buffer " << '\n';
+      for (int i = 0; i < numberElements; i++)
+          std::cout
+      << rdma_buffer[i] << ' ';);
+
 
   //ASSERT
   for (uint32_t j = 0; j < numberSegments; j++)

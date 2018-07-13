@@ -34,6 +34,7 @@ class BufferWriterShared : public BufferWriterInterface
                 return false;
             }
         }
+        
         auto segment = m_handle->segments.back();
         // std::cout << "Segment offset: " << segment.offset << '\n';
         auto writeOffset = modifyCounter(size, segment.offset);
@@ -123,6 +124,10 @@ class BufferWriterShared : public BufferWriterInterface
             return false;
         }
         return true;
+    }
+
+    bool super_close(){
+            return true;
     }
 
     inline uint64_t modifyCounter(int64_t value, size_t segmentOffset)

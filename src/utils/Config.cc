@@ -9,7 +9,8 @@ using namespace dpi;
 int Config::HELLO_PORT = 4001;
 
 //DPI
-string Config::DPI_REGISTRY_SERVER = "127.0.0.1";
+string Config::DPI_REGISTRY_SERVER = "10.116.60.3";
+// string Config::DPI_REGISTRY_SERVER = "127.0.0.1";
 uint32_t Config::DPI_REGISTRY_PORT = 5300;
 uint32_t Config::DPI_NODE_PORT = 5400;
 
@@ -20,17 +21,18 @@ uint32_t Config::DPI_NODE_PORT = 5400;
  * IP is Config::DPI_NODES[(nodeid:1) - 1] => use the function 
  * getIPFromNodeId(1) to retrieve the IP
  */
-vector<string> Config::DPI_NODES = {  "127.0.0.1:"
+// vector<string> Config::DPI_NODES = {  "127.0.0.1:"
+//     + to_string(Config::DPI_NODE_PORT) };
+vector<string> Config::DPI_NODES = {  "10.116.60.3:"
     + to_string(Config::DPI_NODE_PORT) };
 
 
 
-
-uint32_t Config::DPI_SCRATCH_PAD_SIZE = 1024;
-uint32_t Config::DPI_SEGMENT_SIZE = (1024 * 1024 * 100) + sizeof(DPI_SEGMENT_HEADER_t);
+uint32_t Config::DPI_SCRATCH_PAD_SIZE = 1024 * 1024 * 1;
+uint32_t Config::DPI_SEGMENT_SIZE = (1024 * 1024 * 512) + sizeof(DPI_SEGMENT_HEADER_t);
 
 //RDMA
-size_t Config::RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 1;  //1GB
+size_t Config::RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 5;  //1GB
 uint32_t Config::RDMA_NUMAREGION = 1;
 uint32_t Config::RDMA_DEVICE = 1;
 uint32_t Config::RDMA_IBPORT = 1;
@@ -39,8 +41,7 @@ uint32_t Config::RDMA_MAX_WR = 4096;
 
 
 //THREADING
-vector<int> Config::THREAD_CPUS = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 20, 21, 22,
-    23, 24, 25, 26, 27, 28, 29 };
+vector<int> Config::THREAD_CPUS = { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39 };
 
 //LOGGING
 int Config::LOGGING_LEVEL = 1;

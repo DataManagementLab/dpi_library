@@ -27,6 +27,9 @@ class BufferWriterInterface
 
     virtual bool super_append(size_t size, size_t scratchPadOffset = 0) = 0;
 
+    virtual bool super_close() = 0;
+
+
   protected:
     void setScratchpad(void *scratchPad)
     {
@@ -51,7 +54,7 @@ class BufferWriterInterface
     }
 
     
-    inline bool __attribute__((always_inline)) writeToSegment(BufferSegment &segment, size_t offset, size_t size , size_t scratchPadOffset = 0, bool signaled=true)
+    inline bool __attribute__((always_inline)) writeToSegment(BufferSegment &segment, size_t offset, size_t size , size_t scratchPadOffset = 0, bool signaled=false)
     {
         void* scratch_tmp = (void*) ((char*)m_scratchPad + scratchPadOffset);
         return m_rdmaClient->writeRC(m_handle->node_id, segment.offset + offset + sizeof(Config::DPI_SEGMENT_HEADER_t), scratch_tmp , size, signaled);

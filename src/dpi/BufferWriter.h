@@ -58,6 +58,10 @@ class BufferWriter : public base
     {
         return this->m_scratchPad;
     }
+
+    bool close(){
+        return this->super_close();
+    }
 };
 
 } // namespace dpi
