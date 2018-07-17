@@ -25,7 +25,7 @@ DPIAppendBenchmarkThread::DPIAppendBenchmarkThread(NodeID nodeid, string &conns,
   {
     std::cout << "To be Impelemented" << '\n';
   }
-  m_bufferWriter = new BufferWriter<BufferWriterPrivate>(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, m_regClient);
+  m_bufferWriter = new BufferWriter<BufferWriterPrivate>(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
   std::cout << "DPI append Thread constructed" << '\n';
 }
 
@@ -46,13 +46,13 @@ void DPIAppendBenchmarkThread::run()
   lck.unlock();
 
   std::cout << "Benchmark Started" << '\n';
-  void *scratchPad = m_bufferWriter->getScratchPad();
+  void *scratchPad = malloc(m_size);
   memset(scratchPad, 1, m_size);
 
   startTimer();
   for (size_t i = 0; i <= m_iter; i++)
   {
-    m_bufferWriter->appendFromScratchpad(m_size);
+    m_bufferWriter->append(scratchPad, m_size);
   }
 
   m_bufferWriter->close();

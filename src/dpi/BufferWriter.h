@@ -18,45 +18,31 @@
 
 namespace dpi
 {
+
+
+
+
 template <class base>
 class BufferWriter : public base
 {
 
   public:
-    BufferWriter(BufferHandle *handle, size_t scratchPadSize = Config::DPI_SCRATCH_PAD_SIZE, RegistryClient *regClient = nullptr)
+    BufferWriter(BufferHandle *handle, size_t scratchPadSize = Config::DPI_INTERNAL_BUFFER_SIZE, RegistryClient *regClient = nullptr)
         : base(handle, scratchPadSize, regClient){};
     ~BufferWriter(){};
 
-    //Append without use of scratchpad. Bad performance!
+    //data: ptr to data, size: size in bytes. return: true if successful, false otherwise
     bool append(void *data, size_t size)
     {
-        while (size > this->m_scratchPadSize)
+        while (size > this->m_internalBuffer->size)
         {
             // update size move pointer
-            size = size - this->m_scratchPadSize;
-            memcpy(this->m_scratchPad, data, this->m_scratchPadSize);
-            data = ((char *)data + this->m_scratchPadSize);
-            if (!this->super_append(this->m_scratchPadSize))
+            size = size - this->m_internalBuffer->size;
+            if (!this->super_append(data, this->m_internalBuffer->size))
                 return false;
+            data = ((char *)data + this->m_internalBuffer->size);
         }
-        memcpy(this->m_scratchPad, data, size);
-        return this->super_append(size);
-    }
-
-    //Append with scratchpad
-    bool appendFromScratchpad(size_t size)
-    {
-        if (size > this->m_scratchPadSize)
-        {
-            std::cerr << "The size specified exceeds size of scratch pad size" << std::endl;
-            return false;
-        }
-        return this->super_append(size);
-    }
-
-    void *getScratchPad()
-    {
-        return this->m_scratchPad;
+        return this->super_append(data, size);
     }
 
     bool close(){

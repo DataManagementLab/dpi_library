@@ -8,26 +8,25 @@ class BufferWriterShared : public BufferWriterInterface
 {
 
   public:
-    BufferWriterShared(BufferHandle *handle, size_t scratchPadSize, RegistryClient *regClient = nullptr) : BufferWriterInterface(handle, scratchPadSize, regClient)
+    BufferWriterShared(BufferHandle *handle, size_t internalBufferSize, RegistryClient *regClient = nullptr) : BufferWriterInterface(handle, internalBufferSize, regClient)
     {
-        m_rdmaHeader = (Config::DPI_SEGMENT_HEADER_t *)m_rdmaClient->localAlloc(sizeof(Config::DPI_SEGMENT_HEADER_t));
     };
 
-    ~BufferWriterShared()
-    {
-        if (m_scratchPad != nullptr)
-        {
-            m_rdmaClient->localFree(m_scratchPad);
-        }
-        m_scratchPad = nullptr;
-        delete m_rdmaClient;
-    };
+    // ~BufferWriterShared()
+    // {
+    //     if (this->m_internalBuffer != nullptr || this->m_internalBuffer->dataPtr != nullptr)
+    //     {
+    //         m_rdmaClient->localFree(this->m_internalBuffer->dataPtr);
+    //     }
+    //     delete m_rdmaClient;
+    // };
 
-    bool super_append(size_t size, size_t scratchPadOffset = 0)
+    bool super_append(void *data, size_t size)
     {
+        std::cout << "appending" << " size: " << size << '\n';
         if (m_handle->segments.empty())
         {
-            // std::cout << "Empty Segment" << '\n';
+            std::cout << "Empty Segment" << '\n';
             BufferSegment newSegment;
             if (!allocRemoteSegment(newSegment))
             {
@@ -36,15 +35,15 @@ class BufferWriterShared : public BufferWriterInterface
         }
         
         auto segment = m_handle->segments.back();
-        // std::cout << "Segment offset: " << segment.offset << '\n';
+        std::cout << "Segment offset: " << segment.offset << '\n';
         auto writeOffset = modifyCounter(size, segment.offset);
         uint64_t nextOffset = writeOffset + size;
 
         // Case 1: Data fits below threshold
         if (nextOffset < segment.threshold)
         {
-            // std::cout << "Case 1" << '\n';
-            if (!writeToSegment(segment, writeOffset, size, scratchPadOffset))
+            std::cout << "Case 1" << '\n';
+            if (!writeToSegment(segment, writeOffset, size, data))
             {
                 return false;
             }
@@ -52,8 +51,8 @@ class BufferWriterShared : public BufferWriterInterface
         // Case 2: Data fits in segment but new segment is allocated by someone else
         else if (writeOffset > segment.threshold && nextOffset <= segment.size)
         {
-            // std::cout << "Case 2" << '\n';
-            if (!writeToSegment(segment, writeOffset, size, scratchPadOffset))
+            std::cout << "Case 2" << '\n';
+            if (!writeToSegment(segment, writeOffset, size, data))
             {
                 return false;
             }
@@ -61,7 +60,7 @@ class BufferWriterShared : public BufferWriterInterface
         // Case 3: Data fits in segment and exceeds threshold -> allocating new segment
         else if (segment.size >= nextOffset && nextOffset >= segment.threshold && writeOffset <= segment.threshold)
         {
-            // std::cout << "Case 3" << '\n';
+            std::cout << "Case 3" << '\n';
             auto hasFollowSegment = setHasFollowSegment(segment.offset);
             if (hasFollowSegment == 0)
             {
@@ -71,7 +70,7 @@ class BufferWriterShared : public BufferWriterInterface
                     return false;
                 }
             }
-            if (!writeToSegment(segment, writeOffset, size, scratchPadOffset))
+            if (!writeToSegment(segment, writeOffset, size, data))
             {
                 return false;
             }
@@ -86,7 +85,7 @@ class BufferWriterShared : public BufferWriterInterface
             size_t firstPartSize = segment.size - writeOffset;
             size_t rest = nextOffset - segment.size;
 
-            if (!writeToSegment(segment, writeOffset, firstPartSize, scratchPadOffset))
+            if (!writeToSegment(segment, writeOffset, firstPartSize, data))
             {
                 return false;
             }
@@ -102,13 +101,13 @@ class BufferWriterShared : public BufferWriterInterface
                 {
                     return false;
                 }
-                return super_append(size, firstPartSize);
+                return super_append((void*) ((char*)data + firstPartSize), size - firstPartSize);
             }
             else
             {
                 // std::cout << "Case 4.2" << '\n';
                 m_handle = m_regClient->retrieveBuffer(m_handle->name);
-                return super_append(size);
+                return super_append(data, size);
             }
         }
         // counter exceeded segment size therefore retrieve and start over
@@ -116,26 +115,26 @@ class BufferWriterShared : public BufferWriterInterface
         {
             modifyCounter(-size, segment.offset);
             m_handle = m_regClient->retrieveBuffer(m_handle->name);
-            return super_append(size);
+            return super_append(data, size);
         }
         else
         {
-            // std::cout << "Case 5: Should not happen" << '\n';
+            std::cout << "Case 5: Should not happen" << '\n';
             return false;
         }
         return true;
     }
 
     bool super_close(){
-            return true;
+        return true;
     }
 
     inline uint64_t modifyCounter(int64_t value, size_t segmentOffset)
     {
-
+        // std::cout << "m_rdmaHeader->counter: " << m_rdmaHeader->counter << '\n';
         while (!m_rdmaClient->fetchAndAdd(m_handle->node_id, segmentOffset + Config::DPI_SEGMENT_HEADER_META::getCounterOffset, 
         (void *)&m_rdmaHeader->counter, value, sizeof(uint64_t), true))
-            ;
+        ;
 
         return Network::bigEndianToHost(m_rdmaHeader->counter);
     }
@@ -149,8 +148,14 @@ class BufferWriterShared : public BufferWriterInterface
         return Network::bigEndianToHost(m_rdmaHeader->hasFollowSegment);
     }
 
+    inline bool __attribute__((always_inline)) writeToSegment(BufferSegment &segment, size_t insideSegOffset, size_t size, void* data)
+    {
+        memcpy(m_internalBuffer->bufferPtr, data, size);
+
+        return m_rdmaClient->writeRC(m_handle->node_id, segment.offset + insideSegOffset + sizeof(Config::DPI_SEGMENT_HEADER_t), m_internalBuffer->bufferPtr , size, false);
+    }
+
   private:
-    Config::DPI_SEGMENT_HEADER_t *m_rdmaHeader = nullptr;
 };
 
 } // namespace dpi

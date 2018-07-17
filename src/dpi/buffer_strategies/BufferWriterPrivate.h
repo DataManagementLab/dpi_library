@@ -10,30 +10,19 @@ class BufferWriterPrivate : public BufferWriterInterface
 {
 
   public:
-    BufferWriterPrivate(BufferHandle *handle, size_t scratchPadSize, RegistryClient *regClient = nullptr) : BufferWriterInterface(handle, scratchPadSize, regClient){
-        m_rdmaHeader = (Config::DPI_SEGMENT_HEADER_t *)m_rdmaClient->localAlloc(sizeof(Config::DPI_SEGMENT_HEADER_t));
-    };
+    BufferWriterPrivate(BufferHandle *handle, size_t internalBufferSize, RegistryClient *regClient = nullptr) : BufferWriterInterface(handle, internalBufferSize, regClient){};
 
-    ~BufferWriterPrivate()
-    {
-        if (m_scratchPad != nullptr)
-        {
-            m_rdmaClient->localFree(m_scratchPad);
-        }
-        m_scratchPad = nullptr;
-        delete m_rdmaClient;
-    };
 
     // ToDo flag to change signaled.
-    bool super_append(size_t size, size_t scratchPadOffset = 0)
+    bool super_append(void *data, size_t size)
     {
 
         if (m_localBufferSegment == nullptr)
-        {   
+        {
             m_localBufferSegment = new BufferSegment();
             if (!allocRemoteSegment(*m_localBufferSegment))
-            {   
-                 std::cout << "Failed to allocate new segment" << '\n'; //todo: should do a fatal log
+            {
+                std::cout << "Failed to allocate new segment" << '\n'; //todo: should do a fatal log
                 return false;
             }
             m_handle->segments.push_back(*m_localBufferSegment);
@@ -44,7 +33,7 @@ class BufferWriterPrivate : public BufferWriterInterface
         {
             size_t firstPartSize = m_localBufferSegment->size - m_sizeUsed;
 
-            if (!writeToSegment(*m_localBufferSegment, m_sizeUsed, firstPartSize, scratchPadOffset, true))
+            if (!writeToSegment(*m_localBufferSegment, m_sizeUsed, firstPartSize, data))
             {
                 return false;
             }
@@ -60,11 +49,11 @@ class BufferWriterPrivate : public BufferWriterInterface
             m_sizeUsed = 0;
             m_rdmaHeader->hasFollowSegment = 0;
             m_rdmaHeader->counter = 0;
-            
-            return super_append(size, firstPartSize);
+
+            return super_append((void*) ((char*)data + firstPartSize), size - firstPartSize);
         }
 
-        if (!writeToSegment(*m_localBufferSegment, m_sizeUsed, size, 0, true))
+        if (!writeToSegment(*m_localBufferSegment, m_sizeUsed, size, data))
         {
             std::cout << "failed to write to segmnet" << '\n'; //todo: should do a fatal log
             return false;
@@ -74,24 +63,46 @@ class BufferWriterPrivate : public BufferWriterInterface
         return true;
     };
 
-    bool super_close(){
+    bool super_close()
+    {
         m_rdmaHeader->counter = m_sizeUsed;
-        if (m_localBufferSegment == nullptr) return true;
+        if (m_localBufferSegment == nullptr)
+            return true;
         return writeHeaderToRemote(m_localBufferSegment->offset);
     }
 
   protected:
-    BufferSegment* m_localBufferSegment = nullptr;
 
-  inline bool __attribute__((always_inline)) writeHeaderToRemote( size_t segmentOffset)
+    inline bool __attribute__((always_inline)) writeToSegment(BufferSegment &segment, size_t insideSegOffset, size_t size, void *data)
     {
+        // std::cout << "Writing to segment, size: " << size << " insideSegOffset: " << insideSegOffset << " circular buf size: " << m_internalBuffer->size << " size + m_internalBuffer->offset: " << size + m_internalBuffer->offset << " data: " << ((int*)data)[0] << '\n';
+        if (size + m_internalBuffer->offset <= m_internalBuffer->size)
+        {
+            // std::cout << "Fit into circular buffer" << '\n';
+            memcpy((void *)((char *)m_internalBuffer->bufferPtr + m_internalBuffer->offset), data, size);
+        }
+        else
+        {
+            // std::cout << "Does not fit into circular buffer, sending header first" << '\n';
+            writeHeaderToRemote(segment.offset); //Writing to the header is signalled, i.e. call only returns when all prior writes are sent
+            memcpy(m_internalBuffer->bufferPtr, data, size);
+            m_internalBuffer->offset = 0;
+        }
 
-        return m_rdmaClient->writeRC(m_handle->node_id, segmentOffset , (void*)m_rdmaHeader, sizeof(Config::DPI_SEGMENT_HEADER_t), true);
+        void *bufferTmp = (void *)((char *)m_internalBuffer->bufferPtr + m_internalBuffer->offset);
+        m_internalBuffer->offset += size;
+
+        return m_rdmaClient->writeRC(m_handle->node_id, segment.offset + insideSegOffset + sizeof(Config::DPI_SEGMENT_HEADER_t), bufferTmp, size, false);
     }
-   
+
+    inline bool __attribute__((always_inline)) writeHeaderToRemote(size_t remoteSegOffset)
+    {
+        return m_rdmaClient->writeRC(m_handle->node_id, remoteSegOffset, (void *)m_rdmaHeader, sizeof(Config::DPI_SEGMENT_HEADER_t), true);
+    }
+
   private:
+    BufferSegment *m_localBufferSegment = nullptr;
     size_t m_sizeUsed = 0;
-    Config::DPI_SEGMENT_HEADER_t* m_rdmaHeader;
 }; // namespace dpi
 
 } // namespace dpi

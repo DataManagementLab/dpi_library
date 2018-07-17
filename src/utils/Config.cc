@@ -9,7 +9,7 @@ using namespace dpi;
 int Config::HELLO_PORT = 4001;
 
 //DPI
-string Config::DPI_REGISTRY_SERVER = "10.116.60.3";
+string Config::DPI_REGISTRY_SERVER = "10.116.60.16";
 // string Config::DPI_REGISTRY_SERVER = "127.0.0.1";
 uint32_t Config::DPI_REGISTRY_PORT = 5300;
 uint32_t Config::DPI_NODE_PORT = 5400;
@@ -23,12 +23,12 @@ uint32_t Config::DPI_NODE_PORT = 5400;
  */
 // vector<string> Config::DPI_NODES = {  "127.0.0.1:"
 //     + to_string(Config::DPI_NODE_PORT) };
-vector<string> Config::DPI_NODES = {  "10.116.60.3:"
+vector<string> Config::DPI_NODES = {  "10.116.60.16:"
     + to_string(Config::DPI_NODE_PORT) };
 
 
 
-uint32_t Config::DPI_SCRATCH_PAD_SIZE = 1024 * 1024 * 1;
+uint32_t Config::DPI_INTERNAL_BUFFER_SIZE = 1024 * 1024 * 1;
 uint32_t Config::DPI_SEGMENT_SIZE = (1024 * 1024 * 512) + sizeof(DPI_SEGMENT_HEADER_t);
 
 //RDMA

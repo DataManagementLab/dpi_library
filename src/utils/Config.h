@@ -135,7 +135,7 @@ class Config
     static vector<string> DPI_NODES;
 
     static uint32_t DPI_NODE_PORT;
-    static uint32_t DPI_SCRATCH_PAD_SIZE;
+    static uint32_t DPI_INTERNAL_BUFFER_SIZE;
     static uint32_t DPI_SEGMENT_SIZE;
 
     /**

@@ -11,12 +11,10 @@
 
 class TestBufferWriter : public CppUnit::TestFixture {
 DPI_UNIT_TEST_SUITE(TestBufferWriter);
-  DPI_UNIT_TEST(testAppendPrivate_WithScratchpad);
-  DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad);
-  DPI_UNIT_TEST(testAppendPrivate_MultipleClients_WithScratchpad); 
-  DPI_UNIT_TEST(testAppendPrivate_SizeTooBigForScratchpad);
   DPI_UNIT_TEST(testBuffer);
-  DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad_splitData);
+  DPI_UNIT_TEST(testAppendPrivate_SingleInts);
+  DPI_UNIT_TEST(testAppendPrivate_SplitData);
+  DPI_UNIT_TEST(testAppendPrivate_SimpleData);
   DPI_UNIT_TEST(testAppendPrivate_MultipleConcurrentClients);    
   DPI_UNIT_TEST(testAppendShared_AtomicHeaderManipulation);
   DPI_UNIT_TEST(testAppendShared_MultipleConcurrentClients);  
@@ -27,17 +25,14 @@ DPI_UNIT_TEST_SUITE_END();
   void tearDown();
 
   // Private Strategy
-  void testAppendPrivate_WithScratchpad();
-  void testAppendPrivate_WithoutScratchpad_splitData();
-  void testAppendPrivate_WithoutScratchpad();
-  void testAppendPrivate_MultipleClients_WithScratchpad();
-  void testAppendPrivate_SizeTooBigForScratchpad();
-  void testAppendPrivate_MultipleConcurrentClients();
   void testBuffer();
+  void testAppendPrivate_SingleInts();
+  void testAppendPrivate_SplitData();
+  void testAppendPrivate_SimpleData();
+  void testAppendPrivate_MultipleConcurrentClients();
 
   // Shared Strategy
   void testAppendShared_AtomicHeaderManipulation();
-  void testAppendShared_WithScratchpad();
   void testAppendShared_MultipleConcurrentClients();
 
 
@@ -68,6 +63,7 @@ public:
 
   bool registerBuffer(BufferHandle* handle)
   {
+    std::cout << "Register Buffer" << '\n';
     BufferHandle* copy_buffHandle = new BufferHandle(handle->name, handle->node_id);
     for(auto segment : handle->segments){
       copy_buffHandle->segments.push_back(segment); 
@@ -77,6 +73,7 @@ public:
   }
   BufferHandle* retrieveBuffer(string& name)
   {
+    std::cout << "Retrieve Buffer" << '\n';
     (void) name;
     //Copy a new BufferHandle to emulate distributed setting (Or else one nodes changes to the BufferHandle would affect another nodes BufferHandle without retrieving the buffer first)
     BufferHandle*  copy_buffHandle = new BufferHandle(m_buffHandle->name, m_buffHandle->node_id);
@@ -87,6 +84,7 @@ public:
   }
   bool appendSegment(string& name, BufferSegment& segment)
   {
+    std::cout << "Appending segment to buffer" << '\n';
     //Implement locking if stub should support concurrent appending of segments.
     (void) name;
     appendSegMutex.lock();
@@ -131,7 +129,7 @@ public:
   {
     //ARRANGE
 
-    BufferWriter<Strategy> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, regClient);
+    BufferWriter<Strategy> buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, regClient);
 
     barrier_wait();
 
