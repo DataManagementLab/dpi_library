@@ -11,6 +11,7 @@
 #include "thread/TestThread.h"
 #include "dpi/TestRegistryClient.h"
 #include "dpi/TestBufferWriter.h"
+#include "dpi/IntegrationTestsAppend.h"
 
 
 #endif /* TESTS_H_ */

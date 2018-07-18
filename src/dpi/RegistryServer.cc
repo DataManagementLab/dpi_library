@@ -147,13 +147,13 @@ BufferHandle *RegistryServer::createBuffer(string &name, NodeID node_id, size_t 
     size_t offset = 0;
     string connection = Config::getIPFromNodeId(node_id);
     std::cout << "Connection " << connection << '\n';
-    if (!m_rdmaClient->remoteAlloc(connection, size, offset))
+    if (!m_rdmaClient->remoteAlloc(connection, size + sizeof(Config::DPI_SEGMENT_HEADER_t), offset))
     {
         return nullptr;
     }
 
     BufferHandle buffHandle(name, node_id);
-    BufferSegment BufferSegment(offset, size, threshold);
+    BufferSegment BufferSegment(offset, size, threshold); //lthostrup: todo encapsulate size of header into segment
     buffHandle.segments.push_back(BufferSegment);
     m_bufferHandles[name] = buffHandle;
     return &m_bufferHandles[name];
@@ -175,5 +175,7 @@ bool RegistryServer::appendSegment(string &name, BufferSegment *segment)
         return false;
     }
     m_bufferHandles[name].segments.push_back(*segment);
+    DPI_DEBUG("Registry Server: Appended new segment to %s \n", name.c_str());
+    DPI_DEBUG("Segment offset: %i, size: %i \n", (*segment).offset, (*segment).size);
     return true;
 };

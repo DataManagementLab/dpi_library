@@ -15,7 +15,8 @@ DPI_UNIT_TEST_SUITE(TestBufferWriter);
   DPI_UNIT_TEST(testAppendPrivate_SingleInts);
   DPI_UNIT_TEST(testAppendPrivate_SplitData);
   DPI_UNIT_TEST(testAppendPrivate_SimpleData);
-  DPI_UNIT_TEST(testAppendPrivate_MultipleConcurrentClients);    
+  DPI_UNIT_TEST(testAppendPrivate_MultipleConcurrentClients);
+  DPI_UNIT_TEST(testAppendShared_SimpleData);
   DPI_UNIT_TEST(testAppendShared_AtomicHeaderManipulation);
   DPI_UNIT_TEST(testAppendShared_MultipleConcurrentClients);  
 DPI_UNIT_TEST_SUITE_END();
@@ -32,6 +33,7 @@ DPI_UNIT_TEST_SUITE_END();
   void testAppendPrivate_MultipleConcurrentClients();
 
   // Shared Strategy
+  void testAppendShared_SimpleData();
   void testAppendShared_AtomicHeaderManipulation();
   void testAppendShared_MultipleConcurrentClients();
 
@@ -58,6 +60,7 @@ public:
     (void) threshold;
  
     m_buffHandle = new BufferHandle(name, node_id);
+    
     return m_buffHandle;
   }
 

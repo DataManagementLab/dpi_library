@@ -14,18 +14,20 @@ DPIAppendBenchmarkThread::DPIAppendBenchmarkThread(NodeID nodeid, string &conns,
   m_nodeId = nodeid;
   m_conns = conns;
   string bufferName = "appendBenchmark";
-  BufferHandle *buffHandle = new BufferHandle(bufferName, 1);
+  BufferHandle *buffHandle;
   m_regClient = new RegistryClient();
 
   if (m_nodeId == 1)
   {
-    m_regClient->createBuffer(bufferName, m_nodeId, (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)), Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR);
+    buffHandle = m_regClient->createBuffer(bufferName, m_nodeId, (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)), Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR);
   }
   else
   {
+    usleep(100000);
+    buffHandle = m_regClient->retrieveBuffer(bufferName);
     std::cout << "To be Impelemented" << '\n';
   }
-  m_bufferWriter = new BufferWriter<BufferWriterPrivate>(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
+  m_bufferWriter = new BufferWriter<BufferWriterShared>(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
   std::cout << "DPI append Thread constructed" << '\n';
 }
 

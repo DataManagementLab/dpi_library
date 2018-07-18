@@ -34,7 +34,7 @@ public:
 
 private:
   bool m_ready = false;
-  BufferWriter<BufferWriterPrivate>* m_bufferWriter = nullptr; 
+  BufferWriter<BufferWriterShared>* m_bufferWriter = nullptr; 
   RegistryClient* m_regClient = nullptr;
   void *m_data;
   size_t m_size;

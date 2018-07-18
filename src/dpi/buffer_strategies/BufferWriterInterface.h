@@ -62,7 +62,7 @@ class BufferWriterInterface
             return false;
         }
 
-        DPI_DEBUG("Remote Offset for segment is %i \n" , remoteOffset );
+        DPI_DEBUG("Remote Offset for segment is %zu \n" , remoteOffset );
         newSegment_ret.offset = remoteOffset;
         newSegment_ret.size = Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t);
         newSegment_ret.threshold = Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR;

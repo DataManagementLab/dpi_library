@@ -85,7 +85,7 @@ using namespace std;
 #endif
 
 
-#define DPI_DEBUG_LEVEL 0
+#define DPI_DEBUG_LEVEL 1
 
 #ifdef DPI_DEBUG_LEVEL
 #define DPI_DEBUG(X, ...) if(DPI_DEBUG_LEVEL>0) {fprintf(stdout, X, ##__VA_ARGS__); fflush(stdout);}

@@ -9,40 +9,28 @@ class BufferWriterShared : public BufferWriterInterface
 
   public:
     BufferWriterShared(BufferHandle *handle, size_t internalBufferSize, RegistryClient *regClient = nullptr) : BufferWriterInterface(handle, internalBufferSize, regClient)
-    {
-    };
-
-    // ~BufferWriterShared()
-    // {
-    //     if (this->m_internalBuffer != nullptr || this->m_internalBuffer->dataPtr != nullptr)
-    //     {
-    //         m_rdmaClient->localFree(this->m_internalBuffer->dataPtr);
-    //     }
-    //     delete m_rdmaClient;
-    // };
-
-    bool super_append(void *data, size_t size)
-    {
-        std::cout << "appending" << " size: " << size << '\n';
+    {        
         if (m_handle->segments.empty())
         {
             std::cout << "Empty Segment" << '\n';
             BufferSegment newSegment;
             if (!allocRemoteSegment(newSegment))
             {
-                return false;
+                return;
             }
+            m_handle->segments.push_back(newSegment);
         }
-        
+    };
+
+    bool super_append(void *data, size_t size)
+    {
         auto segment = m_handle->segments.back();
-        std::cout << "Segment offset: " << segment.offset << '\n';
         auto writeOffset = modifyCounter(size, segment.offset);
         uint64_t nextOffset = writeOffset + size;
-
         // Case 1: Data fits below threshold
         if (nextOffset < segment.threshold)
         {
-            std::cout << "Case 1" << '\n';
+            // std::cout << "Case 1" << '\n';
             if (!writeToSegment(segment, writeOffset, size, data))
             {
                 return false;
@@ -51,7 +39,7 @@ class BufferWriterShared : public BufferWriterInterface
         // Case 2: Data fits in segment but new segment is allocated by someone else
         else if (writeOffset > segment.threshold && nextOffset <= segment.size)
         {
-            std::cout << "Case 2" << '\n';
+            // std::cout << "Case 2" << '\n';
             if (!writeToSegment(segment, writeOffset, size, data))
             {
                 return false;
@@ -60,7 +48,7 @@ class BufferWriterShared : public BufferWriterInterface
         // Case 3: Data fits in segment and exceeds threshold -> allocating new segment
         else if (segment.size >= nextOffset && nextOffset >= segment.threshold && writeOffset <= segment.threshold)
         {
-            std::cout << "Case 3" << '\n';
+            // std::cout << "Case 3" << '\n';
             auto hasFollowSegment = setHasFollowSegment(segment.offset);
             if (hasFollowSegment == 0)
             {
@@ -75,7 +63,6 @@ class BufferWriterShared : public BufferWriterInterface
                 return false;
             }
         }
-        // To do split it up
         // Case 4: Data exceeds segment but some still fit into the old segment
         // split up
         else if (nextOffset > segment.size && writeOffset < segment.size)
@@ -113,13 +100,15 @@ class BufferWriterShared : public BufferWriterInterface
         // counter exceeded segment size therefore retrieve and start over
         else if (writeOffset >= segment.size)
         {
+            // std::cout << "counter exceeded segment size therefore retrieve and start over" << '\n';  
             modifyCounter(-size, segment.offset);
             m_handle = m_regClient->retrieveBuffer(m_handle->name);
+
             return super_append(data, size);
         }
         else
         {
-            std::cout << "Case 5: Should not happen" << '\n';
+            // std::cout << "Case 5: Should not happen" << '\n';
             return false;
         }
         return true;
@@ -131,8 +120,7 @@ class BufferWriterShared : public BufferWriterInterface
 
     inline uint64_t modifyCounter(int64_t value, size_t segmentOffset)
     {
-        // std::cout << "m_rdmaHeader->counter: " << m_rdmaHeader->counter << '\n';
-        while (!m_rdmaClient->fetchAndAdd(m_handle->node_id, segmentOffset + Config::DPI_SEGMENT_HEADER_META::getCounterOffset, 
+        while (!m_rdmaClient->fetchAndAdd(Config::getIPFromNodeId(m_handle->node_id), segmentOffset + Config::DPI_SEGMENT_HEADER_META::getCounterOffset, 
         (void *)&m_rdmaHeader->counter, value, sizeof(uint64_t), true))
         ;
 

@@ -292,6 +292,55 @@ void TestBufferWriter::testAppendPrivate_MultipleConcurrentClients()
   }
 }
 
+
+void TestBufferWriter::testAppendShared_SimpleData()
+{
+  //ARRANGE
+  string bufferName = "buffer1";
+  NodeID nodeId = 1;
+  size_t remoteOffset = 0;
+  size_t memSize = sizeof(int);
+
+  uint32_t numberSegments = 2;
+  size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / memSize * numberSegments;
+
+  BufferHandle *buffHandle = new BufferHandle(bufferName, nodeId);
+  m_stub_regClient->createBuffer(bufferName, nodeId, (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)),Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR);
+  BufferWriter<BufferWriterShared> buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
+
+  //ACT
+  for (int i = 0; i < numberElements; i++)
+  {
+    CPPUNIT_ASSERT(m_nodeClient->dpi_append(&buffWriter, (void *)&i, memSize));
+  }
+
+  CPPUNIT_ASSERT(buffWriter.close());
+  int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
+  
+  
+  for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
+  {
+    std::cout << rdma_buffer[i] << " ";
+  }
+  
+  //ASSERT
+  for (uint32_t j = 0; j < numberSegments; j++)
+  {
+    //Assert header
+    Config::DPI_SEGMENT_HEADER_t *header = (Config::DPI_SEGMENT_HEADER_t *) &(rdma_buffer[j*Config::DPI_SEGMENT_SIZE / memSize]);
+    CPPUNIT_ASSERT_EQUAL((uint64_t)(Config::DPI_SEGMENT_SIZE- sizeof(Config::DPI_SEGMENT_HEADER_t)), header[0].counter);
+    CPPUNIT_ASSERT_EQUAL((uint64_t)1, header[0].hasFollowSegment);
+
+    //Assert data
+    int expected = 0;
+    for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / memSize; i < (numberElements / numberSegments); i++)
+    {
+      CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[i]);
+      expected++;
+    }
+  }
+}
+
 void TestBufferWriter::testAppendShared_MultipleConcurrentClients()
 {
   //ARRANGE

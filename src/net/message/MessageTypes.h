@@ -65,7 +65,7 @@ public:
     return anyMessage;
   }
 
-  static Any createDPIRegisterBufferRequest(string &name, NodeID node_id, size_t offset, size_t size, size_t threshold)
+  static Any createDPIRegisterBufferRequest(string &name, NodeID node_id)
   {
     DPIAppendBufferRequest appendBufferReq;
     appendBufferReq.set_name(name);
@@ -73,9 +73,6 @@ public:
     appendBufferReq.set_register_(true);
 
     DPIAppendBufferRequest_Segment *segmentReq = appendBufferReq.add_segment();
-    segmentReq->set_offset(offset);
-    segmentReq->set_size(size);
-    segmentReq->set_threshold(threshold);
     Any anyMessage;
     anyMessage.PackFrom(appendBufferReq);
     return anyMessage;

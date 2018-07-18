@@ -95,6 +95,9 @@ static void runtest(int t)
     case 202:
         runner.addTest(TestRegistryClient::suite());
         break;
+    case 203:
+        runner.addTest(IntegrationTestsAppend::suite());
+        break;
     default:
         cout << "No test with number " << t << " exists." << endl;
         return;
