@@ -171,7 +171,8 @@ void DPIAppendBenchmark::runClient()
   }
 
   //wait for user input
-  waitForUser();
+  //waitForUser();
+  usleep(10000000);
 
   //send signal to run benchmark
   DPIAppendBenchmark::signaled = false;
