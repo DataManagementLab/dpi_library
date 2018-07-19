@@ -13,6 +13,7 @@ DPIAppendBenchmarkThread::DPIAppendBenchmarkThread(NodeID nodeid, string &conns,
   m_iter = iter;
   m_nodeId = nodeid;
   m_conns = conns;
+  
   string bufferName = "appendBenchmark";
   BufferHandle *buffHandle;
   m_regClient = new RegistryClient();
@@ -25,7 +26,6 @@ DPIAppendBenchmarkThread::DPIAppendBenchmarkThread(NodeID nodeid, string &conns,
   {
     usleep(100000);
     buffHandle = m_regClient->retrieveBuffer(bufferName);
-    std::cout << "To be Impelemented" << '\n';
   }
   m_bufferWriter = new BufferWriter<BufferWriterShared>(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
   std::cout << "DPI append Thread constructed" << '\n';
@@ -65,6 +65,14 @@ DPIAppendBenchmark::DPIAppendBenchmark(config_t config, bool isClient)
     : DPIAppendBenchmark(config.server, config.port, config.data, config.iter,
                          config.threads)
 {
+
+  Config::DPI_NODES.clear();
+  string dpiServerNode = config.server + ":" + to_string(config.port);
+  Config::DPI_NODES.push_back(dpiServerNode);
+  std::cout << "connection: " << Config::DPI_NODES.back() << '\n';
+  Config::DPI_REGISTRY_SERVER = config.registryServer;
+  Config::DPI_REGISTRY_PORT = config.registryPort;
+
   this->isClient(isClient);
 
   //check parameters
@@ -107,6 +115,7 @@ DPIAppendBenchmark::~DPIAppendBenchmark()
   {
     if (m_nodeServer != nullptr)
     {
+      std::cout << "stopping node server" << '\n';
       m_nodeServer->stopServer();
       delete m_nodeServer;
     }

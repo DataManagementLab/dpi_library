@@ -46,7 +46,6 @@ vector<int> Config::THREAD_CPUS = { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 30, 
 //LOGGING
 int Config::LOGGING_LEVEL = 1;
 
-
 string& Config::getIPFromNodeId(NodeID& node_id){
   return Config::DPI_NODES.at(node_id -1);
 }

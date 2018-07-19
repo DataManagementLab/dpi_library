@@ -176,6 +176,6 @@ bool RegistryServer::appendSegment(string &name, BufferSegment *segment)
     }
     m_bufferHandles[name].segments.push_back(*segment);
     DPI_DEBUG("Registry Server: Appended new segment to %s \n", name.c_str());
-    DPI_DEBUG("Segment offset: %i, size: %i \n", (*segment).offset, (*segment).size);
+    DPI_DEBUG("Segment offset: %zu, size: %zu \n", (*segment).offset, (*segment).size);
     return true;
 };
