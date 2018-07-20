@@ -19,6 +19,7 @@ struct config_t {
   size_t iter = 100000;
   size_t threads = 1;
   size_t data = 2048;
+  size_t internalBufSize = Config::DPI_INTERNAL_BUFFER_SIZE;
 };
 
 class BenchmarkRunner {
@@ -30,10 +31,10 @@ class BenchmarkRunner {
     while (1) {
       struct option long_options[] = { { "number", required_argument, 0, 'n' },
           { "node server", optional_argument, 0, 's' },  { "port",
-          optional_argument, 0, 'p' }, { "registry server", optional_argument, 0, 'r'}, {"registry port", optional_argument, 0, 'o'}, { "data", optional_argument, 0, 'd' }, {
-              "threads", optional_argument, 0, 't' }, {"iteration", optional_argument, 0, 'i' } };
+          optional_argument, 0, 'p' }, {"internal buffer size", optional_argument, 0, 'b'}, { "registry server", optional_argument, 0, 'r'}, {"registry port", optional_argument, 0, 'o'},
+           { "data", optional_argument, 0, 'd' }, {"threads", optional_argument, 0, 't' }, {"iteration", optional_argument, 0, 'i' } };
 
-      int c = getopt_long(argc, argv, "n:d:s:t:p:i:r:o", long_options, NULL);
+      int c = getopt_long(argc, argv, "n:d:s:t:p:i:r:o:b:", long_options, NULL);
       if (c == -1)
         break;
 
@@ -55,6 +56,11 @@ class BenchmarkRunner {
           break;
         case 'o':
           config.registryPort = strtoul(optarg, NULL, 0);
+          break;
+        case 'b':
+          std::cout << "hit case b" << '\n';
+          config.internalBufSize = strtoul(optarg, NULL, 0);
+          std::cout << "Updated internal buf size to " << config.internalBufSize << '\n';
           break;
         case 't':
           config.threads = strtoul(optarg, NULL, 0);

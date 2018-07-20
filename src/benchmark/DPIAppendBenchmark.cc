@@ -27,7 +27,7 @@ DPIAppendBenchmarkThread::DPIAppendBenchmarkThread(NodeID nodeid, string &conns,
     usleep(100000);
     buffHandle = m_regClient->retrieveBuffer(bufferName);
   }
-  m_bufferWriter = new BufferWriter<BufferWriterShared>(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
+  m_bufferWriter = new BufferWriter<BufferWriterPrivate>(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
   std::cout << "DPI append Thread constructed" << '\n';
 }
 
@@ -72,6 +72,7 @@ DPIAppendBenchmark::DPIAppendBenchmark(config_t config, bool isClient)
   std::cout << "connection: " << Config::DPI_NODES.back() << '\n';
   Config::DPI_REGISTRY_SERVER = config.registryServer;
   Config::DPI_REGISTRY_PORT = config.registryPort;
+  Config::DPI_INTERNAL_BUFFER_SIZE = config.internalBufSize;
 
   this->isClient(isClient);
 
@@ -79,6 +80,7 @@ DPIAppendBenchmark::DPIAppendBenchmark(config_t config, bool isClient)
   if (isClient && config.server.length() > 0)
   {
     std::cout << "Starting DPIAppend Clients" << '\n';
+    std::cout << "Internal buf size: " << Config::DPI_INTERNAL_BUFFER_SIZE << '\n';
     this->isRunnable(true);
   }
   else if (!isClient)
