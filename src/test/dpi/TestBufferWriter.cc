@@ -55,9 +55,10 @@ void TestBufferWriter::testAppendPrivate_SimpleData()
   uint32_t numberSegments = 2;
   size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int) * numberSegments;
 
-  BufferHandle *buffHandle = m_stub_regClient->createBuffer(bufferName, 1, (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)),Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR);
+  BufferHandle *buffHandle = new BufferHandle(bufferName, 1);
+  m_stub_regClient->registerBuffer(buffHandle);
   BufferWriter<BufferWriterPrivate> buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
-  std::cout << "Created private buffer writer object" << '\n';
+
   //ACT
   for (int i = 0; i < numberElements; i++)
   {
@@ -88,7 +89,8 @@ void TestBufferWriter::testAppendPrivate_SplitData()
   size_t numberElements = (Config::DPI_INTERNAL_BUFFER_SIZE / sizeof(int)) * 4;
   uint32_t numberSegments = (numberElements * sizeof(int)) / (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t));
   size_t memSize = numberElements * sizeof(int);
-  BufferHandle *buffHandle = m_stub_regClient->createBuffer(bufferName, 1, (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)),Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR);
+  BufferHandle *buffHandle = new BufferHandle(bufferName, 1);
+  m_stub_regClient->registerBuffer(buffHandle);
   BufferWriter<BufferWriterPrivate> buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
 
   int *data = new int[numberElements];
@@ -131,8 +133,8 @@ void TestBufferWriter::testAppendPrivate_SingleInts()
   size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int) * numberSegments;
   uint64_t expectedCounter = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t));
   uint64_t expectedhasFollowSegment = 1;
-
-  BufferHandle *buffHandle = m_stub_regClient->createBuffer(bufferName, 1, (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)),Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR);
+  BufferHandle *buffHandle = new BufferHandle(bufferName, 1);
+  m_stub_regClient->registerBuffer(buffHandle);
   BufferWriter<BufferWriterPrivate> buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
 
 
@@ -224,10 +226,10 @@ void TestBufferWriter::testAppendPrivate_MultipleConcurrentClients()
       expectedResult.push_back(i);
     }
   }
-
-  m_stub_regClient->createBuffer(bufferName, nodeId, (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)),Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR);
-  BufferHandle *buffHandle1 = new BufferHandle(bufferName, nodeId);
-  BufferHandle *buffHandle2 = new BufferHandle(bufferName, nodeId);
+  BufferHandle *buffHandle = new BufferHandle(bufferName, 1);
+  m_stub_regClient->registerBuffer(buffHandle);
+  BufferHandle *buffHandle1 = m_stub_regClient->retrieveBuffer(bufferName);
+  BufferHandle *buffHandle2 = m_stub_regClient->retrieveBuffer(bufferName);
 
   BufferWriterClient<TestData, BufferWriterPrivate> *client1 = new BufferWriterClient<TestData, BufferWriterPrivate>(m_nodeServer, m_stub_regClient, buffHandle1, dataToWrite);
   BufferWriterClient<TestData, BufferWriterPrivate> *client2 = new BufferWriterClient<TestData, BufferWriterPrivate>(m_nodeServer, m_stub_regClient, buffHandle2, dataToWrite);
@@ -304,8 +306,7 @@ void TestBufferWriter::testAppendShared_SimpleData()
   uint32_t numberSegments = 2;
   size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / memSize * numberSegments;
 
-  BufferHandle *buffHandle = new BufferHandle(bufferName, nodeId);
-  m_stub_regClient->createBuffer(bufferName, nodeId, (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)),Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR);
+  BufferHandle *buffHandle = m_stub_regClient->createBuffer(bufferName, nodeId, (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)),Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR);
   BufferWriter<BufferWriterShared> buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
 
   //ACT
@@ -328,7 +329,7 @@ void TestBufferWriter::testAppendShared_SimpleData()
   {
     //Assert header
     Config::DPI_SEGMENT_HEADER_t *header = (Config::DPI_SEGMENT_HEADER_t *) &(rdma_buffer[j*Config::DPI_SEGMENT_SIZE / memSize]);
-    CPPUNIT_ASSERT_EQUAL((uint64_t)(Config::DPI_SEGMENT_SIZE- sizeof(Config::DPI_SEGMENT_HEADER_t)), header[0].counter);
+    CPPUNIT_ASSERT_EQUAL((uint64_t)(Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)), header[0].counter);
     CPPUNIT_ASSERT_EQUAL((uint64_t)1, header[0].hasFollowSegment);
 
     //Assert data
@@ -374,8 +375,6 @@ void TestBufferWriter::testAppendShared_MultipleConcurrentClients()
   rdmaClient->connect(connection);
   size_t remoteOffset = 0;
   rdmaClient->remoteAlloc(connection, Config::DPI_SEGMENT_SIZE, remoteOffset);
-
-  std::cout << "Remote offset: " << remoteOffset << '\n';
 
   BufferSegment newSegment(remoteOffset, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t), Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR);
   buffHandle->segments.push_back(newSegment);
@@ -434,4 +433,149 @@ void TestBufferWriter::testAppendShared_MultipleConcurrentClients()
   {
     CPPUNIT_ASSERT_EQUAL(expectedResult[i], result[i]);
   }
+}
+
+
+void TestBufferWriter::testAppendPrivate_VaryingDataSizes()
+{
+  //ARRANGE
+  string bufferName = "buffer1";
+  NodeID nodeId = 1;
+
+  size_t numberElements = 200;
+  size_t intsWritten = 0;
+  vector<int> expected;
+
+  BufferHandle *buffHandle = new BufferHandle(bufferName, nodeId);
+  m_stub_regClient->registerBuffer(buffHandle);
+  BufferWriter<BufferWriterPrivate> buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
+
+  //ACT
+  for (int i = 0; i < numberElements; i++)
+  {
+    size_t nrInts = (i%10)+1; //data size ranging from 1 to 10 ints
+    int data[nrInts];
+    size_t dataSize = sizeof(data);    
+    for(size_t j = 0; j < nrInts; j++)
+    {
+      expected.push_back(nrInts);
+      data[j] = nrInts;
+    }    
+    CPPUNIT_ASSERT(m_nodeClient->dpi_append(&buffWriter, (void*)data, dataSize));
+    intsWritten += nrInts;
+  }
+
+  CPPUNIT_ASSERT(buffWriter.close());
+  int *rdma_buffer = (int *)m_nodeServer->getBuffer(0);
+
+  buffHandle = m_stub_regClient->retrieveBuffer(bufferName);
+  uint32_t numberSegments = buffHandle->segments.size();
+  
+  // for(size_t i = 0; i < intsWritten + sizeof(Config::DPI_SEGMENT_HEADER_t)/sizeof(int)*numberSegments; i++)
+  // {
+  //   std::cout << rdma_buffer[i] << " ";
+  // }
+  
+  //ASSERT
+  int expectedIdx = 0;
+  for (BufferSegment &segment : buffHandle->segments)
+  {
+    //ASSERT HEADER
+    Config::DPI_SEGMENT_HEADER_t *header = readSegmentHeader(&segment);
+    if (header[0].hasFollowSegment == (uint64_t)1)
+      CPPUNIT_ASSERT_EQUAL(header[0].counter, (uint64_t)(Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)));
+    else
+      CPPUNIT_ASSERT_EQUAL(header[0].counter, (uint64_t)(intsWritten*sizeof(int) - (buffHandle->segments.size()-1) * (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t))));
+
+    //ASSERT DATA
+    size_t size = 0;
+    int* segData = (int*)readSegmentData(&segment, size);
+    size = size / sizeof(int);
+    
+    for(size_t i = 0; i < size; i++)
+    {
+      CPPUNIT_ASSERT_EQUAL(expected[expectedIdx], segData[i]);
+      ++expectedIdx;
+    }
+  }
+}
+
+
+void TestBufferWriter::testAppendShared_VaryingDataSizes()
+{
+  //ARRANGE
+  string bufferName = "buffer1";
+  NodeID nodeId = 1;
+
+  size_t numberElements = 200;
+  size_t intsWritten = 0;
+  vector<int> expected;
+
+  BufferHandle *buffHandle = m_stub_regClient->createBuffer(bufferName, nodeId, (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)), Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR);
+  BufferWriter<BufferWriterShared> buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
+
+  //ACT
+  for (int i = 0; i < numberElements; i++)
+  {
+    size_t nrInts = (i%10)+1; //data size ranging from 1 to 10 ints
+    int data[nrInts];
+    size_t dataSize = sizeof(data);    
+    for(size_t j = 0; j < nrInts; j++)
+    {
+      expected.push_back(nrInts);
+      data[j] = nrInts;
+    }    
+    CPPUNIT_ASSERT(m_nodeClient->dpi_append(&buffWriter, (void*)data, dataSize));
+    intsWritten += nrInts;
+  }
+
+  CPPUNIT_ASSERT(buffWriter.close());
+  int *rdma_buffer = (int *)m_nodeServer->getBuffer(0);
+
+  buffHandle = m_stub_regClient->retrieveBuffer(bufferName);
+  uint32_t numberSegments = buffHandle->segments.size();
+
+  // for(size_t i = 0; i < intsWritten + sizeof(Config::DPI_SEGMENT_HEADER_t)/sizeof(int)*numberSegments; i++)
+  // {
+  //   std::cout << rdma_buffer[i] << " ";
+  // }
+  
+  //ASSERT
+  int expectedIdx = 0;
+  for (BufferSegment &segment : buffHandle->segments)
+  {
+    //ASSERT HEADER
+    Config::DPI_SEGMENT_HEADER_t *header = readSegmentHeader(&segment);
+    if (header[0].hasFollowSegment == (uint64_t)1)
+      CPPUNIT_ASSERT_EQUAL(header[0].counter, (uint64_t)(Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)));
+    else
+      CPPUNIT_ASSERT_EQUAL(header[0].counter, (uint64_t)(intsWritten*sizeof(int) - (buffHandle->segments.size()-1) * (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t))));
+
+    //ASSERT DATA
+    size_t size = 0;
+    int* segData = (int*)readSegmentData(&segment, size);
+    size = size / sizeof(int);
+    
+    for(size_t i = 0; i < size; i++)
+    {
+      CPPUNIT_ASSERT_EQUAL_MESSAGE("Data check", expected[expectedIdx], segData[i]);
+      ++expectedIdx;
+    }
+  }
+}
+
+
+void* TestBufferWriter::readSegmentData(BufferSegment* segment, size_t &size)
+{
+  void* segmentPtr = m_nodeServer->getBuffer(segment->offset);
+  Config::DPI_SEGMENT_HEADER_t *header = (Config::DPI_SEGMENT_HEADER_t *)segmentPtr;
+  size = header[0].counter;
+  return (void*)(((char*)segmentPtr) + sizeof(Config::DPI_SEGMENT_HEADER_t));
+}
+
+Config::DPI_SEGMENT_HEADER_t *TestBufferWriter::readSegmentHeader(BufferSegment* segment)
+{
+  void* segmentPtr = m_nodeServer->getBuffer(segment->offset);
+  Config::DPI_SEGMENT_HEADER_t *header = (Config::DPI_SEGMENT_HEADER_t *)segmentPtr;
+  return header;
 }

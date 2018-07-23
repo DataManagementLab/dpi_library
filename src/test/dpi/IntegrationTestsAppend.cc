@@ -78,10 +78,10 @@ void IntegrationTestsAppend::testPrivate_SimpleIntegrationWithAppendInts()
   CPPUNIT_ASSERT(buffWriter.close());
   int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
   
-  for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
-  {
-    std::cout << rdma_buffer[i] << " ";
-  }
+  // for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
+  // {
+  //   std::cout << rdma_buffer[i] << " ";
+  // }
   
   //ASSERT
   for (uint32_t j = 0; j < numberSegments; j++)
@@ -125,10 +125,10 @@ void IntegrationTestsAppend::testShared_SimpleIntegrationWithAppendInts()
   int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
   
   
-  for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
-  {
-    std::cout << rdma_buffer[i] << " ";
-  }
+  // for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
+  // {
+  //   std::cout << rdma_buffer[i] << " ";
+  // }
   
 
   //ASSERT

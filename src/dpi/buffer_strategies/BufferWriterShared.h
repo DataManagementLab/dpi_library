@@ -87,7 +87,7 @@ class BufferWriterShared : public BufferWriterInterface
                 // std::cout << "Case 4.2" << '\n';
                 m_handle = m_regClient->retrieveBuffer(m_handle->name);
                 m_currentSegment = m_handle->segments.back();
-                return super_append(data, size);
+                return super_append(data, rest);
             }
         }
         // counter exceeded segment size therefore retrieve and start over

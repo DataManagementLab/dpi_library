@@ -16,26 +16,30 @@ DPI_UNIT_TEST_SUITE(TestBufferWriter);
   DPI_UNIT_TEST(testAppendPrivate_SplitData);
   DPI_UNIT_TEST(testAppendPrivate_SimpleData);
   DPI_UNIT_TEST(testAppendPrivate_MultipleConcurrentClients);
+  DPI_UNIT_TEST(testAppendPrivate_VaryingDataSizes);
   DPI_UNIT_TEST(testAppendShared_SimpleData);
   DPI_UNIT_TEST(testAppendShared_AtomicHeaderManipulation);
   DPI_UNIT_TEST(testAppendShared_MultipleConcurrentClients);  
+  DPI_UNIT_TEST(testAppendShared_VaryingDataSizes);  
 DPI_UNIT_TEST_SUITE_END();
-
+ 
  public:
   void setUp();
   void tearDown();
-
+ 
   // Private Strategy
   void testBuffer();
   void testAppendPrivate_SingleInts();
   void testAppendPrivate_SplitData();
   void testAppendPrivate_SimpleData();
   void testAppendPrivate_MultipleConcurrentClients();
+  void testAppendPrivate_VaryingDataSizes();
 
   // Shared Strategy
   void testAppendShared_SimpleData();
   void testAppendShared_AtomicHeaderManipulation();
   void testAppendShared_MultipleConcurrentClients();
+  void testAppendShared_VaryingDataSizes();
 
 
   static std::atomic<int> bar;    // Counter of threads, faced barrier.
@@ -44,6 +48,9 @@ DPI_UNIT_TEST_SUITE_END();
 
 
 private:
+  void* readSegmentData(BufferSegment* segment, size_t &size);
+  Config::DPI_SEGMENT_HEADER_t *readSegmentHeader(BufferSegment* segment);
+
   NodeClient* m_nodeClient;
   NodeServer* m_nodeServer;
   RegistryClient* m_stub_regClient;
@@ -54,19 +61,30 @@ public:
 
   BufferHandle* createBuffer(string& name, NodeID node_id, size_t size, size_t threshold)
   {
-    std::cout << "Created buffer" << '\n';
     (void) name;
     (void) size;
     (void) threshold;
- 
+    
     m_buffHandle = new BufferHandle(name, node_id);
+    RDMAClient *rdmaClient = new RDMAClient();
+    rdmaClient->connect(Config::getIPFromNodeId(node_id));
+    size_t remoteOffset = 0;
+    rdmaClient->remoteAlloc(Config::getIPFromNodeId(node_id), Config::DPI_SEGMENT_SIZE, remoteOffset);
+    
+    BufferSegment seg;
+    seg.offset = remoteOffset;
+    seg.size = Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t);
+    seg.threshold = Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR;
+    appendSegment(name, seg);
+    
+    // std::cout << "Created buffer" << '\n';
     
     return m_buffHandle;
   }
 
   bool registerBuffer(BufferHandle* handle)
   {
-    std::cout << "Register Buffer" << '\n';
+    // std::cout << "Register Buffer" << '\n';
     BufferHandle* copy_buffHandle = new BufferHandle(handle->name, handle->node_id);
     for(auto segment : handle->segments){
       copy_buffHandle->segments.push_back(segment); 
@@ -76,7 +94,7 @@ public:
   }
   BufferHandle* retrieveBuffer(string& name)
   {
-    std::cout << "Retrieve Buffer" << '\n';
+    // std::cout << "Retrieve Buffer" << '\n';
     (void) name;
     //Copy a new BufferHandle to emulate distributed setting (Or else one nodes changes to the BufferHandle would affect another nodes BufferHandle without retrieving the buffer first)
     BufferHandle*  copy_buffHandle = new BufferHandle(m_buffHandle->name, m_buffHandle->node_id);
@@ -87,7 +105,7 @@ public:
   }
   bool appendSegment(string& name, BufferSegment& segment)
   {
-    std::cout << "Appending segment to buffer" << '\n';
+    // std::cout << "Appending segment to buffer" << '\n';
     //Implement locking if stub should support concurrent appending of segments.
     (void) name;
     appendSegMutex.lock();
