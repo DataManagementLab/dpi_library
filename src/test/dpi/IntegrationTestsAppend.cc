@@ -1,5 +1,8 @@
 #include "IntegrationTestsAppend.h"
 
+std::atomic<int> IntegrationTestsAppend::bar{0};    // Counter of threads, faced barrier.
+std::atomic<int> IntegrationTestsAppend::passed{0}; // Number of barriers, passed by all threads.
+
 void IntegrationTestsAppend::setUp()
 {  
   //Setup Test DPI
@@ -7,10 +10,11 @@ void IntegrationTestsAppend::setUp()
   Config::DPI_SEGMENT_SIZE = (2048 + sizeof(Config::DPI_SEGMENT_HEADER_t));
   Config::DPI_INTERNAL_BUFFER_SIZE = 1024;
   Config::DPI_REGISTRY_SERVER = "127.0.0.1";
+  Config::DPI_REGISTRY_PORT = 5300;
+  Config::DPI_NODE_PORT = 5400;
   Config::DPI_NODES.clear();
   string dpiTestNode = "127.0.0.1:" + to_string(Config::DPI_NODE_PORT);
   Config::DPI_NODES.push_back(dpiTestNode);
-  Config::DPI_REGISTRY_SERVER = "127.0.0.1";
 
   m_nodeServer = new NodeServer();
   CPPUNIT_ASSERT(m_nodeServer->startServer());
@@ -142,6 +146,128 @@ void IntegrationTestsAppend::testShared_SimpleIntegrationWithAppendInts()
       CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[i]);
       expected++;
     }
+  }
+}
+
+void IntegrationTestsAppend::testPrivate_FourAppendersConcurrent()
+{
+  //ARRANGE
+  string bufferName = "test";
+  int nodeId = 1;
+
+  size_t segPerClient = 2;
+  size_t numberElements = segPerClient * (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int64_t); //Each client fill two segments
+  std::vector<int64_t> *dataToWrite = new std::vector<int64_t>();
+  
+  for(int64_t i = 0; i < numberElements; i++)
+  {
+    dataToWrite->push_back(i);
+  }  
+
+  BufferHandle *buffHandle1 = new BufferHandle(bufferName, nodeId);
+  CPPUNIT_ASSERT(m_regClient->registerBuffer(buffHandle1));
+
+  BufferHandle *buffHandle2 = m_regClient->retrieveBuffer(bufferName);
+  BufferHandle *buffHandle3 = m_regClient->retrieveBuffer(bufferName);
+  BufferHandle *buffHandle4 = m_regClient->retrieveBuffer(bufferName);
+
+  BufferWriterClient<int64_t, BufferWriterPrivate> *client1 = new BufferWriterClient<int64_t, BufferWriterPrivate>(buffHandle1, dataToWrite);
+  BufferWriterClient<int64_t, BufferWriterPrivate> *client2 = new BufferWriterClient<int64_t, BufferWriterPrivate>(buffHandle2, dataToWrite);
+  BufferWriterClient<int64_t, BufferWriterPrivate> *client3 = new BufferWriterClient<int64_t, BufferWriterPrivate>(buffHandle3, dataToWrite);
+  BufferWriterClient<int64_t, BufferWriterPrivate> *client4 = new BufferWriterClient<int64_t, BufferWriterPrivate>(buffHandle4, dataToWrite);
+
+  //ACT
+  client1->start();
+  client2->start();
+  client3->start();
+  client4->start();
+  client1->join();
+  client2->join();
+  client3->join();
+  client4->join();
+  
+  //ASSERT
+  int64_t *rdma_buffer = (int64_t *)m_nodeServer->getBuffer(0);
+
+  // std::cout << "Buffer " << '\n';
+  // for (int i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int64_t)*segPerClient*4; i++)
+  // {
+  //   std::cout << rdma_buffer[i] << ' ';
+  // }
+
+  for(size_t i = 0; i < segPerClient*4; i++)
+  {
+    int64_t segmentStart = i*Config::DPI_SEGMENT_SIZE/sizeof(int64_t);
+    //Assert counter in header
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Counter in header check", (int64_t)(sizeof(int64_t)*numberElements/segPerClient), rdma_buffer[segmentStart]);
+    if (rdma_buffer[segmentStart+1] == (int64_t)1) //Has follow segment, data should be dataToWrite[0 -> numberElements/2]
+    {
+      for(int64_t j = segmentStart; j < (int64_t)(segmentStart + numberElements/segPerClient); j++)
+      {
+        CPPUNIT_ASSERT_EQUAL(dataToWrite->operator[](j - segmentStart), rdma_buffer[j+sizeof(Config::DPI_SEGMENT_HEADER_t)/sizeof(int64_t)]);
+      }      
+    }
+    else //data should be dataToWrite[numberElements/2 -> numberElements]
+    {
+      for(int64_t j = segmentStart; j < (int64_t)(segmentStart + numberElements/segPerClient); j++)
+      {
+        CPPUNIT_ASSERT_EQUAL(dataToWrite->operator[](j+numberElements/segPerClient - segmentStart), rdma_buffer[j+sizeof(Config::DPI_SEGMENT_HEADER_t)/sizeof(int64_t)]);
+      }
+    }
+  }
+}
+
+
+void IntegrationTestsAppend::testShared_FourAppendersConcurrent()
+{
+  //ARRANGE
+  string bufferName = "test";
+  int nodeId = 1;
+
+  size_t segPerClient = 2; //Each client fill two segments
+  size_t numberElements = segPerClient * (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int64_t); 
+  std::vector<int64_t> *dataToWrite = new std::vector<int64_t>();
+  
+  for(int64_t i = 0; i < numberElements; i++)
+  {
+    dataToWrite->push_back(i);
+  }  
+
+  BufferHandle *buffHandle1 = m_regClient->createBuffer(bufferName, (NodeID) nodeId, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t), Config::DPI_SEGMENT_SIZE * 0.8);
+  BufferHandle *buffHandle2 = m_regClient->retrieveBuffer(bufferName);
+  BufferHandle *buffHandle3 = m_regClient->retrieveBuffer(bufferName);
+  BufferHandle *buffHandle4 = m_regClient->retrieveBuffer(bufferName);
+
+  BufferWriterClient<int64_t, BufferWriterShared> *client1 = new BufferWriterClient<int64_t, BufferWriterShared>(buffHandle1, dataToWrite);
+  BufferWriterClient<int64_t, BufferWriterShared> *client2 = new BufferWriterClient<int64_t, BufferWriterShared>(buffHandle2, dataToWrite);
+  BufferWriterClient<int64_t, BufferWriterShared> *client3 = new BufferWriterClient<int64_t, BufferWriterShared>(buffHandle3, dataToWrite);
+  BufferWriterClient<int64_t, BufferWriterShared> *client4 = new BufferWriterClient<int64_t, BufferWriterShared>(buffHandle4, dataToWrite);
+
+  //ACT
+  client1->start();
+  client2->start();
+  client3->start();
+  client4->start();
+  client1->join();
+  client2->join();
+  client3->join();
+  client4->join();
+  
+  //ASSERT
+  int64_t *rdma_buffer = (int64_t *)m_nodeServer->getBuffer(0);
+
+  // std::cout << "Buffer " << '\n';
+  // for (int i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int64_t)*segPerClient*4; i++)
+  // {
+  //   std::cout << rdma_buffer[i] << ' ';
+  // }
+
+  for(size_t i = 0; i < segPerClient*4; i++)
+  {
+    int64_t segmentStart = i*Config::DPI_SEGMENT_SIZE/sizeof(int64_t);
+    //Assert counter in header
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Counter in header check", (int64_t)(sizeof(int64_t)*numberElements/segPerClient), rdma_buffer[segmentStart]);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Has follow segment in header check", (int64_t)1, rdma_buffer[segmentStart+1]);
   }
 }
 

@@ -37,6 +37,7 @@ static void usage()
     cout << "104: \t net/TestRDMAServerMCast" << endl;
     cout << "201: \t dpi/TestBufferWriter" << endl;
     cout << "202: \t dpi/TestRegistryClient" << endl;
+    cout << "203: \t dpi/IntegrationTest" << endl;
 
     cout << endl;
 }
