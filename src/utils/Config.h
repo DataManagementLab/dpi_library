@@ -31,6 +31,9 @@
 
 using namespace std;
 
+// #define DPI_STRATEGY_SHARED
+#define DPI_STRATEGY_PRIVATE
+
 #define RDMA_TRANSPORT 0 //0=RC, 1=UD
 
 #if RDMA_TRANSPORT == 0

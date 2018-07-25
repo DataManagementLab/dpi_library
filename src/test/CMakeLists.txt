@@ -4,6 +4,7 @@ enable_testing()
 add_subdirectory(net)
 add_subdirectory(thread)
 add_subdirectory(dpi)
+add_subdirectory(examples)
 
 set(TEST_SRC
 	Test.h
@@ -28,6 +29,7 @@ target_link_libraries(dpi_tests
 	test_thread
 	test_net
 	test_dpi
+	examples_dpi
 	)
 	
 target_link_libraries(test 
@@ -35,5 +37,6 @@ target_link_libraries(test
 	test_thread
 	test_net
 	test_dpi
+	examples_dpi
 	)
 	

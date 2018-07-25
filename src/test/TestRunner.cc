@@ -22,6 +22,7 @@ int main(int argc, char **argv) {
   runner.addTest(TestSimpleUD::suite());
   runner.addTest(TestBufferWriter::suite());
   runner.addTest(IntegrationTestsAppend::suite());
+  runner.addTest(AppendExamples::suite());
 
   // Change the default outputter to a compiler error format outputter
   runner.setOutputter(
