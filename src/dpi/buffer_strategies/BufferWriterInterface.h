@@ -27,15 +27,11 @@ class BufferWriterInterface
         m_rdmaHeader = (Config::DPI_SEGMENT_HEADER_t *)m_rdmaClient->localAlloc(sizeof(Config::DPI_SEGMENT_HEADER_t));
 
         m_internalBuffer = new InternalBuffer(m_rdmaClient->localAlloc(internalBufferSize), internalBufferSize);
-
-        TO_BE_IMPLEMENTED(if (regClient == nullptr) {
-            m_regClient = new RegistryClient();
-        } m_regClient->connect(Config::DPI_REGISTRY_SERVER));
     };
 
     ~BufferWriterInterface()
     {
-        if (m_internalBuffer != nullptr || m_internalBuffer->bufferPtr != nullptr)
+        if (m_internalBuffer != nullptr && m_internalBuffer->bufferPtr != nullptr)
         {
             m_rdmaClient->localFree(m_internalBuffer->bufferPtr);
         }
@@ -101,12 +97,9 @@ class BufferWriterInterface
 
     InternalBuffer *m_internalBuffer = nullptr;
     BufferHandle *m_handle = nullptr;
-    // void *m_scratchPad = nullptr;
     RegistryClient *m_regClient = nullptr;
     RDMAClient *m_rdmaClient = nullptr; //
     Config::DPI_SEGMENT_HEADER_t* m_rdmaHeader;
-
-
 
 };
 

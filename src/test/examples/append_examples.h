@@ -8,12 +8,14 @@ class AppendExamples : public CppUnit::TestFixture
 {
   DPI_UNIT_TEST_SUITE(AppendExamples);
     DPI_UNIT_TEST(example1);
+    DPI_UNIT_TEST(paperExample);
   DPI_UNIT_TEST_SUITE_END();
 
 public:
   void setUp();
   void tearDown();
   void example1();
+  void paperExample();
  
 private:
   RegistryServer *m_regServer;

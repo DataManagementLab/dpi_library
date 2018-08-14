@@ -43,15 +43,46 @@ void AppendExamples::example1()
 {
   string buffer_name = "example";
   char data[] = "Hello World!";
-  CONTEXT context;
+  DPI_Context context;
   DPI_Init(context);
   DPI_Create_buffer(buffer_name, 1, context);
   DPI_Append(buffer_name, (void*)data, sizeof(data), context);
-  DPI_Finalize(context);
 
-  char* buffer = (char*)m_nodeServer->getBuffer(0);
-  string hello(buffer + sizeof(Config::DPI_SEGMENT_HEADER_t), sizeof(data));
-  string expected(data, sizeof(data));
-  std::cout << hello << " == " << expected << '\n';
-  CPPUNIT_ASSERT_EQUAL(expected,  hello);
+  size_t buffer_size;
+  void* buffer_ptr;
+  DPI_Close_buffer(buffer_name, context);
+  DPI_Get_buffer(buffer_name, buffer_size, buffer_ptr, context);
+
+  DPI_Finalize(context);
+  
+  for(size_t i = 0; i < buffer_size; i++)
+  {
+    cout << ((char*)buffer_ptr)[i];
+    CPPUNIT_ASSERT_EQUAL(data[i], ((char*)buffer_ptr)[i]);
+  }
+  
+}
+
+void AppendExamples::paperExample()
+{
+  string buffer_name = "buffer";
+  char data1[] = "Hello ";
+  char data2[] = "World!";
+  int rcv_node_id = 1; //ID is mapped to a concrete node in cluster spec
+  DPI_Context context;
+  DPI_Init(context); 
+  DPI_Create_buffer(buffer_name, rcv_node_id, context);
+  DPI_Append(buffer_name, (void*)data1, sizeof(data1), context);
+  DPI_Append(buffer_name, (void*)data2, sizeof(data2), context);
+  DPI_Close_buffer(buffer_name, context);
+
+  size_t buffer_size;
+  void* buffer_ptr;
+  DPI_Get_buffer(buffer_name, buffer_size, buffer_ptr, context);
+
+  DPI_Finalize(context);
+  for(size_t i = 0; i < buffer_size; i++)
+  {
+    cout << ((char*)buffer_ptr)[i];
+  }
 }

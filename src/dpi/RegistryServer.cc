@@ -86,6 +86,16 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
         {
             BufferHandle buffHandle(name, appendBuffReq.node_id());
             registerSuccess = registerBuffer(&buffHandle);
+            if (registerSuccess)
+            {
+                appendBuffResp.set_return_(MessageErrors::NO_ERROR);
+            }
+            else
+            {
+                appendBuffResp.set_return_(MessageErrors::DPI_APPEND_BUFFHANDLE_FAILED);
+            }
+            anyResp->PackFrom(appendBuffResp);
+            return;
         }
 
         bool appendSuccess = true;
@@ -103,7 +113,7 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
             }
         }
 
-        if (registerSuccess && appendSuccess)
+        if (appendSuccess)
         {
             appendBuffResp.set_return_(MessageErrors::NO_ERROR);
         }

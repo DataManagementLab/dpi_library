@@ -3,6 +3,8 @@ set(API_SRC
     append.h
     context.h
     create_buffer.h
+    get_buffer.h
+    close_buffer.h
     err_codes.h
     init.h
     finalize.h

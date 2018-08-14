@@ -27,8 +27,8 @@ class BufferWriter : public base
 {
 
   public:
-    BufferWriter(BufferHandle *handle, size_t scratchPadSize = Config::DPI_INTERNAL_BUFFER_SIZE, RegistryClient *regClient = nullptr)
-        : base(handle, scratchPadSize, regClient){};
+    BufferWriter(BufferHandle *handle, size_t internalBufferSize = Config::DPI_INTERNAL_BUFFER_SIZE, RegistryClient *regClient = nullptr)
+        : base(handle, internalBufferSize, regClient){};
     ~BufferWriter(){};
 
     //data: ptr to data, size: size in bytes. return: true if successful, false otherwise

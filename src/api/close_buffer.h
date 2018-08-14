@@ -1,15 +1,16 @@
 #pragma once
 
+#include <string>
 #include "context.h"
 #include "err_codes.h"
+#include "../utils/Config.h"
 
-inline int DPI_Append(string& name, void* data, size_t size, DPI_Context& context)
+inline int DPI_Close_buffer(string& name, DPI_Context& context)
 {
     if (context.registry_client == nullptr) return DPI_NOT_INITIALIZED;
     
     auto buffer_writer = context.buffer_writers[name]; 
-
-    if (!buffer_writer->append(data, size))
-        return DPI_FAILURE;
+    buffer_writer->close();
+    
     return DPI_SUCCESS;
-};
+}

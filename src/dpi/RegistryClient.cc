@@ -83,7 +83,6 @@ BufferHandle *RegistryClient::retrieveBuffer(string &name)
         DPIRetrieveBufferResponse_Segment segmentResp = rtrvBufferResp.segment(i);
         BufferSegment segment(segmentResp.offset(), segmentResp.size(), segmentResp.threshold());
         buffHandle->segments.push_back(segment);
-        DPI_DEBUG("Registry Client - Retrieve Buffer: Segment offset: %zu, size: %zu \n", (segment).offset, (segment).size);
     }
 
     return buffHandle;

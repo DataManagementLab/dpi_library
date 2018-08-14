@@ -2,6 +2,13 @@
 
 void TestRegistryClient::setUp()
 {
+  Config::RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 1; //1GB
+  Config::DPI_SEGMENT_SIZE = (2048 + sizeof(Config::DPI_SEGMENT_HEADER_t));
+  Config::DPI_INTERNAL_BUFFER_SIZE = 1024;
+  Config::DPI_REGISTRY_SERVER = "127.0.0.1";
+  Config::DPI_NODES.clear();
+  string dpiTestNode = "127.0.0.1:" + to_string(Config::DPI_NODE_PORT);
+  Config::DPI_NODES.push_back(dpiTestNode);
   m_nodeServer = new NodeServer();
   CPPUNIT_ASSERT(m_nodeServer->startServer());
   std::cout << "Start NodeServer" << '\n';
@@ -69,15 +76,13 @@ void TestRegistryClient::testRegisterBuffer()
 {
   string name = "buffer1";
   BufferHandle *buffHandle = new BufferHandle(name,1);
-  BufferSegment segment(2000, 1024, 800);
-  buffHandle->segments.push_back(segment);
   CPPUNIT_ASSERT( m_regClient->registerBuffer(buffHandle));
 
   BufferHandle* handle_ret = m_regClient->retrieveBuffer(name);
   CPPUNIT_ASSERT(handle_ret != nullptr);
   CPPUNIT_ASSERT_EQUAL(handle_ret->name, name);
-
-  CPPUNIT_ASSERT_EQUAL(1, ((int)handle_ret->segments.size()));
+  std::cout << "handle_ret->segments.size()" << handle_ret->segments.size() << '\n';
+  CPPUNIT_ASSERT_EQUAL(0, ((int)handle_ret->segments.size()));
 };
 
 void TestRegistryClient::testAppendSegment(){
