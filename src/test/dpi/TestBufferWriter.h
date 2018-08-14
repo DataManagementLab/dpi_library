@@ -6,39 +6,41 @@
 #include "../../dpi/NodeClient.h"
 #include "../../dpi/RegistryClient.h"
 #include "../../dpi/BufferWriter.h"
+#include "RegistryClientStub.h"
 
 #include <atomic>
 
 class TestBufferWriter : public CppUnit::TestFixture {
 DPI_UNIT_TEST_SUITE(TestBufferWriter);
-  DPI_UNIT_TEST(testAppendPrivate_WithScratchpad);
-  DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad);
-  DPI_UNIT_TEST(testAppendPrivate_MultipleClients_WithScratchpad); 
-  DPI_UNIT_TEST(testAppendPrivate_SizeTooBigForScratchpad);
   DPI_UNIT_TEST(testBuffer);
-  DPI_UNIT_TEST(testAppendPrivate_WithoutScratchpad_splitData);
-  DPI_UNIT_TEST(testAppendPrivate_MultipleConcurrentClients);    
+  DPI_UNIT_TEST(testAppendPrivate_SingleInts);
+  DPI_UNIT_TEST(testAppendPrivate_SplitData);
+  DPI_UNIT_TEST(testAppendPrivate_SimpleData);
+  DPI_UNIT_TEST(testAppendPrivate_MultipleConcurrentClients);
+  DPI_UNIT_TEST(testAppendPrivate_VaryingDataSizes);
+  DPI_UNIT_TEST(testAppendShared_SimpleData);
   DPI_UNIT_TEST(testAppendShared_AtomicHeaderManipulation);
   DPI_UNIT_TEST(testAppendShared_MultipleConcurrentClients);  
+  DPI_UNIT_TEST(testAppendShared_VaryingDataSizes);  
 DPI_UNIT_TEST_SUITE_END();
-
+ 
  public:
   void setUp();
   void tearDown();
-
+ 
   // Private Strategy
-  void testAppendPrivate_WithScratchpad();
-  void testAppendPrivate_WithoutScratchpad_splitData();
-  void testAppendPrivate_WithoutScratchpad();
-  void testAppendPrivate_MultipleClients_WithScratchpad();
-  void testAppendPrivate_SizeTooBigForScratchpad();
-  void testAppendPrivate_MultipleConcurrentClients();
   void testBuffer();
+  void testAppendPrivate_SingleInts();
+  void testAppendPrivate_SplitData();
+  void testAppendPrivate_SimpleData();
+  void testAppendPrivate_MultipleConcurrentClients();
+  void testAppendPrivate_VaryingDataSizes();
 
   // Shared Strategy
+  void testAppendShared_SimpleData();
   void testAppendShared_AtomicHeaderManipulation();
-  void testAppendShared_WithScratchpad();
   void testAppendShared_MultipleConcurrentClients();
+  void testAppendShared_VaryingDataSizes();
 
 
   static std::atomic<int> bar;    // Counter of threads, faced barrier.
@@ -47,63 +49,13 @@ DPI_UNIT_TEST_SUITE_END();
 
 
 private:
+  void* readSegmentData(BufferSegment* segment, size_t &size);
+  Config::DPI_SEGMENT_HEADER_t *readSegmentHeader(BufferSegment* segment);
+
   NodeClient* m_nodeClient;
   NodeServer* m_nodeServer;
   RegistryClient* m_stub_regClient;
 
-class RegistryClientStub : public RegistryClient
-{
-public:
-
-  BufferHandle* createBuffer(string& name, NodeID node_id, size_t size, size_t threshold)
-  {
-    std::cout << "Created buffer" << '\n';
-    (void) name;
-    (void) size;
-    (void) threshold;
- 
-    m_buffHandle = new BufferHandle(name, node_id);
-    return m_buffHandle;
-  }
-
-  bool registerBuffer(BufferHandle* handle)
-  {
-    BufferHandle* copy_buffHandle = new BufferHandle(handle->name, handle->node_id);
-    for(auto segment : handle->segments){
-      copy_buffHandle->segments.push_back(segment); 
-    }
-    m_buffHandle = copy_buffHandle;
-    return true;
-  }
-  BufferHandle* retrieveBuffer(string& name)
-  {
-    (void) name;
-    //Copy a new BufferHandle to emulate distributed setting (Or else one nodes changes to the BufferHandle would affect another nodes BufferHandle without retrieving the buffer first)
-    BufferHandle*  copy_buffHandle = new BufferHandle(m_buffHandle->name, m_buffHandle->node_id);
-    for(auto segment : m_buffHandle->segments){
-      copy_buffHandle->segments.push_back(segment); 
-    }
-    return copy_buffHandle;
-  }
-  bool appendSegment(string& name, BufferSegment& segment)
-  {
-    //Implement locking if stub should support concurrent appending of segments.
-    (void) name;
-    appendSegMutex.lock();
-    BufferSegment seg;
-    seg.offset = segment.offset;
-    seg.size = segment.size;
-    seg.threshold = segment.threshold;
-    m_buffHandle->segments.push_back(seg);
-    appendSegMutex.unlock();
-    
-    return true;
-  }
-
-private:
-  BufferHandle* m_buffHandle = nullptr; //For this stub we just have one buffHandle
-  std::mutex appendSegMutex;
-};
  
 struct TestData
 {
@@ -131,7 +83,7 @@ public:
   {
     //ARRANGE
 
-    BufferWriter<Strategy> buffWriter(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, regClient);
+    BufferWriter<Strategy> buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, regClient);
 
     barrier_wait();
 
@@ -140,6 +92,8 @@ public:
     {
       buffWriter.append(&dataToWrite->operator[](i), sizeof(DataType));
     }
+
+    buffWriter.close();
   }
 
     void barrier_wait()

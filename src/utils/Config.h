@@ -31,6 +31,9 @@
 
 using namespace std;
 
+// #define DPI_STRATEGY_SHARED
+#define DPI_STRATEGY_PRIVATE
+
 #define RDMA_TRANSPORT 0 //0=RC, 1=UD
 
 #if RDMA_TRANSPORT == 0
@@ -74,7 +77,7 @@ using namespace std;
 
 
 
-#define DEBUGCODE
+// #define DEBUGCODE
 #if defined(DEBUGCODE)
 #define DebugCode(code_fragment) \
     {                            \
@@ -85,7 +88,7 @@ using namespace std;
 #endif
 
 
-#define DPI_DEBUG_LEVEL 0
+#define DPI_DEBUG_LEVEL 1
 
 #ifdef DPI_DEBUG_LEVEL
 #define DPI_DEBUG(X, ...) if(DPI_DEBUG_LEVEL>0) {fprintf(stdout, X, ##__VA_ARGS__); fflush(stdout);}
@@ -135,7 +138,7 @@ class Config
     static vector<string> DPI_NODES;
 
     static uint32_t DPI_NODE_PORT;
-    static uint32_t DPI_SCRATCH_PAD_SIZE;
+    static uint32_t DPI_INTERNAL_BUFFER_SIZE;
     static uint32_t DPI_SEGMENT_SIZE;
 
     /**

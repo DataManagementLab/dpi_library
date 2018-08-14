@@ -88,16 +88,16 @@ BufferHandle *RegistryClient::retrieveBuffer(string &name)
     return buffHandle;
 }
 
+//Change so private can use this instead of create buffer
 bool RegistryClient::registerBuffer(BufferHandle *handle)
 {
-    if (handle->segments.size() != 1)
+    if (handle->segments.size() != 0)
     {
-        Logging::error(__FILE__, __LINE__, "Too many segments in handle");
+        Logging::error(__FILE__, __LINE__, "Can only register handle without segments");
         return false;
     }
 
-    BufferSegment segment = handle->segments[0];
-    Any sendAny = MessageTypes::createDPIRegisterBufferRequest(handle->name, handle->node_id, segment.offset, segment.size, segment.threshold);
+    Any sendAny = MessageTypes::createDPIRegisterBufferRequest(handle->name, handle->node_id);
     return appendOrRetrieveSegment(&sendAny);
 }
 

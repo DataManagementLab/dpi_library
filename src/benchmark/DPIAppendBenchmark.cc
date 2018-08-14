@@ -6,32 +6,39 @@ mutex DPIAppendBenchmark::waitLock;
 condition_variable DPIAppendBenchmark::waitCv;
 bool DPIAppendBenchmark::signaled;
 
-DPIAppendBenchmarkThread::DPIAppendBenchmarkThread(string &conns,
-                                           size_t size, size_t iter)
+DPIAppendBenchmarkThread::DPIAppendBenchmarkThread(NodeID nodeid, string &conns,
+                                                   size_t size, size_t iter)
 {
   m_size = size;
   m_iter = iter;
+  m_nodeId = nodeid;
   m_conns = conns;
+  
   string bufferName = "appendBenchmark";
-  BufferHandle *buffHandle = new BufferHandle(bufferName, 1);
+  BufferHandle *buffHandle;
   m_regClient = new RegistryClient();
-  
-  m_regClient->createBuffer(bufferName, 1, (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)),Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR);
 
-  m_bufferWriter = new BufferWriter<BufferWriterPrivate>(buffHandle, Config::DPI_SCRATCH_PAD_SIZE, m_regClient);
-  std::cout << "DPI append Thread constructed"  << '\n';
-  
+  if (m_nodeId == 1)
+  {
+    buffHandle = m_regClient->createBuffer(bufferName, m_nodeId, (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)), Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR);
+  }
+  else
+  {
+    usleep(100000);
+    buffHandle = m_regClient->retrieveBuffer(bufferName);
+  }
+  m_bufferWriter = new BufferWriter<BufferWriterPrivate>(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
+  std::cout << "DPI append Thread constructed" << '\n';
 }
 
 DPIAppendBenchmarkThread::~DPIAppendBenchmarkThread()
 {
-  
 }
 
 void DPIAppendBenchmarkThread::run()
 {
 
-  std::cout << "DPI append Thread running"  << '\n';
+  std::cout << "DPI append Thread running" << '\n';
   unique_lock<mutex> lck(DPIAppendBenchmark::waitLock);
   if (!DPIAppendBenchmark::signaled)
   {
@@ -41,37 +48,39 @@ void DPIAppendBenchmarkThread::run()
   lck.unlock();
 
   std::cout << "Benchmark Started" << '\n';
-  int *scratchPad = (int *)m_bufferWriter->getScratchPad();
-  
-  scratchPad[0] = 1;
-  scratchPad[1] = 2;
-  scratchPad[2] = 2;
-  scratchPad[3] = 2;
-  scratchPad[4] = 2;
-  scratchPad[5] = 2;
-  scratchPad[6] = 2;
-  scratchPad[7] = 2;
-
+  void *scratchPad = malloc(m_size);
+  memset(scratchPad, 1, m_size);
 
   startTimer();
   for (size_t i = 0; i <= m_iter; i++)
   {
-    m_bufferWriter->appendFromScratchpad(sizeof(int)*8);
+    m_bufferWriter->append(scratchPad, m_size);
   }
+
+  m_bufferWriter->close();
   endTimer();
 }
 
-
 DPIAppendBenchmark::DPIAppendBenchmark(config_t config, bool isClient)
     : DPIAppendBenchmark(config.server, config.port, config.data, config.iter,
-                     config.threads)
+                         config.threads)
 {
+
+  Config::DPI_NODES.clear();
+  string dpiServerNode = config.server + ":" + to_string(config.port);
+  Config::DPI_NODES.push_back(dpiServerNode);
+  std::cout << "connection: " << Config::DPI_NODES.back() << '\n';
+  Config::DPI_REGISTRY_SERVER = config.registryServer;
+  Config::DPI_REGISTRY_PORT = config.registryPort;
+  Config::DPI_INTERNAL_BUFFER_SIZE = config.internalBufSize;
+
   this->isClient(isClient);
 
   //check parameters
   if (isClient && config.server.length() > 0)
   {
     std::cout << "Starting DPIAppend Clients" << '\n';
+    std::cout << "Internal buf size: " << Config::DPI_INTERNAL_BUFFER_SIZE << '\n';
     this->isRunnable(true);
   }
   else if (!isClient)
@@ -81,16 +90,17 @@ DPIAppendBenchmark::DPIAppendBenchmark(config_t config, bool isClient)
 }
 
 DPIAppendBenchmark::DPIAppendBenchmark(string &conns, size_t serverPort,
-                               size_t size, size_t iter, size_t threads)
+                                       size_t size, size_t iter, size_t threads)
 {
   m_conns = conns;
   m_serverPort = serverPort;
-  m_size = sizeof(int);
+  m_size = size;
   m_iter = iter;
   m_numThreads = threads;
   DPIAppendBenchmark::signaled = false;
 
   std::cout << "Iterations in client" << m_iter << '\n';
+  std::cout << "With " << m_size << " byte appends" << '\n';
 }
 
 DPIAppendBenchmark::~DPIAppendBenchmark()
@@ -107,11 +117,12 @@ DPIAppendBenchmark::~DPIAppendBenchmark()
   {
     if (m_nodeServer != nullptr)
     {
+      std::cout << "stopping node server" << '\n';
       m_nodeServer->stopServer();
       delete m_nodeServer;
     }
     m_nodeServer = nullptr;
-    
+
     if (m_regServer != nullptr)
     {
       m_regServer->stopServer();
@@ -124,7 +135,7 @@ DPIAppendBenchmark::~DPIAppendBenchmark()
 void DPIAppendBenchmark::runServer()
 {
   std::cout << "Starting DPI Server port " << m_serverPort << '\n';
-  
+
   m_nodeServer = new NodeServer(m_serverPort);
 
   if (!m_nodeServer->startServer())
@@ -142,32 +153,17 @@ void DPIAppendBenchmark::runServer()
   while (m_nodeServer->isRunning())
   {
     usleep(Config::DPI_SLEEP_INTERVAL);
-    // std::cout << "Buffer" << '\n';
-    // int* buffer = (int* )m_nodeServer->getBuffer(2048);
-    // std::cout << "buffer[8]" << buffer[1] << '\n';
-    // std::cout << "buffer[8]" << buffer[2] << '\n';
-    // std::cout << "buffer[8]" << buffer[3] << '\n';
-    // std::cout << "buffer[8]" << buffer[4] << '\n';
-    // std::cout << "buffer[8]" << buffer[5] << '\n';
-    // std::cout << "buffer[8]" << buffer[6] << '\n';
-    // std::cout << "buffer[8]" << buffer[7] << '\n';
-    // std::cout << "buffer[8]" << buffer[8] << '\n';
-    // std::cout << "buffer[8]" << buffer[9] << '\n';
-    // std::cout << "buffer[8]" << buffer[10] << '\n';
-    // std::cout << "buffer[8]" << buffer[11] << '\n';
-    // std::cout << "buffer[8]" << buffer[12] << '\n';
-    // std::cout << "buffer[8]" << buffer[13] << '\n';
   }
 }
 
 void DPIAppendBenchmark::runClient()
 {
   //start all client threads
-  for (size_t i = 0; i < m_numThreads; i++)
+  for (size_t i = 1; i <= m_numThreads; i++)
   {
-    DPIAppendBenchmarkThread *perfThread = new DPIAppendBenchmarkThread(m_conns,
-                                                                m_size,
-                                                                m_iter);
+    DPIAppendBenchmarkThread *perfThread = new DPIAppendBenchmarkThread(i, m_conns,
+                                                                        m_size,
+                                                                        m_iter);
     perfThread->start();
     if (!perfThread->ready())
     {
@@ -177,7 +173,8 @@ void DPIAppendBenchmark::runClient()
   }
 
   //wait for user input
-  waitForUser();
+  //waitForUser();
+  usleep(10000000);
 
   //send signal to run benchmark
   DPIAppendBenchmark::signaled = false;
