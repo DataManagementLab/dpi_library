@@ -1,3 +1,8 @@
+/**
+ * @file ProtoServer.h
+ * @author cbinnig, tziegler
+ * @date 2018-08-17
+ */
 
 
 #ifndef NET_PROTOSERVER_H

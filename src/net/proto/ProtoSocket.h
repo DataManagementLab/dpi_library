@@ -1,3 +1,9 @@
+/**
+ * @file ProtoSocket.h
+ * @author cbinnig, tziegler
+ * @date 2018-08-17
+ */
+
 #ifndef ZMQ_ProtoSocket_H
 #define ZMQ_ProtoSocket_H
 

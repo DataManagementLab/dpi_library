@@ -1,3 +1,9 @@
+/**
+ * @file StringHelper.h
+ * @author cbinnig, tziegler
+ * @date 2018-08-17
+ */
+
 #ifndef SRC_UTILS_STRINGHELPER_H_
 #define SRC_UTILS_STRINGHELPER_H_
 

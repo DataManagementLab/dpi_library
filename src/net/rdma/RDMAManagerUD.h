@@ -1,3 +1,9 @@
+/**
+ * @file RDMAManagerUD.h
+ * @author cbinnig, tziegler
+ * @date 2018-08-17
+ */
+
 
 
 #ifndef RDMAMANAGERUD_H_

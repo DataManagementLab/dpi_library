@@ -1,3 +1,9 @@
+/**
+ * @file Logging.h
+ * @author cbinnig, lthostrup, tziegler
+ * @date 2018-08-17
+ */
+
 
 
 #ifndef LOGGING_HPP_

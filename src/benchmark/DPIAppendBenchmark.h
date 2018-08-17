@@ -1,3 +1,9 @@
+/**
+ * @file DPIAppendBenchmark.h
+ * @author cbinnig, lthostrup, tziegler
+ * @date 2018-08-17
+ */
+
 
 
 #ifndef RemotePingPong_BW_H_

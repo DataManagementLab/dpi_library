@@ -1,3 +1,9 @@
+/**
+ * @file IntegrationTestsAppend.h
+ * @author cbinnig, lthostrup, tziegler
+ * @date 2018-08-17
+ */
+
 #pragma once
 
 #include "../../utils/Config.h"

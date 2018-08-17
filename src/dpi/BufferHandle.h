@@ -1,6 +1,4 @@
-/**
- * @brief 
- * 
+/** 
  * @file BufferHandle.h
  * @author cbinnig, lthostrup, tziegler
  * @date 2018-07-06

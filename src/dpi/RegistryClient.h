@@ -1,6 +1,4 @@
 /**
- * @brief 
- * 
  * @file RegistryClient.h
  * @author cbinnig, lthostrup, tziegler
  * @date 2018-07-06

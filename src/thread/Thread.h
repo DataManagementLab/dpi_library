@@ -1,3 +1,9 @@
+/**
+ * @file Thread.h
+ * @author cbinnig, tziegler
+ * @date 2018-08-17
+ */
+
 
 
 #ifndef THREAD_HPP_

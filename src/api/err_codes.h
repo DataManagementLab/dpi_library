@@ -1,3 +1,9 @@
+/**
+ * @file err_codes.h
+ * @author cbinnig, lthostrup, tziegler
+ * @date 2018-08-17
+ */
+
 #pragma once
 
 #define DPI_SUCCESS 0

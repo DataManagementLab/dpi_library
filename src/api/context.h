@@ -1,3 +1,9 @@
+/**
+ * @file context.h
+ * @author cbinnig, lthostrup, tziegler
+ * @date 2018-08-17
+ */
+
 #pragma once
 
 #include "../utils/Config.h"
@@ -6,6 +12,9 @@
 #include "../dpi/BufferReader.h"
 #include "../dpi/RegistryClient.h"
 
+/**
+ * @brief DPI_Context containing the objects needed for the different DPI operations
+ */
 struct DPI_Context
 {
     #ifdef DPI_STRATEGY_PRIVATE //todo: remove ugly hack

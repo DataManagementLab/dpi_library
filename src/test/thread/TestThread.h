@@ -1,3 +1,9 @@
+/**
+ * @file TestThread.h
+ * @author cbinnig, lthostrup, tziegler
+ * @date 2018-08-17
+ */
+
 
 
 #ifndef SRC_TEST_THREAD_TESTTHREAD_H_

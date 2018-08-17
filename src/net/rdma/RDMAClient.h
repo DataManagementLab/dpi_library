@@ -1,4 +1,8 @@
-
+/**
+ * @file RDMAClient.h
+ * @author cbinnig, tziegler
+ * @date 2018-08-17
+ */
 
 #ifndef RDMAClient_H_
 #define RDMAClient_H_

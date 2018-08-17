@@ -1,3 +1,9 @@
+/**
+ * @file create_buffer.h
+ * @author cbinnig, lthostrup, tziegler
+ * @date 2018-08-17
+ */
+
 #pragma once
 
 #include <string>
@@ -5,6 +11,14 @@
 #include "err_codes.h"
 #include "../utils/Config.h"
 
+/**
+ * @brief DPI_Create_buffer initializes a buffer and needs to be called before any buffer operations
+ * 
+ * @param name - name of the buffer
+ * @param node_id - NodeID of the node where the buffer should be located
+ * @param context - DPI_Context
+ * @return int - error code
+ */
 inline int DPI_Create_buffer(std::string &name, NodeID node_id, DPI_Context& context)
 {
     //Check that DPI_Init has been called

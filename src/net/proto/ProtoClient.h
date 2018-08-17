@@ -1,3 +1,9 @@
+/**
+ * @file ProtoClient.h
+ * @author cbinnig, tziegler
+ * @date 2018-08-17
+ */
+
 
 
 #ifndef NET_PROTOCLIENT_H

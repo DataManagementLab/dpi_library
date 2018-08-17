@@ -53,14 +53,12 @@ void AppendExamples::example1()
   DPI_Close_buffer(buffer_name, context);
   DPI_Get_buffer(buffer_name, buffer_size, buffer_ptr, context);
 
-  DPI_Finalize(context);
-  
   for(size_t i = 0; i < buffer_size; i++)
   {
     cout << ((char*)buffer_ptr)[i];
     CPPUNIT_ASSERT_EQUAL(data[i], ((char*)buffer_ptr)[i]);
   }
-  
+  DPI_Finalize(context);
 }
 
 void AppendExamples::paperExample()
@@ -80,9 +78,9 @@ void AppendExamples::paperExample()
   void* buffer_ptr;
   DPI_Get_buffer(buffer_name, buffer_size, buffer_ptr, context);
 
-  DPI_Finalize(context);
   for(size_t i = 0; i < buffer_size; i++)
   {
     cout << ((char*)buffer_ptr)[i];
   }
+  DPI_Finalize(context);
 }

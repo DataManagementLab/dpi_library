@@ -1,3 +1,9 @@
+/**
+ * @file RDMAServer.h
+ * @author cbinnig, tziegler
+ * @date 2018-08-17
+ */
+
 
 
 #ifndef RDMAServer_H_

@@ -1,3 +1,9 @@
+/**
+ * @file Benchmarks.h
+ * @author cbinnig, lthostrup, tziegler
+ * @date 2018-08-17
+ */
+
 
 
 #ifndef PERFTESTS_H_

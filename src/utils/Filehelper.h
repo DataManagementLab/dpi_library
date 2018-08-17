@@ -1,3 +1,9 @@
+/**
+ * @file Filehelper.h
+ * @author cbinnig, lthostrup, tziegler
+ * @date 2018-08-17
+ */
+
 #ifndef SRC_UTILS_FILEHELPER_H_
 #define SRC_UTILS_FILEHELPER_H_
 

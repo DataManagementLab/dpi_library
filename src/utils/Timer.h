@@ -1,3 +1,9 @@
+/**
+ * @file Timer.h
+ * @author cbinnig, tziegler
+ * @date 2018-08-17
+ */
+
 
 
 #ifndef SRC_UTILS_TIMER_H_
