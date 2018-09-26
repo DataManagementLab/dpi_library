@@ -1,12 +1,19 @@
 # dpi_library
 
-Emerging network technologies will have a significant impact on data-intensive applications, but how will applications make best use of them?    
-Making use of RDMA, which is already seeing significant adoption, is still complex due to missing higher-level abstractions.
-This problem is even worse for emerging technologies, like smart NICs and switches for in-network processing.    
-Data processing systems, such as distributed database systems or analytics engines (Spark, Flink) can exploit these technologies, but
-doing this on a system by system basis demands repeated reinvention of the wheel.   
-
-In this paper, we propose DPI, an interface that provides a set of useful abstractions for network-aware data-intensive processing.
-The aim of DPI is to provide simple yet powerful abstractions that are flexible enough to enable exploitation of RDMA and in-network processing. 
-Like MPI, DPI is just an interface that can have multiple implementations for different networking technologies.
-To that end, a concrete DPI implementation can serve as a toolkit for implementing networked data-intensive applications, such as analytics engines or distributed database systems.
+As data processing evolves towards large scale, distributed plat-
+forms, the network will necessarily play a substantial role in achiev-
+ing efficiency and performance. Increasingly, switches, network
+cards, and protocols are becoming more flexible while programma-
+bility at all levels (aka, software defined networks) opens up many
+possibilities to tailor the network to data processing applications
+and to push processing down to the network elements.
+In this paper, we propose DPI, an interface providing a set of
+simple yet powerful abstractions flexible enough to exploit features
+of modern networks (e.g., RDMA or in-network processing) suit-
+able for data processing. Mirroring the concept behind the Message
+Passing Interface (MPI) used extensively in high-performance com-
+puting, DPI is an interface definition rather than an implementation
+so as to be able to bridge different networking technologies and
+to evolve with them. In the paper we motivate and discuss key
+primitives of the interface and present a number of use cases that
+show the potential of DPI for data-intensive applica
