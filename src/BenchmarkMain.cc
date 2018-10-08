@@ -36,7 +36,8 @@ BenchmarkRunner* createTest(config_t& config) {
 }
 int main(int argc, char* argv[]) {
   // load configuration
-  static Config conf;
+  string prog_name = string(argv[0]);
+  static Config conf(prog_name);
 
   // parse parameters
   struct config_t config = BenchmarkRunner::parseParameters(argc, argv);

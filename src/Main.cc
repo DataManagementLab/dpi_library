@@ -209,7 +209,8 @@ int main(int argc, char *argv[])
     }
 
     // load  configuration
-    static Config conf;
+    string prog_name = string(argv[0]);
+    static Config conf(prog_name);
 
     // run program
     if (config.runmode.length() > 0)

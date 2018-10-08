@@ -12,6 +12,9 @@ int main(int argc, char **argv) {
   (void) argc;
   (void) argv;
 
+  string prog_name = string(argv[0]);
+  static Config conf(prog_name);
+
   // Adds the test to the list of test to run
   CppUnit::TextUi::TestRunner runner;
   runner.addTest(TestThread::suite());

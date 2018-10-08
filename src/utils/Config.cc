@@ -1,6 +1,7 @@
 
 
 #include "Config.h"
+#include "Logging.h"
 #include <cmath>
 
 using namespace dpi;
@@ -17,8 +18,8 @@ uint32_t Config::DPI_NODE_PORT = 5400;
 /**
  * @brief Config::DPI_NODES collects the IP adress of each node participating
  * NOTE: The index of the vector corresponds to nodeid - 1
- * i.e., each node gets a node id starting at 1 therefore the corresponding 
- * IP is Config::DPI_NODES[(nodeid:1) - 1] => use the function 
+ * i.e., each node gets a node id starting at 1 therefore the corresponding
+ * IP is Config::DPI_NODES[(nodeid:1) - 1] => use the function
  * getIPFromNodeId(1) to retrieve the IP
  */
 // vector<string> Config::DPI_NODES = {  "127.0.0.1:"
@@ -90,9 +91,21 @@ void Config::unload() {
   google::protobuf::ShutdownProtobufLibrary();
 }
 
-void Config::load() {
-  string configFile = "./conf/DPI.conf";
-  ifstream file(configFile.c_str());
+void Config::load(const string& prog_name) {
+  string conf_file;
+  if (prog_name.empty() || prog_name.find("/") == string::npos) {
+    conf_file = ".";
+  } else {
+    conf_file = prog_name.substr(0, prog_name.find_last_of("/"));
+  }
+  conf_file += "/conf/DPI.conf";
+  ifstream file(conf_file.c_str());
+
+  if (file.fail()) {
+    Logging::error(__FILE__, __LINE__,
+                    "Failed to load config file at " + conf_file + ". "
+                    "The default values are used.");
+  }
 
   string line;
   string key;

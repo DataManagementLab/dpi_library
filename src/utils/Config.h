@@ -124,9 +124,9 @@ namespace dpi
 class Config
 {
   public:
-    Config()
+    Config(const string& prog_name)
     {
-        load();
+        load(prog_name);
     }
 
     ~Config()
@@ -185,7 +185,7 @@ class Config
     static string& getIPFromNodeId(NodeID& nodeid);
 
   private:
-    static void load();
+    static void load(const string& exec_path);
     static void unload();
 
     static void set(string key, string value);
