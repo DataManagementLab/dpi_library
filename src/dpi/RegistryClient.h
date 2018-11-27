@@ -9,8 +9,8 @@
 #include "../utils/Config.h"
 
 #include "../net/proto/ProtoClient.h"
-#include "../../net/message/MessageTypes.h"
-#include "../../net/message/MessageErrors.h"
+#include "../net/message/MessageTypes.h"
+#include "../net/message/MessageErrors.h"
 
 #include "BufferHandle.h"
 

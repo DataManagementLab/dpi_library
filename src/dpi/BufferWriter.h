@@ -45,6 +45,11 @@ class BufferWriter : public base
         return this->super_append(data, size);
     }
 
+    bool addToInternalBuffer(void *data, size_t size)
+    {
+        return this->super_addToInternalBuffer(data, size);
+    }
+
     bool close(){
         return this->super_close();
     }

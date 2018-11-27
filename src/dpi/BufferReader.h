@@ -1,5 +1,5 @@
 /**
- * @brief BufferReader implements a read method that pulls latest bufferhandle from the registry and reads the buffer data
+ * @brief BufferReader implements a read method that pulls latest bufferhandle from the registry and reads the buffer data (mostly intended for debug purposes)
  * 
  * @file BufferReader.h
  * @author cbinnig, lthostrup, tziegler

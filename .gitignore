@@ -34,3 +34,8 @@
 *.exe
 *.out
 *.app
+
+
+# VS Code
+.vscode/
+build/
