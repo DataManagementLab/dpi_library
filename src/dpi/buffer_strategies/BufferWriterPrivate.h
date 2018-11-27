@@ -19,22 +19,9 @@ class BufferWriterPrivate : public BufferWriterInterface
     BufferWriterPrivate(BufferHandle *handle, size_t internalBufferSize, RegistryClient *regClient = nullptr) : BufferWriterInterface(handle, internalBufferSize, regClient){};
 
 
-    bool super_addToInternalBuffer(void* data, size_t size)
-    {
-        return true;
-    };
-
     // ToDo flag to change signaled.
-    bool super_append(void *data, size_t size) //bool localAppend
+    bool super_append(void *data, size_t size)
     {
-        //if localAppend
-            //memcpy to internalBuffer (what if it doesn't fit? -> append like normal?)
-            //increment added mem var
-            //return true
-        //else
-            //add added mem to size
-            //bussiness as usual
-            //except for memcpy in writeToSegment
 
         if (m_localBufferSegment == nullptr)
         {
@@ -94,14 +81,8 @@ class BufferWriterPrivate : public BufferWriterInterface
 
     inline bool __attribute__((always_inline)) writeToSegment(BufferSegment &segment, size_t insideSegOffset, size_t size, void *data)
     {
-        //Case 1 - no added mem, size fits into internal buffer = main case
-        //Case 2 - no added mem, size does not fit into buffer = else case
-        //Case 3 - added mem, size + added mem fit into buffer = memcpy data with added mem as addition offset. send added mem + size. BAD because append logic does not know about added mem (potentially overwrite segment)
-        //Case 4 - added mem, size + added mem does not fit into buffer = send added mem
-
-
         // std::cout << "Writing to segment, size: " << size << " insideSegOffset: " << insideSegOffset << " circular buf size: " << m_internalBuffer->size << " size + m_internalBuffer->offset: " << size + m_internalBuffer->offset << " data: " << ((int*)data)[0] << '\n';
-        if (size + m_internalBuffer->offset <= m_internalBuffer->size) 
+        if (size + m_internalBuffer->offset <= m_internalBuffer->size)
         {
             // std::cout << "Fit into circular buffer" << '\n';
             memcpy((void *)((char *)m_internalBuffer->bufferPtr + m_internalBuffer->offset), data, size);
@@ -109,15 +90,15 @@ class BufferWriterPrivate : public BufferWriterInterface
         else
         {
             // std::cout << "Does not fit into circular buffer, sending header first" << '\n';
-            writeHeaderToRemote(segment.offset); //Writing to the header is signaled, i.e. call only returns when all prior writes are sent
+            writeHeaderToRemote(segment.offset); //Writing to the header is signalled, i.e. call only returns when all prior writes are sent
             memcpy(m_internalBuffer->bufferPtr, data, size);
             m_internalBuffer->offset = 0;
         }
 
-        void *localDataPtr = (void *)((char *)m_internalBuffer->bufferPtr + m_internalBuffer->offset);
+        void *bufferTmp = (void *)((char *)m_internalBuffer->bufferPtr + m_internalBuffer->offset);
         m_internalBuffer->offset += size;
 
-        return m_rdmaClient->writeRC(m_handle->node_id, segment.offset + insideSegOffset + sizeof(Config::DPI_SEGMENT_HEADER_t), localDataPtr, size, false);
+        return m_rdmaClient->writeRC(m_handle->node_id, segment.offset + insideSegOffset + sizeof(Config::DPI_SEGMENT_HEADER_t), bufferTmp, size, false);
     }
 
     inline bool __attribute__((always_inline)) writeHeaderToRemote(size_t remoteSegOffset)

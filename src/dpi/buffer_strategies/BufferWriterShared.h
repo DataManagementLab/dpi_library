@@ -30,11 +30,6 @@ class BufferWriterShared : public BufferWriterInterface
         m_currentSegment = m_handle->segments.back();
     };
 
-    bool super_addToInternalBuffer(void* data, size_t size)
-    {
-        return true;
-    };
-
     bool super_append(void *data, size_t size)
     {
         auto writeOffset = modifyCounter(size, m_currentSegment.offset);

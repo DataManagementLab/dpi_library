@@ -48,7 +48,6 @@ class BufferWriterInterface
 
     virtual bool super_close() = 0;
 
-    virtual bool super_addToInternalBuffer(void* data, size_t size) = 0;
 
   protected:
 

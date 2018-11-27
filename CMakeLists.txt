@@ -3,8 +3,6 @@ cmake_minimum_required(VERSION 2.8)
 project(dpi)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
-# set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/library)
-# set(LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/library)
 
 # Compiler Options
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLINUX -DDEBUG -std=c++11 -Wall -g  -Wextra ")

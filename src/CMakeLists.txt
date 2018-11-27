@@ -21,19 +21,6 @@ target_link_libraries(dpi_exe
   api
 )
 
-# file(GLOB_RECURSE SOURCES "*.cc")
-
-# add_library(dpi_lib ${SOURCES})
-
-# target_link_libraries(dpi_lib
-#   utils
-#   net_message
-#   net_proto
-#   net_rdma
-#   dpi
-#   api
-# )
-
 add_executable(dpi_bench BenchmarkMain.cc)
     
 target_link_libraries(dpi_bench
