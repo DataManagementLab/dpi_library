@@ -24,7 +24,7 @@ class RegistryClient: public ProtoClient
     RegistryClient();
     virtual ~RegistryClient();
 
-    virtual BufferHandle *createBuffer(string &name, NodeID node_id, size_t size, size_t threshold);
+    virtual BufferHandle *createBuffer(string &name, NodeID node_id, size_t size, size_t threshold); //Buffer size (in segments? in segments per appender? can be infinite?), #appenders (rings)
     virtual bool registerBuffer(BufferHandle *handle);
     virtual BufferHandle *retrieveBuffer(string &name);
     virtual bool appendSegment(string &name, BufferSegment &segment);

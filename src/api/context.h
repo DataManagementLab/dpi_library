@@ -17,12 +17,7 @@
  */
 struct DPI_Context
 {
-    #ifdef DPI_STRATEGY_PRIVATE //todo: remove ugly hack
-    std::unordered_map<std::string, BufferWriter<BufferWriterPrivate>*> buffer_writers;
-    #endif
-    #ifdef DPI_STRATEGY_SHARED
-    std::unordered_map<std::string, BufferWriter<BufferWriterShared>*> buffer_writers;
-    #endif
+    std::unordered_map<std::string, BufferWriter*> buffer_writers;
 
     std::unordered_map<std::string, BufferReader*> buffer_readers;
 

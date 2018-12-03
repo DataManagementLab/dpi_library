@@ -20,8 +20,7 @@ class NodeClient
     NodeClient(/* args */);
     ~NodeClient();
 
-    template <class T>
-    bool dpi_append(BufferWriter<T> *writer, void *data, size_t size)
+    bool dpi_append(BufferWriter *writer, void *data, size_t size)
     {
         return writer->append(data, size);
     };

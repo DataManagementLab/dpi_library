@@ -10,12 +10,12 @@
 
 using namespace dpi;
 
-RDMAClient::RDMAClient(rdma_transport_t transport) {
+RDMAClient::RDMAClient(size_t mem_size, rdma_transport_t transport) {
   m_countWR = 0;
 
   switch (transport) {
     case rc:
-      m_rdmaManager = new RDMAManagerRC();
+      m_rdmaManager = new RDMAManagerRC(mem_size);
       break;
     case ud:
       m_rdmaManager = new RDMAManagerUD();

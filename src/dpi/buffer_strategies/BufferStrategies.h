@@ -1,4 +1,4 @@
-#pragma once
+// #pragma once
 
-#include "BufferWriterPrivate.h" 
-#include "BufferWriterShared.h"
+// #include "BufferWriterPrivate.h" 
+// #include "BufferWriterShared.h"

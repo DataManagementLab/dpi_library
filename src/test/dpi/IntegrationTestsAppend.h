@@ -22,21 +22,18 @@
 class IntegrationTestsAppend : public CppUnit::TestFixture
 {
   DPI_UNIT_TEST_SUITE(IntegrationTestsAppend);
-    DPI_UNIT_TEST(testPrivate_SimpleIntegrationWithAppendInts);
-    DPI_UNIT_TEST(testPrivate_FourAppendersConcurrent);
-    DPI_UNIT_TEST(testShared_FourAppendersConcurrent);
-    DPI_UNIT_TEST(testShared_SimpleIntegrationWithAppendInts);
-    DPI_UNIT_TEST(testShared_AtomicHeaderManipulation);
+    DPI_UNIT_TEST(SimpleIntegrationWithAppendInts);
+    DPI_UNIT_TEST(FourAppendersConcurrent);
   DPI_UNIT_TEST_SUITE_END();
 
 public:
   void setUp();
   void tearDown();
-  void testPrivate_SimpleIntegrationWithAppendInts();
-  void testShared_SimpleIntegrationWithAppendInts();
-  void testShared_AtomicHeaderManipulation();
-  void testPrivate_FourAppendersConcurrent();
-  void testShared_FourAppendersConcurrent();
+  void SimpleIntegrationWithAppendInts();
+  void FourAppendersConcurrent();
+  // void testShared_SimpleIntegrationWithAppendInts();
+  // void testShared_AtomicHeaderManipulation();
+  // void testShared_FourAppendersConcurrent();
 
   static std::atomic<int> bar;    // Counter of threads, faced barrier.
   static std::atomic<int> passed; // Number of barriers, passed by all threads.
@@ -49,7 +46,7 @@ private:
 
 
 
-template <class DataType, class Strategy> 
+template <class DataType> 
 class BufferWriterClient : public Thread
 {
   BufferHandle* buffHandle = nullptr;
@@ -66,7 +63,7 @@ public:
   {
     //ARRANGE
 
-    BufferWriter<Strategy> buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, new RegistryClient());
+    BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, new RegistryClient());
 
     barrier_wait();
 

@@ -48,8 +48,8 @@ void AppendExamples::example1()
   DPI_Create_buffer(buffer_name, 1, context);
   DPI_Append(buffer_name, (void*)data, sizeof(data), context);
 
-  size_t buffer_size;
-  void* buffer_ptr;
+  size_t buffer_size = 0;
+  void* buffer_ptr = nullptr;
   DPI_Close_buffer(buffer_name, context);
   DPI_Get_buffer(buffer_name, buffer_size, buffer_ptr, context);
 
@@ -74,8 +74,8 @@ void AppendExamples::paperExample()
   DPI_Append(buffer_name, (void*)data2, sizeof(data2), context);
   DPI_Close_buffer(buffer_name, context);
 
-  size_t buffer_size;
-  void* buffer_ptr;
+  size_t buffer_size = 0;
+  void* buffer_ptr = nullptr;
   DPI_Get_buffer(buffer_name, buffer_size, buffer_ptr, context);
 
   for(size_t i = 0; i < buffer_size; i++)

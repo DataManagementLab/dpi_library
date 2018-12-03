@@ -14,7 +14,7 @@ namespace dpi
 struct BufferSegment
 {
     size_t offset;
-    size_t size;
+    size_t size; //Size of data portion (without header)
     size_t threshold;
 
     BufferSegment(){};
