@@ -16,19 +16,19 @@
 class TestRegistryClient : public CppUnit::TestFixture
 {
   DPI_UNIT_TEST_SUITE(TestRegistryClient);
-  DPI_UNIT_TEST(testCreateBuffer);
-  DPI_UNIT_TEST(testRetrieveBuffer);
-  DPI_UNIT_TEST(testRegisterBuffer);
-  DPI_UNIT_TEST(testAppendSegment);
+  // DPI_UNIT_TEST(testCreateBuffer);
+  // DPI_UNIT_TEST(testRetrieveBuffer);
+  // DPI_UNIT_TEST(testRegisterBuffer);
+  // DPI_UNIT_TEST(testAppendSegment);
   DPI_UNIT_TEST_SUITE_END();
 
 public:
   void setUp();
   void tearDown();
-  void testCreateBuffer();
-  void testRetrieveBuffer();
-  void testRegisterBuffer();
-  void testAppendSegment();
+  // void testCreateBuffer();
+  // void testRetrieveBuffer();
+  // void testRegisterBuffer();
+  // void testAppendSegment();
 
 private:
   RegistryClient *m_regClient;

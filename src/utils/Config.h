@@ -156,15 +156,17 @@ class Config
     {
         uint64_t counter = 0;
         uint64_t hasFollowSegment = 0;
-        uint64_t nextSegmentPtr = 0;
+        uint64_t nextSegmentOffset = 0;
         uint64_t segmentFlags = 0;
+        DPI_SEGMENT_HEADER_t(){};
+        DPI_SEGMENT_HEADER_t(uint64_t counter, uint64_t hasFollowSegment, uint64_t nextSegmentOffset, uint64_t segmentFlags) : counter(counter), hasFollowSegment(hasFollowSegment), nextSegmentOffset(nextSegmentOffset), segmentFlags(segmentFlags){};
     };
     struct DPI_SEGMENT_HEADER_META
     {
         static const size_t getCounterOffset = 0;
         static const size_t getHasFollowSegmentOffset = sizeof(DPI_SEGMENT_HEADER_t::counter);
         static const size_t getNextSegmentPtrOffset = sizeof(DPI_SEGMENT_HEADER_t::counter) + sizeof(DPI_SEGMENT_HEADER_t::hasFollowSegment);
-        static const size_t getSegmentFlagsOffset = sizeof(DPI_SEGMENT_HEADER_t::counter) + sizeof(DPI_SEGMENT_HEADER_t::hasFollowSegment)+ sizeof(DPI_SEGMENT_HEADER_t::nextSegmentPtr);
+        static const size_t getSegmentFlagsOffset = sizeof(DPI_SEGMENT_HEADER_t::counter) + sizeof(DPI_SEGMENT_HEADER_t::hasFollowSegment)+ sizeof(DPI_SEGMENT_HEADER_t::nextSegmentOffset);
     };
 
     //RDMA

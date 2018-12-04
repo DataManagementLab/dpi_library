@@ -12,8 +12,8 @@
 #include "RDMAConnResponseMgmt.pb.h"
 #include "MemoryResourceRequest.pb.h"
 #include "MemoryResourceResponse.pb.h"
-#include "DPICreateBufferRequest.pb.h"
-#include "DPICreateBufferResponse.pb.h"
+#include "DPICreateRingOnBufferRequest.pb.h"
+#include "DPICreateRingOnBufferResponse.pb.h"
 #include "DPIRetrieveBufferRequest.pb.h"
 #include "DPIRetrieveBufferResponse.pb.h"
 #include "DPIAppendBufferRequest.pb.h"
@@ -38,15 +38,12 @@ enum MessageTypesEnum : int
 class MessageTypes
 {
 public:
-  static Any createDPICreateBufferRequest(string &name, NodeID node_id, size_t size, size_t threshold)
+  static Any createDPICreateRingOnBufferRequest(string &name)
   {
-    DPICreateBufferRequest createBufferReq;
-    createBufferReq.set_name(name);
-    createBufferReq.set_node_id(node_id);
-    createBufferReq.set_size(size);
-    createBufferReq.set_threshold(threshold);
+    DPICreateRingOnBufferRequest createRingReq;
+    createRingReq.set_name(name);
     Any anyMessage;
-    anyMessage.PackFrom(createBufferReq);
+    anyMessage.PackFrom(createRingReq);
     return anyMessage;
   }
 
@@ -65,11 +62,14 @@ public:
     return anyMessage;
   }
 
-  static Any createDPIRegisterBufferRequest(string &name, NodeID node_id)
+  static Any createDPIRegisterBufferRequest(string &name, NodeID nodeId, size_t segmentsPerWriter, bool reuseSegments, size_t segmentSizes)
   {
     DPIAppendBufferRequest appendBufferReq;
     appendBufferReq.set_name(name);
-    appendBufferReq.set_node_id(node_id);
+    appendBufferReq.set_node_id(nodeId);
+    appendBufferReq.set_segmentsperwriter(segmentsPerWriter);
+    appendBufferReq.set_reusesegments(reuseSegments);
+    appendBufferReq.set_segmentsizes(segmentSizes);
     appendBufferReq.set_register_(true);
 
     DPIAppendBufferRequest_Segment *segmentReq = appendBufferReq.add_segment();

@@ -25,7 +25,7 @@ inline int DPI_Create_buffer(std::string &name, NodeID node_id, DPI_Context& con
     if (context.registry_client == nullptr) return DPI_NOT_INITIALIZED;
 
 #ifdef DPI_STRATEGY_PRIVATE
-    BufferHandle *buffHandle = new BufferHandle(name, node_id);
+    BufferHandle *buffHandle = new BufferHandle(name, node_id, 1);
     context.registry_client->registerBuffer(buffHandle);
     context.buffer_writers[name] = new BufferWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, context.registry_client);
 #endif

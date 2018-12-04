@@ -36,20 +36,20 @@ public:
         //Update buffer handle
         m_handle = m_regClient->retrieveBuffer(m_handle->name);
         Logging::debug(__FILE__, __LINE__, "Retrieved new BufferHandle");
-        if (m_handle->segments.size() == 0) 
+        if (m_handle->entrySegments.size() == 0) 
         {
             Logging::error(__FILE__, __LINE__, "Buffer Handle did not contain any segments");
             return nullptr;
         }
         size_t dataSize = 0;
-        for (BufferSegment &segment : m_handle->segments)
+        for (BufferSegment &segment : m_handle->entrySegments)
         {
             dataSize += segment.size;
         }
         void* data = m_rdmaClient->localAlloc(dataSize);
         Config::DPI_SEGMENT_HEADER_t* header = (Config::DPI_SEGMENT_HEADER_t*) m_rdmaClient->localAlloc(sizeof(Config::DPI_SEGMENT_HEADER_t));
         size_t writeoffset = 0;
-        for (BufferSegment &segment : m_handle->segments)
+        for (BufferSegment &segment : m_handle->entrySegments)
         {
             //Read header of segment
             m_rdmaClient->read(m_handle->node_id, segment.offset, (void*)(header), sizeof(Config::DPI_SEGMENT_HEADER_t), true);

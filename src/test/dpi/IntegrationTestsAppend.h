@@ -22,18 +22,18 @@
 class IntegrationTestsAppend : public CppUnit::TestFixture
 {
   DPI_UNIT_TEST_SUITE(IntegrationTestsAppend);
-    DPI_UNIT_TEST(SimpleIntegrationWithAppendInts);
-    DPI_UNIT_TEST(FourAppendersConcurrent);
+    DPI_UNIT_TEST(SimpleIntegrationWithAppendInts_DontReuseSegs);
+    DPI_UNIT_TEST(FourAppendersConcurrent_DontReuseSegs);
   DPI_UNIT_TEST_SUITE_END();
 
 public:
   void setUp();
   void tearDown();
-  void SimpleIntegrationWithAppendInts();
-  void FourAppendersConcurrent();
-  // void testShared_SimpleIntegrationWithAppendInts();
+  void SimpleIntegrationWithAppendInts_DontReuseSegs();
+  void FourAppendersConcurrent_DontReuseSegs();
+  // void testShared_SimpleIntegrationWithAppendInts_DontReuseSegs();
   // void testShared_AtomicHeaderManipulation();
-  // void testShared_FourAppendersConcurrent();
+  // void testShared_FourAppendersConcurrent_DontReuseSegs();
 
   static std::atomic<int> bar;    // Counter of threads, faced barrier.
   static std::atomic<int> passed; // Number of barriers, passed by all threads.
@@ -65,7 +65,7 @@ public:
 
     BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, new RegistryClient());
 
-    barrier_wait();
+    barrier_wait(); //Use barrier to simulate concurrent appends between BufferWriters
 
     //ACT
     for(size_t i = 0; i < dataToWrite->size(); i++)

@@ -38,7 +38,7 @@ void TestBufferReader::testReadWithHeader()
     uint32_t numberSegments = 2;
     size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / memSize * numberSegments;
 
-    BufferHandle *buffHandle = new BufferHandle(bufferName, 1);
+    BufferHandle *buffHandle = new BufferHandle(bufferName, 1, numberSegments);
     BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
     m_stub_regClient->registerBuffer(buffHandle);
 
@@ -76,7 +76,7 @@ void TestBufferReader::testReadWithoutHeader(){
     uint32_t numberSegments = 2;
     size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / memSize * numberSegments;
 
-    BufferHandle *buffHandle = new BufferHandle(bufferName, 1);
+    BufferHandle *buffHandle = new BufferHandle(bufferName, 1, numberSegments);
     BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
     m_stub_regClient->registerBuffer(buffHandle);
 

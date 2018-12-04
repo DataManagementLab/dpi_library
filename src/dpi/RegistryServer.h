@@ -57,6 +57,10 @@ private:
   BufferHandle *retrieveBuffer(string &name);
 
   bool appendSegment(string &name, BufferSegment *segment);
+
+  BufferSegment *createRingOnBuffer(BufferHandle *bufferHandle);
+
+  Config::DPI_SEGMENT_HEADER_t* segmentHeaderBuffer = nullptr;
 };
 
 } // namespace dpi

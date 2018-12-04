@@ -54,7 +54,7 @@ void IntegrationTestsAppend::tearDown()
   }
 }
 
-void IntegrationTestsAppend::SimpleIntegrationWithAppendInts()
+void IntegrationTestsAppend::SimpleIntegrationWithAppendInts_DontReuseSegs()
 {
   //ARRANGE
   string bufferName = "buffer1";
@@ -64,10 +64,22 @@ void IntegrationTestsAppend::SimpleIntegrationWithAppendInts()
 
   uint32_t numberSegments = 2;
   size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / memSize * numberSegments;
-
-  BufferHandle *buffHandle = new BufferHandle(bufferName, 1);
-  BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
+  uint32_t segmentsPerWriter = 2;
+  BufferHandle *buffHandle = new BufferHandle(bufferName, 1, segmentsPerWriter);
+  DPI_DEBUG("Created BufferHandle\n");
   m_regClient->registerBuffer(buffHandle);
+  DPI_DEBUG("Registered Buffer in Registry\n");
+  buffHandle = m_regClient->createSegmentRingOnBuffer(bufferName);
+  DPI_DEBUG("Created segment ring on buffer\n");
+
+
+  int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
+  for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
+  {
+    std::cout << rdma_buffer[i] << " ";
+  }
+
+  BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
 
   //ACT
   for (size_t i = 0; i < numberElements; i++)
@@ -76,33 +88,32 @@ void IntegrationTestsAppend::SimpleIntegrationWithAppendInts()
   }
 
   CPPUNIT_ASSERT(buffWriter.close());
-  int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
   
-  // for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
-  // {
-  //   std::cout << rdma_buffer[i] << " ";
-  // }
+  for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
+  {
+    std::cout << rdma_buffer[i] << " ";
+  }
   
   //ASSERT
   for (uint32_t j = 0; j < numberSegments; j++)
   {
     //Assert header
     Config::DPI_SEGMENT_HEADER_t *header = (Config::DPI_SEGMENT_HEADER_t *) &(rdma_buffer[j*Config::DPI_SEGMENT_SIZE / memSize]);
-    CPPUNIT_ASSERT_EQUAL((uint64_t)(Config::DPI_SEGMENT_SIZE- sizeof(Config::DPI_SEGMENT_HEADER_t)), header[0].counter);
-    CPPUNIT_ASSERT_EQUAL((uint64_t)(j == numberSegments - 1 ? 0 : 1), header[0].hasFollowSegment);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Expected size of segment (without header) did not match segment counter", (uint64_t)(Config::DPI_SEGMENT_SIZE- sizeof(Config::DPI_SEGMENT_HEADER_t)), header[0].counter);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("hasFollowSegment did not match expected", (uint64_t)(j == numberSegments - 1 ? 0 : 1), header[0].hasFollowSegment);
 
     //Assert data
     int expected = 0;
     for (uint32_t i = sizeof(Config::DPI_SEGMENT_HEADER_t) / memSize; i < (numberElements / numberSegments); i++)
     {
-      CPPUNIT_ASSERT_EQUAL(expected, rdma_buffer[i]);
+      CPPUNIT_ASSERT_EQUAL_MESSAGE("Data value did not match", expected, rdma_buffer[i]);
       expected++;
     }
   }
 }
 
 
-void IntegrationTestsAppend::FourAppendersConcurrent()
+void IntegrationTestsAppend::FourAppendersConcurrent_DontReuseSegs()
 {
   //ARRANGE
   string bufferName = "test";
@@ -117,12 +128,19 @@ void IntegrationTestsAppend::FourAppendersConcurrent()
     dataToWrite->push_back(i);
   }  
 
-  BufferHandle *buffHandle1 = new BufferHandle(bufferName, nodeId);
-  CPPUNIT_ASSERT(m_regClient->registerBuffer(buffHandle1));
+  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segPerClient)));
+  BufferHandle *buffHandle1 = m_regClient->createSegmentRingOnBuffer(bufferName);
+  BufferHandle *buffHandle2 = m_regClient->createSegmentRingOnBuffer(bufferName);
+  BufferHandle *buffHandle3 = m_regClient->createSegmentRingOnBuffer(bufferName);
+  BufferHandle *buffHandle4 = m_regClient->createSegmentRingOnBuffer(bufferName);
 
-  BufferHandle *buffHandle2 = m_regClient->retrieveBuffer(bufferName);
-  BufferHandle *buffHandle3 = m_regClient->retrieveBuffer(bufferName);
-  BufferHandle *buffHandle4 = m_regClient->retrieveBuffer(bufferName);
+  int64_t *rdma_buffer = (int64_t *)m_nodeServer->getBuffer();
+
+  // std::cout << "Buffer before appending" << '\n';
+  // for (int i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int64_t)*segPerClient*4; i++)
+  // {
+  //   std::cout << rdma_buffer[i] << ' ';
+  // }
 
   BufferWriterClient<int64_t> *client1 = new BufferWriterClient<int64_t>(buffHandle1, dataToWrite);
   BufferWriterClient<int64_t> *client2 = new BufferWriterClient<int64_t>(buffHandle2, dataToWrite);
@@ -140,40 +158,38 @@ void IntegrationTestsAppend::FourAppendersConcurrent()
   client4->join();
   
   //ASSERT
-  BufferReader bufferReader(buffHandle1, m_regClient);
-  size_t read_buffer_size = 0;
-  int64_t *read_buffer = (int64_t *)bufferReader.read(read_buffer_size, true);
 
-  // std::cout << "Buffer " << '\n';
+  // std::cout << "Buffer after appending, total int64_t's: " << numberElements << " * 4" << '\n';
   // for (int i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int64_t)*segPerClient*4; i++)
   // {
   //   std::cout << rdma_buffer[i] << ' ';
   // }
+
   for(size_t i = 0; i < segPerClient*4; i++)
   {
     int64_t segmentStart = i*Config::DPI_SEGMENT_SIZE/sizeof(int64_t);
     //Assert counter in header
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("Counter in header check", (int64_t)(sizeof(int64_t)*numberElements/segPerClient), read_buffer[segmentStart]);
-    if (read_buffer[segmentStart+1] == (int64_t)1) //Has follow segment, data should be dataToWrite[0 -> numberElements/2]
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Counter in header check", (int64_t)(sizeof(int64_t)*numberElements/segPerClient), rdma_buffer[segmentStart]);
+    if (rdma_buffer[segmentStart+1] == (int64_t)1) //Has follow segment, data should be dataToWrite[0 -> numberElements/2]
     {
       for(int64_t j = segmentStart; j < (int64_t)(segmentStart + numberElements/segPerClient); j++)
       {
-        CPPUNIT_ASSERT_EQUAL(dataToWrite->operator[](j - segmentStart), read_buffer[j+sizeof(Config::DPI_SEGMENT_HEADER_t)/sizeof(int64_t)]);
+        CPPUNIT_ASSERT_EQUAL(dataToWrite->operator[](j - segmentStart), rdma_buffer[j+sizeof(Config::DPI_SEGMENT_HEADER_t)/sizeof(int64_t)]);
       }      
     }
     else //data should be dataToWrite[numberElements/2 -> numberElements]
     {
       for(int64_t j = segmentStart; j < (int64_t)(segmentStart + numberElements/segPerClient); j++)
       {
-        CPPUNIT_ASSERT_EQUAL(dataToWrite->operator[](j+numberElements/segPerClient - segmentStart), read_buffer[j+sizeof(Config::DPI_SEGMENT_HEADER_t)/sizeof(int64_t)]);
+        CPPUNIT_ASSERT_EQUAL(dataToWrite->operator[](j+numberElements/segPerClient - segmentStart), rdma_buffer[j+sizeof(Config::DPI_SEGMENT_HEADER_t)/sizeof(int64_t)]);
       }
     }
   }
-  m_nodeServer->localFree(read_buffer);
+  m_nodeServer->localFree(rdma_buffer);
 }
 
 
-// void IntegrationTestsAppend::testShared_SimpleIntegrationWithAppendInts()
+// void IntegrationTestsAppend::testShared_SimpleIntegrationWithAppendInts_DontReuseSegs()
 // {
 //   //ARRANGE
 //   string bufferName = "buffer1";
@@ -221,7 +237,7 @@ void IntegrationTestsAppend::FourAppendersConcurrent()
 //   }
 // }
 
-// void IntegrationTestsAppend::testShared_FourAppendersConcurrent()
+// void IntegrationTestsAppend::testShared_FourAppendersConcurrent_DontReuseSegs()
 // {
 //   //ARRANGE
 //   string bufferName = "test";

@@ -1,9 +1,0 @@
-syntax = "proto3";
-package dpi;
-
-message DPICreateBufferRequest {
-	string name = 1;
-    uint64 node_id = 2;
-    uint64 size = 3;
-    uint64 threshold = 4;
-}

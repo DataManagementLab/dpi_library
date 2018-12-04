@@ -1,18 +1,17 @@
 syntax = "proto3";
 package dpi;
 
-message DPIAppendBufferRequest {
-    message Segment {
+message DPICreateRingOnBufferResponse {
+	message Segment {
         uint64 offset = 1;
         uint64 size = 2;
-        uint64 threshold = 3;
+        uint64 nextSegmentOffset = 3;
     }
     string name = 1;
     uint64 node_id = 2;
-    repeated Segment segment = 3;
+    Segment segment = 3;
     uint64 segmentsPerWriter = 4;
     bool reuseSegments = 5;
     uint64 segmentSizes = 6;
-    bool register = 7;
-
+    uint32 return = 7;
 }
