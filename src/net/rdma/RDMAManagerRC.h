@@ -59,7 +59,6 @@ class RDMAManagerRC : public RDMAManager {
     inline bool __attribute__((always_inline)) remoteAccess(struct ib_addr_t& ibAddr, size_t offset, const void* memAddr,
                              size_t size, bool signaled, bool wait, enum ibv_wr_opcode verb) {
             
-        
         uint64_t connKey = ibAddr.conn_key;
         struct ib_qp_t localQP = m_qps[connKey];
         struct ib_conn_t remoteConn = m_rconns[connKey];

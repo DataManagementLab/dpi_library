@@ -65,7 +65,7 @@ void IntegrationTestsAppend::SimpleIntegrationWithAppendInts_DontReuseSegs()
   uint32_t numberSegments = 2;
   size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / memSize * numberSegments;
   uint32_t segmentsPerWriter = 2;
-  BufferHandle *buffHandle = new BufferHandle(bufferName, 1, segmentsPerWriter);
+  BufferHandle *buffHandle = new BufferHandle(bufferName, 1, segmentsPerWriter-1); //Create 1 less segment in ring to test BufferWriter creating a segment on the ring
   DPI_DEBUG("Created BufferHandle\n");
   m_regClient->registerBuffer(buffHandle);
   DPI_DEBUG("Registered Buffer in Registry\n");
@@ -74,10 +74,10 @@ void IntegrationTestsAppend::SimpleIntegrationWithAppendInts_DontReuseSegs()
 
 
   int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
-  for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
-  {
-    std::cout << rdma_buffer[i] << " ";
-  }
+  // for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
+  // {
+  //   std::cout << rdma_buffer[i] << " ";
+  // }
 
   BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
 
@@ -89,10 +89,10 @@ void IntegrationTestsAppend::SimpleIntegrationWithAppendInts_DontReuseSegs()
 
   CPPUNIT_ASSERT(buffWriter.close());
   
-  for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
-  {
-    std::cout << rdma_buffer[i] << " ";
-  }
+  // for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
+  // {
+  //   std::cout << rdma_buffer[i] << " ";
+  // }
   
   //ASSERT
   for (uint32_t j = 0; j < numberSegments; j++)

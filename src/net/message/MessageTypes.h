@@ -18,6 +18,8 @@
 #include "DPIRetrieveBufferResponse.pb.h"
 #include "DPIAppendBufferRequest.pb.h"
 #include "DPIAppendBufferResponse.pb.h"
+#include "DPIAllocSegmentsRequest.pb.h"
+#include "DPIAllocSegmentsResponse.pb.h"
 
 #include "ErrorMessage.pb.h"
 
@@ -38,6 +40,21 @@ enum MessageTypesEnum : int
 class MessageTypes
 {
 public:
+
+
+  static Any createDPIAllocSegmentsRequest(const string& bufferName, const size_t segmentsCount, const size_t segmentsSize, const bool reuseSegments, const bool newRing)
+  {
+    DPIAllocSegmentsRequest allocSegReq;
+    allocSegReq.set_name(bufferName);
+    allocSegReq.set_segments_count(segmentsCount);
+    allocSegReq.set_segments_size(segmentsSize);
+    allocSegReq.set_reuse_segments(reuseSegments);
+    allocSegReq.set_new_ring(newRing);
+    Any anyMessage;
+    anyMessage.PackFrom(allocSegReq);
+    return anyMessage;
+  }
+
   static Any createDPICreateRingOnBufferRequest(string &name)
   {
     DPICreateRingOnBufferRequest createRingReq;
@@ -72,7 +89,7 @@ public:
     appendBufferReq.set_segmentsizes(segmentSizes);
     appendBufferReq.set_register_(true);
 
-    DPIAppendBufferRequest_Segment *segmentReq = appendBufferReq.add_segment();
+    // DPIAppendBufferRequest_Segment *segmentReq = appendBufferReq.add_segment();
     Any anyMessage;
     anyMessage.PackFrom(appendBufferReq);
     return anyMessage;

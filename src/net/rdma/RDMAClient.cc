@@ -48,6 +48,35 @@ bool RDMAClient::localFree(const void* ptr) {
 }
 
 
+//DPI specific function
+bool RDMAClient::remoteAllocSegments(const string& connection, const string& bufferName, const size_t segmentsCount, const size_t segmentsSize, const bool reuseSegments, const bool newRing, size_t& offset)
+{
+  if (!connect(connection)) {
+    return false;
+  }
+  ProtoClient* client = m_clients[connection];
+
+  Any sendAny = MessageTypes::createDPIAllocSegmentsRequest(bufferName, segmentsCount, segmentsSize, reuseSegments, newRing);
+  Any rcvAny;
+  if (!client->send(&sendAny, &rcvAny)) {
+    Logging::error(__FILE__, __LINE__, "cannot send message");
+    return false;
+  }
+
+  if (rcvAny.Is<DPIAllocSegmentsResponse>()) {
+    Logging::debug(__FILE__, __LINE__, "Received DPIAllocSegmentsResponse");
+    DPIAllocSegmentsResponse resResp;
+    rcvAny.UnpackTo(&resResp);
+    if (resResp.return_() == MessageErrors::NO_ERROR) {
+      offset = resResp.offset();
+      return true;
+    }
+    Logging::warn("RDMAClient: Got error code " + to_string(resResp.return_()));
+  }
+  return false;
+}
+
+
 bool RDMAClient::remoteAlloc(const string& connection, const size_t size,
                              size_t& offset) {
   if (!connect(connection)) {

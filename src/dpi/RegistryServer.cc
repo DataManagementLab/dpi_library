@@ -21,11 +21,13 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
 {
     if (anyReq->Is<DPICreateRingOnBufferRequest>())
     {
+        Logging::debug(__FILE__, __LINE__, "Received DPICreateRingOnBufferRequest");
         DPICreateRingOnBufferRequest createRingReq;
         DPICreateRingOnBufferResponse createRingResp;
         anyReq->UnpackTo(&createRingReq);
 
         string name = createRingReq.name();
+        Logging::debug(__FILE__, __LINE__, "Retrieving buffer");
         BufferHandle *buffHandle = retrieveBuffer(name);
         
         if (buffHandle == nullptr)
@@ -45,7 +47,7 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
             createRingResp.set_reusesegments(buffHandle->reuseSegments);
             createRingResp.set_segmentsizes(buffHandle->segmentSizes);
             createRingResp.set_return_(MessageErrors::NO_ERROR);
-            delete segment;
+            buffHandle->entrySegments.push_back(*segment);
         }
 
         anyResp->PackFrom(createRingResp);
@@ -159,37 +161,16 @@ BufferSegment *RegistryServer::createRingOnBuffer(BufferHandle *bufferHandle)
     string connection = Config::getIPFromNodeId(bufferHandle->node_id);
     size_t fullSegmentSize = bufferHandle->segmentSizes + sizeof(Config::DPI_SEGMENT_HEADER_t);
 
-    if (!m_rdmaClient->remoteAlloc(connection, bufferHandle->segmentsPerWriter * fullSegmentSize, offset))
+    if (!m_rdmaClient->remoteAllocSegments(connection, bufferHandle->name, bufferHandle->segmentsPerWriter, fullSegmentSize, bufferHandle->reuseSegments, true, offset))
     {
         return nullptr;
-    }
-
-    //Write headers to allocated segments
-    for (size_t i = 0; i < bufferHandle->segmentsPerWriter; i++)
-    {
-        bool lastSegment = i == bufferHandle->segmentsPerWriter-1;
-        size_t nextSegOffset;
-        if (lastSegment)
-            nextSegOffset = (bufferHandle->reuseSegments ? offset : SIZE_MAX); //If reuseSegments is true, point last segment back to first (creating a ring), if not set it to max value
-        else
-            nextSegOffset = offset + (i+1) * fullSegmentSize;
-        
-        segmentHeaderBuffer->counter = 0;
-        segmentHeaderBuffer->hasFollowSegment = (lastSegment && !bufferHandle->reuseSegments ? 0 : 1);
-        segmentHeaderBuffer->nextSegmentOffset = nextSegOffset;
-        segmentHeaderBuffer->segmentFlags = 0;
-
-        if (!m_rdmaClient->writeRC(bufferHandle->node_id, offset + i * fullSegmentSize, segmentHeaderBuffer, sizeof(*segmentHeaderBuffer), true))
-        {
-            Logging::error(__FILE__, __LINE__, "RegistryServer: Error occured when writing header to newly created segments on buffer " + bufferHandle->name);
-            return nullptr;
-        }
     }
 
     Logging::debug(__FILE__, __LINE__, "Created ring with offset on entry segment: " + to_string(offset));
 
     auto bufferSegment = new BufferSegment(offset, bufferHandle->segmentSizes, bufferHandle->segmentSizes + sizeof(Config::DPI_SEGMENT_HEADER_t));
     return bufferSegment;
+
 }
 
 BufferHandle *RegistryServer::retrieveBuffer(string &name)

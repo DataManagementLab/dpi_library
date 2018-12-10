@@ -45,7 +45,7 @@ uint32_t Config::RDMA_MAX_WR = 4096;
 vector<int> Config::THREAD_CPUS = { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39 };
 
 //LOGGING
-int Config::LOGGING_LEVEL = 0;
+int Config::LOGGING_LEVEL = 99;
 
 string& Config::getIPFromNodeId(NodeID& node_id){
   return Config::DPI_NODES.at(node_id -1);

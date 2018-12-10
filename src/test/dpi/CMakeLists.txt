@@ -9,6 +9,8 @@ IntegrationTestsAppend.cc
 TestBufferReader.h
 TestBufferReader.cc
 RegistryClientStub.h
+TestNodeServerConsumeSeg.h
+TestNodeServerConsumeSeg.cc
   ) # Adding headers required for portability reasons http://voices.canonical.com/jussi.pakkanen/2013/03/26/a-list-of-common-cmake-antipatterns/
   
 add_library(test_dpi ${TEST_DPI_SRC})

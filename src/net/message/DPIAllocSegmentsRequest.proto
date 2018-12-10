@@ -1,0 +1,11 @@
+syntax = "proto3";
+package dpi;
+
+message DPIAllocSegmentsRequest {
+    string name = 1;
+	uint32 segments_count = 2;
+	uint64 segments_size = 3;
+    bool reuse_segments = 4;
+    bool new_ring = 5;
+}
+

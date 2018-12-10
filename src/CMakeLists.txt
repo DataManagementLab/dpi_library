@@ -16,7 +16,7 @@ target_link_libraries(dpi_exe
   net_message
   net_proto
   net_rdma
-  test
+  test_lib
   dpi
   api
 )

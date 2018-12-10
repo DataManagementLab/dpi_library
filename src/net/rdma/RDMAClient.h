@@ -44,6 +44,9 @@ class RDMAClient {
                   const size_t offset);
   void* getBuffer(const size_t offset = 0);
 
+  // DPI
+  bool remoteAllocSegments(const string& connection, const string& bufferName, const size_t segmentsCount, const size_t fullSegmentsSize, const bool reuseSegments, const bool newRing, size_t& offset);
+
   // one-sided
   // ip interface
   bool write(const string& connection, size_t remoteOffset, void* localData,
