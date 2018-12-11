@@ -1,4 +1,4 @@
-# dpi_library
+# DPI: The Data Processing Interface for Modern Networks
 ## Abstract
 As data processing evolves towards large scale, distributed platforms, the network will necessarily play a substantial role in achieving efficiency and performance. Increasingly, switches, network cards, and protocols are becoming more flexible while programmability at all levels (aka, software defined networks) opens up many
 possibilities to tailor the network to data processing applications
