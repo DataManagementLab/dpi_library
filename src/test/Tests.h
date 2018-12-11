@@ -12,7 +12,7 @@
 #include "dpi/TestRegistryClient.h"
 #include "dpi/TestBufferWriter.h"
 #include "dpi/IntegrationTestsAppend.h"
-#include "dpi/TestNodeServerConsumeSeg.h"
+#include "dpi/TestBufferConsumer.h"
 #include "examples/append_examples.h"
 #include "dpi/TestBufferReader.h"
 

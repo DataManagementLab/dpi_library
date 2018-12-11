@@ -39,7 +39,7 @@ static void usage()
     cout << "202: \t dpi/TestRegistryClient" << endl;
     cout << "203: \t dpi/IntegrationTest" << endl;
     cout << "204: \t dpi/TestBufferReader" << endl;
-    cout << "205: \t dpi/TestNodeServerConsumeSeg" << endl;
+    cout << "205: \t dpi/TestBufferConsumer" << endl;
     cout << "301: \t examples" << endl;
 
     cout << endl;
@@ -106,7 +106,7 @@ static void runtest(int t)
         runner.addTest(TestBufferReader::suite());
         break;
     case 205:
-        runner.addTest(TestNodeServerConsumeSeg::suite());
+        runner.addTest(TestBufferConsumer::suite());
         break;
     case 301:
         runner.addTest(AppendExamples::suite());

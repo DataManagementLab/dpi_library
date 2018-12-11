@@ -37,13 +37,6 @@ DPI_UNIT_TEST_SUITE_END();
   void testAppend_MultipleConcurrentClients();
   void testAppend_VaryingDataSizes();
 
-  // // Shared Strategy
-  // void testAppendShared_SimpleData();
-  // void testAppendShared_AtomicHeaderManipulation();
-  // void testAppendShared_MultipleConcurrentClients();
-  // void testAppendShared_VaryingDataSizes();
-
-
   static std::atomic<int> bar;    // Counter of threads, faced barrier.
   static std::atomic<int> passed; // Number of barriers, passed by all threads.
   static const int NUMBER_THREADS = 2;
@@ -51,9 +44,11 @@ DPI_UNIT_TEST_SUITE_END();
 
 private:
   void* readSegmentData(BufferSegment* segment, size_t &size);
+  void* readSegmentData(size_t offset, size_t &size);
+  Config::DPI_SEGMENT_HEADER_t *readSegmentHeader(size_t offset);
   Config::DPI_SEGMENT_HEADER_t *readSegmentHeader(BufferSegment* segment);
 
-  NodeClient* m_nodeClient;
+  RDMAClient* m_rdmaClient;
   NodeServer* m_nodeServer;
   RegistryClient* m_stub_regClient;
 

@@ -16,6 +16,10 @@ class RegistryClientStub : public RegistryClient
 {
 public:
 
+  RegistryClientStub(RDMAClient *rdmaClient) : m_rdmaClient(rdmaClient)
+  {
+
+  }
   // BufferHandle* createBuffer(string& name, NodeID node_id, size_t size, size_t threshold)
   // {
   //   (void) name;
@@ -38,6 +42,27 @@ public:
     
   //   return m_buffHandle;
   // }
+
+  
+  BufferHandle *createSegmentRingOnBuffer(string &name)
+  {
+    size_t offset = 0;
+    string connection = Config::getIPFromNodeId(m_buffHandle->node_id);
+    size_t fullSegmentSize = m_buffHandle->segmentSizes + sizeof(Config::DPI_SEGMENT_HEADER_t);
+
+    if (!m_rdmaClient->remoteAllocSegments(connection, name, m_buffHandle->segmentsPerWriter, fullSegmentSize, m_buffHandle->reuseSegments, true, offset))
+    {
+        return nullptr;
+    }
+
+    Logging::debug(__FILE__, __LINE__, "Created ring with offset on entry segment: " + to_string(offset));
+
+    m_buffHandle->entrySegments.emplace_back(offset, m_buffHandle->segmentSizes, m_buffHandle->segmentSizes + sizeof(Config::DPI_SEGMENT_HEADER_t));
+
+    BufferHandle*  copy_buffHandle = new BufferHandle(name, m_buffHandle->node_id, m_buffHandle->segmentsPerWriter, m_buffHandle->reuseSegments, m_buffHandle->segmentSizes);
+    copy_buffHandle->entrySegments.push_back(m_buffHandle->entrySegments.back()); //Only the newly created entrysegment into the returned buffer handle
+    return copy_buffHandle;
+  }
 
   bool registerBuffer(BufferHandle* handle)
   {
@@ -79,4 +104,5 @@ public:
 private:
   BufferHandle* m_buffHandle = nullptr; //For this stub we just have one buffHandle
   std::mutex appendSegMutex;
+  RDMAClient* m_rdmaClient = nullptr; 
 };

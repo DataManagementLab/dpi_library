@@ -44,7 +44,7 @@ class BufferConsumer
 
     /**
      * @brief consume finds the next segment in any of the rings that has the canConsume flag sat. 
-     * Concurrency: The function supports concurrency across different buffers, but not within each buffer! I.e. it is possible to have two threads each consuming segments concurrently, but on different buffers
+     * Implementation is not threadsafe! Two BufferConsumer can also not consume on the same Buffer!
      * 
      * @param size - will be updated to the size of returned segment (in bytes)
      * @param freeLastSegment - if true: The last returned segment within a buffer is freed to be overwritten (canWrite flag = true). If false: segment will not be freed (canWrite flag = false)
@@ -53,7 +53,7 @@ class BufferConsumer
     void *consume(size_t &size, bool freeLastSegment = true)
     {
         //Iterate the ring-position-offsets of all rings - continue in list from where last consumeSegment returned
-        size_t lastsegmentOffset = *ringPosOffsetsIter;
+        // size_t lastsegmentOffset = *ringPosOffsetsIter;
         // std::cout << "lastsegmentOffset " << lastsegmentOffset << '\n';
         for (size_t i = 0; i < ringPosOffsets.size(); ++i)
         {

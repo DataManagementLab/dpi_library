@@ -20,13 +20,13 @@
 #include <atomic>
 
 
-class TestNodeServerConsumeSeg : public CppUnit::TestFixture
+class TestBufferConsumer : public CppUnit::TestFixture
 {
-  DPI_UNIT_TEST_SUITE(TestNodeServerConsumeSeg);
-    // DPI_UNIT_TEST(AppendAndConsumeNotInterleaved_ReuseSegs);
-    // DPI_UNIT_TEST(FourAppendersOneConsumerInterleaved_DontReuseSegs);
-    // DPI_UNIT_TEST(FourAppendersOneConsumerInterleaved_ReuseSegs);
-    DPI_UNIT_TEST(AppenderConsumerBenchmark);
+  DPI_UNIT_TEST_SUITE(TestBufferConsumer);
+    DPI_UNIT_TEST(AppendAndConsumeNotInterleaved_ReuseSegs);
+    DPI_UNIT_TEST(FourAppendersOneConsumerInterleaved_DontReuseSegs);
+    DPI_UNIT_TEST(FourAppendersOneConsumerInterleaved_ReuseSegs);
+    // DPI_UNIT_TEST(AppenderConsumerBenchmark);
   DPI_UNIT_TEST_SUITE_END();
 
 public:

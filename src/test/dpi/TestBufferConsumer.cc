@@ -1,20 +1,20 @@
-#include "TestNodeServerConsumeSeg.h"
+#include "TestBufferConsumer.h"
 #include <chrono>
 
-std::atomic<int> TestNodeServerConsumeSeg::bar{0};    // Counter of threads, faced barrier.
-std::atomic<int> TestNodeServerConsumeSeg::passed{0}; // Number of barriers, passed by all threads.
+std::atomic<int> TestBufferConsumer::bar{0};    // Counter of threads, faced barrier.
+std::atomic<int> TestBufferConsumer::passed{0}; // Number of barriers, passed by all threads.
 
-void TestNodeServerConsumeSeg::setUp()
+void TestBufferConsumer::setUp()
 {  
   //Setup Test DPI
-  // Config::RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 1;  //1GB
-  // Config::DPI_SEGMENT_SIZE = (512 + sizeof(Config::DPI_SEGMENT_HEADER_t));
-  // Config::DPI_INTERNAL_BUFFER_SIZE = 1024;
+  Config::RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 1;  //1GB
+  Config::DPI_SEGMENT_SIZE = (512 + sizeof(Config::DPI_SEGMENT_HEADER_t));
+  Config::DPI_INTERNAL_BUFFER_SIZE = 1024;
 
   //BENCHMARK STUFF!!!
-  Config::RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 10;  //1GB
-  Config::DPI_SEGMENT_SIZE = (80 * 1048576 + sizeof(Config::DPI_SEGMENT_HEADER_t)); //80 MiB
-  Config::DPI_INTERNAL_BUFFER_SIZE = 1024 * 1024 * 8;
+  // Config::RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 10;  //1GB
+  // Config::DPI_SEGMENT_SIZE = (80 * 1048576 + sizeof(Config::DPI_SEGMENT_HEADER_t)); //80 MiB
+  // Config::DPI_INTERNAL_BUFFER_SIZE = 1024 * 1024 * 8;
 
 
   Config::DPI_REGISTRY_SERVER = "127.0.0.1";
@@ -36,7 +36,7 @@ void TestNodeServerConsumeSeg::setUp()
   std::cout << "Start RegClient" << '\n';
 }
 
-void TestNodeServerConsumeSeg::tearDown()
+void TestBufferConsumer::tearDown()
 {
   if (m_nodeClient != nullptr)
   {
@@ -62,7 +62,7 @@ void TestNodeServerConsumeSeg::tearDown()
   }
 }
 
-void TestNodeServerConsumeSeg::AppendAndConsumeNotInterleaved_ReuseSegs()
+void TestBufferConsumer::AppendAndConsumeNotInterleaved_ReuseSegs()
 {
   //ARRANGE
   string bufferName = "buffer1";
@@ -80,11 +80,11 @@ void TestNodeServerConsumeSeg::AppendAndConsumeNotInterleaved_ReuseSegs()
   DPI_DEBUG("Created segment ring on buffer\n");
 
 
-  int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
-  for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
-  {
-    std::cout << rdma_buffer[i] << " ";
-  } std::cout << std::endl;
+  // int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
+  // for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
+  // {
+  //   std::cout << rdma_buffer[i] << " ";
+  // } std::cout << std::endl;
 
   BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
   BufferConsumer buffConsumer(bufferName, m_regClient, m_nodeServer);
@@ -96,10 +96,12 @@ void TestNodeServerConsumeSeg::AppendAndConsumeNotInterleaved_ReuseSegs()
 
   CPPUNIT_ASSERT(buffWriter.close());
   
-  for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
-  {
-    std::cout << rdma_buffer[i] << " ";
-  } std::cout << std::endl;
+  // for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
+  // {
+  //   if (i % (Config::DPI_SEGMENT_SIZE/memSize) == 0)
+  //     std::cout << std::endl;
+  //   std::cout << rdma_buffer[i] << " ";
+  // } std::cout << std::endl;
   
   //ACT & ASSERT
   size_t i = 0;
@@ -128,15 +130,15 @@ void TestNodeServerConsumeSeg::AppendAndConsumeNotInterleaved_ReuseSegs()
   }
   CPPUNIT_ASSERT_EQUAL(numberSegments, i);
 
-  for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
-  {
-    std::cout << rdma_buffer[i] << " ";
-  } std::cout << std::endl;
+  // for(size_t i = 0; i < numberSegments*Config::DPI_SEGMENT_SIZE/memSize; i++)
+  // {
+  //   std::cout << rdma_buffer[i] << " ";
+  // } std::cout << std::endl;
 }
 
 
 
-void TestNodeServerConsumeSeg::FourAppendersOneConsumerInterleaved_DontReuseSegs()
+void TestBufferConsumer::FourAppendersOneConsumerInterleaved_DontReuseSegs()
 {
   //ARRANGE
   string bufferName = "test";
@@ -157,15 +159,15 @@ void TestNodeServerConsumeSeg::FourAppendersOneConsumerInterleaved_DontReuseSegs
   BufferHandle *buffHandle3 = m_regClient->createSegmentRingOnBuffer(bufferName);
   BufferHandle *buffHandle4 = m_regClient->createSegmentRingOnBuffer(bufferName);
 
-  int64_t *rdma_buffer = (int64_t *)m_nodeServer->getBuffer();
+  // int64_t *rdma_buffer = (int64_t *)m_nodeServer->getBuffer();
 
-  std::cout << "Buffer before appending" << '\n';
-  for (size_t i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int64_t)*segPerClient*4; i++)
-  {
-    if (i % (Config::DPI_SEGMENT_SIZE/sizeof(int64_t)) == 0)
-      std::cout << std::endl;
-    std::cout << rdma_buffer[i] << ' ';
-  }
+  // std::cout << "Buffer before appending" << '\n';
+  // for (size_t i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int64_t)*segPerClient*4; i++)
+  // {
+  //   if (i % (Config::DPI_SEGMENT_SIZE/sizeof(int64_t)) == 0)
+  //     std::cout << std::endl;
+  //   std::cout << rdma_buffer[i] << ' ';
+  // }
 
   BufferWriterClient<int64_t> *client1 = new BufferWriterClient<int64_t>(buffHandle1, dataToWrite);
   BufferWriterClient<int64_t> *client2 = new BufferWriterClient<int64_t>(buffHandle2, dataToWrite);
@@ -230,21 +232,21 @@ void TestNodeServerConsumeSeg::FourAppendersOneConsumerInterleaved_DontReuseSegs
   *runConsumer = false;
   consumer.join();
 
-  std::cout << "Buffer after appending, total int64_t's: " << numberElements << " * 4" << '\n';
-  for (size_t i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int64_t)*segPerClient*4; i++)
-  {
-    if (i % (Config::DPI_SEGMENT_SIZE/sizeof(int64_t)) == 0)
-      std::cout << std::endl;
-    std::cout << rdma_buffer[i] << ' ';
-  }
+  // std::cout << "Buffer after appending, total int64_t's: " << numberElements << " * 4" << '\n';
+  // for (size_t i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int64_t)*segPerClient*4; i++)
+  // {
+  //   if (i % (Config::DPI_SEGMENT_SIZE/sizeof(int64_t)) == 0)
+  //     std::cout << std::endl;
+  //   std::cout << rdma_buffer[i] << ' ';
+  // }
   CPPUNIT_ASSERT_EQUAL((size_t)segPerClient * 4, (size_t)*segmentsConsumed);
 
-  m_nodeServer->localFree(rdma_buffer);
+  // m_nodeServer->localFree(rdma_buffer);
 }
 
 
 
-void TestNodeServerConsumeSeg::FourAppendersOneConsumerInterleaved_ReuseSegs()
+void TestBufferConsumer::FourAppendersOneConsumerInterleaved_ReuseSegs()
 {
   //ARRANGE
   string bufferName = "test";
@@ -266,15 +268,15 @@ void TestNodeServerConsumeSeg::FourAppendersOneConsumerInterleaved_ReuseSegs()
   BufferHandle *buffHandle3 = m_regClient->createSegmentRingOnBuffer(bufferName);
   BufferHandle *buffHandle4 = m_regClient->createSegmentRingOnBuffer(bufferName);
 
-  int64_t *rdma_buffer = (int64_t *)m_nodeServer->getBuffer();
+  // int64_t *rdma_buffer = (int64_t *)m_nodeServer->getBuffer();
 
-  std::cout << "Buffer before appending" << '\n';
-  for (size_t i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int64_t)*segsPerRing*4; i++)
-  {
-    if (i % (Config::DPI_SEGMENT_SIZE/sizeof(int64_t)) == 0)
-      std::cout << std::endl;
-    std::cout << rdma_buffer[i] << ' ';
-  }
+  // std::cout << "Buffer before appending" << '\n';
+  // for (size_t i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int64_t)*segsPerRing*4; i++)
+  // {
+  //   if (i % (Config::DPI_SEGMENT_SIZE/sizeof(int64_t)) == 0)
+  //     std::cout << std::endl;
+  //   std::cout << rdma_buffer[i] << ' ';
+  // }
 
   BufferWriterClient<int64_t> *client1 = new BufferWriterClient<int64_t>(buffHandle1, dataToWrite);
   BufferWriterClient<int64_t> *client2 = new BufferWriterClient<int64_t>(buffHandle2, dataToWrite);
@@ -340,21 +342,21 @@ void TestNodeServerConsumeSeg::FourAppendersOneConsumerInterleaved_ReuseSegs()
   *runConsumer = false;
   consumer.join();
 
-  std::cout << "Buffer after appending, total int64_t's: " << numberElements << " * 4" << '\n';
-  for (size_t i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int64_t)*segsPerRing*4; i++)
-  {
-    if (i % (Config::DPI_SEGMENT_SIZE/sizeof(int64_t)) == 0)
-      std::cout << std::endl;
-    std::cout << rdma_buffer[i] << ' ';
-  }
+  // std::cout << "Buffer after appending, total int64_t's: " << numberElements << " * 4" << '\n';
+  // for (size_t i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int64_t)*segsPerRing*4; i++)
+  // {
+  //   if (i % (Config::DPI_SEGMENT_SIZE/sizeof(int64_t)) == 0)
+  //     std::cout << std::endl;
+  //   std::cout << rdma_buffer[i] << ' ';
+  // }
   CPPUNIT_ASSERT_EQUAL_MESSAGE("Consumed number of segments did not match expected", (size_t)segPerClient * 4, (size_t)*segmentsConsumed);
 
-  m_nodeServer->localFree(rdma_buffer);
+  // m_nodeServer->localFree(rdma_buffer);
 }
 
 
 
-void TestNodeServerConsumeSeg::AppenderConsumerBenchmark()
+void TestBufferConsumer::AppenderConsumerBenchmark()
 {
   //ARRANGE
 

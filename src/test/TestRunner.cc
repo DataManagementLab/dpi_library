@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
   runner.addTest(IntegrationTestsAppend::suite());
   runner.addTest(AppendExamples::suite());
   runner.addTest(TestBufferReader::suite());
-  runner.addTest(TestNodeServerConsumeSeg::suite());
+  runner.addTest(TestBufferConsumer::suite());
 
   // Change the default outputter to a compiler error format outputter
   runner.setOutputter(

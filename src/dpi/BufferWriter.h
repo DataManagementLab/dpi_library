@@ -69,8 +69,8 @@ class BufferWriter
     //data: ptr to data, size: size in bytes. return: true if successful, false otherwise
     bool append(void *data, size_t size)
     {
-        if (size > m_handle->segmentSizes)
-            return false;
+        // if (size > m_handle->segmentSizes)
+        //     return false;
 
         while (size > this->m_internalBuffer->size)
         {
@@ -108,7 +108,7 @@ class BufferWriter
             {
                 return false;
             }
-            m_segmentHeader->counter = m_localBufferSegment->size;
+            m_sizeUsed = m_localBufferSegment->size;
             getNextSegment(*m_localBufferSegment);
             m_sizeUsed = 0;
 
@@ -172,6 +172,7 @@ class BufferWriter
             //Set CanConsume flag on old segment
             Config::DPI_SEGMENT_HEADER_FLAGS::setCanConsumeSegment(m_segmentHeader->segmentFlags);
             Config::DPI_SEGMENT_HEADER_FLAGS::setCanWriteToSegment(m_segmentHeader->segmentFlags, false);
+            m_segmentHeader->counter = m_sizeUsed;
             writeHeaderToRemote(m_localBufferSegment->offset);
 
             //Update m_segmentHeader to header of next segment
@@ -230,6 +231,8 @@ class BufferWriter
 
             //Update flags and write header to "old" segment
             Config::DPI_SEGMENT_HEADER_FLAGS::setCanConsumeSegment(m_segmentHeader->segmentFlags);
+            Config::DPI_SEGMENT_HEADER_FLAGS::setCanWriteToSegment(m_segmentHeader->segmentFlags, false);
+            m_segmentHeader->counter = m_sizeUsed;
             writeHeaderToRemote(m_localBufferSegment->offset);
 
             //Update m_segmentHeader to header of next segment

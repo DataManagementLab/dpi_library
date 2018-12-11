@@ -44,29 +44,37 @@ public:
         size_t dataSize = 0;
         for (BufferSegment &segment : m_handle->entrySegments)
         {
-            dataSize += segment.size;
+            dataSize += (segment.size + (withHeader ? sizeof(Config::DPI_SEGMENT_HEADER_t) : 0)) * m_handle->segmentsPerWriter;
         }
         void* data = m_rdmaClient->localAlloc(dataSize);
         Config::DPI_SEGMENT_HEADER_t* header = (Config::DPI_SEGMENT_HEADER_t*) m_rdmaClient->localAlloc(sizeof(Config::DPI_SEGMENT_HEADER_t));
         size_t writeoffset = 0;
         for (BufferSegment &segment : m_handle->entrySegments)
         {
+            size_t firstSegmentOffset = segment.offset;
+            size_t currentSegmentOffset = segment.offset;
+            do
+            {
+                m_rdmaClient->read(m_handle->node_id, currentSegmentOffset, (void*)(header), sizeof(Config::DPI_SEGMENT_HEADER_t), true);
+                size_t segmentDataSize = header->counter;
+                
+                //Read data from segment
+                if (!withHeader)
+                {
+                    m_rdmaClient->read(m_handle->node_id, currentSegmentOffset + sizeof(Config::DPI_SEGMENT_HEADER_t), (void*)(((char*)data) + writeoffset), header->counter, true);
+                    writeoffset += segmentDataSize;
+                }
+                else
+                {
+                    m_rdmaClient->read(m_handle->node_id, currentSegmentOffset, (void*)(((char*)data) + writeoffset), header->counter + sizeof(Config::DPI_SEGMENT_HEADER_t), true);
+                    writeoffset += (segmentDataSize + sizeof(Config::DPI_SEGMENT_HEADER_t));
+                }            
+                Logging::debug(__FILE__, __LINE__, "Read data from segment");
+                currentSegmentOffset = header->nextSegmentOffset;
+            } while (currentSegmentOffset != SIZE_MAX && currentSegmentOffset != firstSegmentOffset);
+
             //Read header of segment
-            m_rdmaClient->read(m_handle->node_id, segment.offset, (void*)(header), sizeof(Config::DPI_SEGMENT_HEADER_t), true);
-            size_t segmentDataSize = header->counter;
             
-            //Read data from segment
-            if (!withHeader)
-            {
-                m_rdmaClient->read(m_handle->node_id, segment.offset + sizeof(Config::DPI_SEGMENT_HEADER_t), (void*)(((char*)data) + writeoffset), header->counter, true);
-                writeoffset += segmentDataSize;
-            }
-            else
-            {
-                m_rdmaClient->read(m_handle->node_id, segment.offset, (void*)(((char*)data) + writeoffset), header->counter + sizeof(Config::DPI_SEGMENT_HEADER_t), true);
-                writeoffset += (segmentDataSize + sizeof(Config::DPI_SEGMENT_HEADER_t));
-            }            
-            Logging::debug(__FILE__, __LINE__, "Read data from segment");
         }
         sizeRead = writeoffset;
         return (void*) data;
