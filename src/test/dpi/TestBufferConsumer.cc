@@ -67,7 +67,7 @@ void TestBufferConsumer::AppendAndConsumeNotInterleaved_ReuseSegs()
   //ARRANGE
   string bufferName = "buffer1";
     
-  size_t remoteOffset = 0;
+  // size_t remoteOffset = 0;
   size_t memSize = sizeof(int);
 
   size_t numberSegments = 4;
@@ -429,7 +429,7 @@ void TestBufferConsumer::AppenderConsumerBenchmark()
 
   auto startTime = chrono::high_resolution_clock::now();
 
-  int64_t numberElements = segPerClient * (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / dataSize; 
+  uint64_t numberElements = segPerClient * (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / dataSize; 
 
   std::cout << "Starting to append" << '\n';
 

@@ -283,7 +283,7 @@ void TestBufferWriter::testAppend_VaryingDataSizes()
   }
 
   CPPUNIT_ASSERT(buffWriter.close());
-  int *rdma_buffer = (int *)m_nodeServer->getBuffer(0);
+  // int *rdma_buffer = (int *)m_nodeServer->getBuffer(0);
 
   // std::cout << "\n";
   // for (size_t i = 0; i < intsWritten + sizeof(Config::DPI_SEGMENT_HEADER_t) * 3; i++)

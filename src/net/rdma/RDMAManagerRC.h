@@ -24,7 +24,7 @@ class RDMAManagerRC : public RDMAManager {
     bool initQP(struct ib_addr_t& retIbAddr, bool isMgmtQP = false);
     bool connectQP(struct ib_addr_t& ibAddr);
 
-    bool __attribute__((always_inline)) remoteWrite(struct ib_addr_t& ibAddr, size_t offset, const void* memAddr, size_t size,
+    bool remoteWrite(struct ib_addr_t& ibAddr, size_t offset, const void* memAddr, size_t size,
                      bool signaled);
     bool remoteRead(struct ib_addr_t& ibAddr, size_t offset, const void* memAddr, size_t size,
                     bool signaled);
