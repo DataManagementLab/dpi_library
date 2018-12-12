@@ -31,9 +31,6 @@ public:
   void tearDown();
   void SimpleIntegrationWithAppendInts_DontReuseSegs();
   void FourAppendersConcurrent_DontReuseSegs();
-  // void testShared_SimpleIntegrationWithAppendInts_DontReuseSegs();
-  // void testShared_AtomicHeaderManipulation();
-  // void testShared_FourAppendersConcurrent_DontReuseSegs();
 
   static std::atomic<int> bar;    // Counter of threads, faced barrier.
   static std::atomic<int> passed; // Number of barriers, passed by all threads.
@@ -63,7 +60,7 @@ public:
   {
     //ARRANGE
 
-    BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, new RegistryClient());
+    BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, new RegistryClient());
 
     barrier_wait(); //Use barrier to simulate concurrent appends between BufferWriters
 

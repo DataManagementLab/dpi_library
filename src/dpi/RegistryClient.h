@@ -44,7 +44,7 @@ class RegistryClient: public ProtoClient
     virtual BufferHandle *retrieveBuffer(string &name);
     
     /**
-     * @brief Create a Segment Ring On Buffer specific for one BufferWriter
+     * @brief Create a Segment Ring On Buffer specific for one BufferWriterBW
      * 
      * @param name of buffer
      * @return BufferHandle* - BufferHandle only contains one element in the vector with the entry segment to the ring

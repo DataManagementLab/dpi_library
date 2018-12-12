@@ -17,7 +17,7 @@
  */
 struct DPI_Context
 {
-    std::unordered_map<std::string, BufferWriter*> buffer_writers;
+    std::unordered_map<std::string, BufferWriterBW*> buffer_writers;
 
     std::unordered_map<std::string, BufferReader*> buffer_readers;
 

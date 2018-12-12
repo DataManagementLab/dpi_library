@@ -1,5 +1,5 @@
 /**
- * @brief BufferWriter implements two different RDMA strategies to write into the remote memory
+ * @brief BufferWriterBW implements two different RDMA strategies to write into the remote memory
  * 
  * @file BufferWriter.h
  * @author cbinnig, lthostrup, tziegler
@@ -28,19 +28,43 @@ struct InternalBuffer
 
 class BufferWriter
 {
+    virtual bool append(void *data, size_t size) = 0;
+    virtual bool close() = 0;
+};
+
+
+class BufferWriterLat : public BufferWriter
+{
+    bool append(void *data, size_t size)
+    {
+        (void)data;
+        (void)size;
+        return false;
+    }
+
+    bool close()
+    {
+        return false;
+    }
+};
+
+
+
+class BufferWriterBW : public BufferWriter
+{
 
   public:
-    BufferWriter(BufferHandle *handle, size_t internalBufferSize = Config::DPI_INTERNAL_BUFFER_SIZE, RegistryClient *regClient = nullptr, RDMAClient *rdmaClient = nullptr) : m_handle(handle), m_regClient(regClient), m_rdmaClient(rdmaClient)
+    BufferWriterBW(BufferHandle *handle, size_t internalBufferSize = Config::DPI_INTERNAL_BUFFER_SIZE, RegistryClient *regClient = nullptr, RDMAClient *rdmaClient = nullptr) : m_handle(handle), m_regClient(regClient), m_rdmaClient(rdmaClient)
     {
         if (m_handle->entrySegments.size() != 1)
         {
-            Logging::error(__FILE__, __LINE__, "BufferWriter expects only one entry segment in segment ring");
+            Logging::error(__FILE__, __LINE__, "BufferWriterBW expects only one entry segment in segment ring");
             return;
         }
 
         m_localBufferSegment = &m_handle->entrySegments.front();
 
-        Logging::debug(__FILE__, __LINE__, "BufferWriter ctor: offset on entry segment: " + to_string(m_localBufferSegment->offset));
+        Logging::debug(__FILE__, __LINE__, "BufferWriterBW ctor: offset on entry segment: " + to_string(m_localBufferSegment->offset));
 
         if (m_rdmaClient == nullptr)
         {
@@ -56,7 +80,7 @@ class BufferWriter
 
         m_internalBuffer = new InternalBuffer(m_rdmaClient->localAlloc(internalBufferSize), internalBufferSize);
     }
-    ~BufferWriter()
+    ~BufferWriterBW()
     {
         if (m_internalBuffer != nullptr && m_internalBuffer->bufferPtr != nullptr)
         {
@@ -117,7 +141,7 @@ class BufferWriter
 
         if (!writeToSegment(*m_localBufferSegment, m_sizeUsed, size, data))
         {
-            Logging::error(__FILE__, __LINE__, "BufferWriter failed to write to segment");
+            Logging::error(__FILE__, __LINE__, "BufferWriterBW failed to write to segment");
             return false;
         }
         m_sizeUsed = m_sizeUsed + size;
@@ -155,7 +179,7 @@ class BufferWriter
     {
         if (!m_rdmaClient->read(m_handle->node_id, remoteSegOffset, m_segmentHeader, sizeof(Config::DPI_SEGMENT_HEADER_t), true))
         {
-            Logging::error(__FILE__, __LINE__, "BufferWriter tried to remotely read the next segment, but failed");
+            Logging::error(__FILE__, __LINE__, "BufferWriterBW tried to remotely read the next segment, but failed");
             return false;
         }
         return true;
@@ -168,7 +192,7 @@ class BufferWriter
 
         if (m_handle->reuseSegments)
         {
-            Logging::debug(__FILE__, __LINE__, "BufferWriter getting new segment (reuseSegments = true)");
+            Logging::debug(__FILE__, __LINE__, "BufferWriterBW getting new segment (reuseSegments = true)");
             //Set CanConsume flag on old segment
             Config::DPI_SEGMENT_HEADER_FLAGS::setCanConsumeSegment(m_segmentHeader->segmentFlags);
             Config::DPI_SEGMENT_HEADER_FLAGS::setCanWriteToSegment(m_segmentHeader->segmentFlags, false);
@@ -194,6 +218,7 @@ class BufferWriter
         }
         else
         {            
+            //Ring is not closed and last segment, so BufferWriter needs to remotely allocate new segment
             if (nextSegmentOffset == SIZE_MAX)
             {
                 Logging::debug(__FILE__, __LINE__, "End of \"ring\", allocating new segment...");
@@ -203,7 +228,7 @@ class BufferWriter
                 auto segmentsToAllocate = 1;
                 if (!m_rdmaClient->remoteAllocSegments(Config::getIPFromNodeId(m_handle->node_id), m_handle->name, segmentsToAllocate, m_handle->segmentSizes + sizeof(Config::DPI_SEGMENT_HEADER_t), m_handle->reuseSegments, false, remoteOffset))
                 {
-                    Logging::error(__FILE__, __LINE__, "BufferWriter tried to remotely allocate a new segment, but failed");
+                    Logging::error(__FILE__, __LINE__, "BufferWriterBW tried to remotely allocate a new segment, but failed");
                     return false;
                 }
 
@@ -228,32 +253,34 @@ class BufferWriter
 
                 return true;
             }
-
-            //Update flags and write header to "old" segment
-            Config::DPI_SEGMENT_HEADER_FLAGS::setCanConsumeSegment(m_segmentHeader->segmentFlags);
-            Config::DPI_SEGMENT_HEADER_FLAGS::setCanWriteToSegment(m_segmentHeader->segmentFlags, false);
-            m_segmentHeader->counter = m_sizeUsed;
-            writeHeaderToRemote(m_localBufferSegment->offset);
-
-            //Update m_segmentHeader to header of next segment
-            if (!m_rdmaClient->read(m_handle->node_id, nextSegmentOffset, m_segmentHeader, sizeof(Config::DPI_SEGMENT_HEADER_t), true))
+            else
             {
-                Logging::error(__FILE__, __LINE__, "BufferWriter tried to remotely read the next segment, but failed");
-                return false;
-            }
-            if (!Config::DPI_SEGMENT_HEADER_FLAGS::getCanWriteToSegment(m_segmentHeader->segmentFlags)) //Is check neccesary? since it is not really a ring (reuseSegments=false)
-            {
-                Logging::error(__FILE__, __LINE__, "BufferWriter could not get next segment because flag indicated it can not be written to. Segment header flags: " + to_string(m_segmentHeader->segmentFlags));
-                return false;
-            }
+                //Ring is not closed, but not last segment
+                //Update flags and write header to "old" segment
+                Config::DPI_SEGMENT_HEADER_FLAGS::setCanConsumeSegment(m_segmentHeader->segmentFlags);
+                Config::DPI_SEGMENT_HEADER_FLAGS::setCanWriteToSegment(m_segmentHeader->segmentFlags, false);
+                m_segmentHeader->counter = m_sizeUsed;
+                writeHeaderToRemote(m_localBufferSegment->offset);
 
-            // Logging::debug(__FILE__, __LINE__, "Read header of next segment: counter: " + to_string(m_segmentHeader->counter) + " followSeg: " + to_string(m_segmentHeader->hasFollowSegment) + " next seg offset: " + to_string(m_segmentHeader->nextSegmentOffset) + "");
-        
-            newSegment_ret.offset = nextSegmentOffset;
-            newSegment_ret.size = m_handle->segmentSizes;
-            newSegment_ret.nextSegmentOffset = m_segmentHeader->nextSegmentOffset;
-            return true;
+                //Update m_segmentHeader to header of next segment
+                if (!m_rdmaClient->read(m_handle->node_id, nextSegmentOffset, m_segmentHeader, sizeof(Config::DPI_SEGMENT_HEADER_t), true))
+                {
+                    Logging::error(__FILE__, __LINE__, "BufferWriterBW tried to remotely read the next segment, but failed");
+                    return false;
+                }
+                if (!Config::DPI_SEGMENT_HEADER_FLAGS::getCanWriteToSegment(m_segmentHeader->segmentFlags)) //Is check neccesary? since it is not really a ring (reuseSegments=false)
+                {
+                    Logging::error(__FILE__, __LINE__, "BufferWriterBW could not get next segment because flag indicated it can not be written to. Segment header flags: " + to_string(m_segmentHeader->segmentFlags));
+                    return false;
+                }
 
+                // Logging::debug(__FILE__, __LINE__, "Read header of next segment: counter: " + to_string(m_segmentHeader->counter) + " followSeg: " + to_string(m_segmentHeader->hasFollowSegment) + " next seg offset: " + to_string(m_segmentHeader->nextSegmentOffset) + "");
+            
+                newSegment_ret.offset = nextSegmentOffset;
+                newSegment_ret.size = m_handle->segmentSizes;
+                newSegment_ret.nextSegmentOffset = m_segmentHeader->nextSegmentOffset;
+                return true;
+            }
         }
     }
 

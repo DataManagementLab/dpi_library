@@ -65,7 +65,7 @@ public:
   {
     //ARRANGE
 
-    BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, new RegistryClient());
+    BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, new RegistryClient());
 
     barrier_wait(); //Use barrier to simulate concurrent appends between BufferWriters
 

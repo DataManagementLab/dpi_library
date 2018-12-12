@@ -41,7 +41,7 @@ void TestBufferReader::testReadWithHeader()
     m_stub_regClient->registerBuffer(new BufferHandle(bufferName, 1, numberSegments));
     BufferHandle *buffHandle = m_stub_regClient->createSegmentRingOnBuffer(bufferName);
     
-    BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
+    BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
 
     BufferReader bufferReader(buffHandle, m_stub_regClient);
     //ACT
@@ -81,7 +81,7 @@ void TestBufferReader::testReadWithoutHeader(){
     m_stub_regClient->registerBuffer(new BufferHandle(bufferName, 1, numberSegments));
     BufferHandle *buffHandle = m_stub_regClient->createSegmentRingOnBuffer(bufferName);
 
-    BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
+    BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
 
     BufferReader bufferReader(buffHandle, m_stub_regClient);
     //ACT

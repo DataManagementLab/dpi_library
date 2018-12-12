@@ -57,7 +57,7 @@ void TestBufferWriter::testAppend_SimpleData()
 
   m_stub_regClient->registerBuffer(new BufferHandle(bufferName, 1, numberSegments));
   auto buffHandle = m_stub_regClient->createSegmentRingOnBuffer(bufferName);
-  BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
+  BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
 
   //ACT
   for (size_t i = 0; i < numberElements; i++)
@@ -91,7 +91,7 @@ void TestBufferWriter::testAppend_SplitData()
   size_t memSize = numberElements * sizeof(int);
   m_stub_regClient->registerBuffer(new BufferHandle(bufferName, 1, numberSegments));
   auto buffHandle = m_stub_regClient->createSegmentRingOnBuffer(bufferName);
-  BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
+  BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
 
   int *data = new int[numberElements];
 
@@ -133,7 +133,7 @@ void TestBufferWriter::testAppend_SingleInts()
   uint64_t expectedhasFollowSegment = 1;
   m_stub_regClient->registerBuffer(new BufferHandle(bufferName, 1, numberSegments));
   auto buffHandle = m_stub_regClient->createSegmentRingOnBuffer(bufferName);
-  BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
+  BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
 
   //ACT
   for (uint32_t i = 0; i < numberElements; i++)
@@ -265,7 +265,7 @@ void TestBufferWriter::testAppend_VaryingDataSizes()
   m_stub_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, 1));
   auto buffHandle = m_stub_regClient->createSegmentRingOnBuffer(bufferName);
   size_t offset = buffHandle->entrySegments.at(0).offset;
-  BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
+  BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
 
   //ACT
   for (size_t i = 0; i < numberElements; i++)

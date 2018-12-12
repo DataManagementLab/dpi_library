@@ -79,7 +79,7 @@ public:
   {
     //ARRANGE
 
-    BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, regClient);
+    BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, regClient);
 
     barrier_wait();
 

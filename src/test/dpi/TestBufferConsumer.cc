@@ -72,7 +72,7 @@ void TestBufferConsumer::AppendAndConsumeNotInterleaved_ReuseSegs()
 
   size_t numberSegments = 4;
   size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / memSize * numberSegments;
-  BufferHandle *buffHandle = new BufferHandle(bufferName, 1, numberSegments, true); //Create 1 less segment in ring to test BufferWriter creating a segment on the ring
+  BufferHandle *buffHandle = new BufferHandle(bufferName, 1, numberSegments, true); //Create 1 less segment in ring to test BufferWriterBW creating a segment on the ring
   DPI_DEBUG("Created BufferHandle\n");
   m_regClient->registerBuffer(buffHandle);
   DPI_DEBUG("Registered Buffer in Registry\n");
@@ -86,13 +86,15 @@ void TestBufferConsumer::AppendAndConsumeNotInterleaved_ReuseSegs()
   //   std::cout << rdma_buffer[i] << " ";
   // } std::cout << std::endl;
 
-  BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
-  BufferConsumer buffConsumer(bufferName, m_regClient, m_nodeServer);
+  BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
+  BufferConsumerBW buffConsumer(bufferName, m_regClient, m_nodeServer);
 
   for (size_t i = 0; i < numberElements; i++)
   {
     CPPUNIT_ASSERT(m_nodeClient->dpi_append(&buffWriter, (void *)&i, memSize));
   }
+
+  std::cout << "Finished appending. Closing..." << '\n';
 
   CPPUNIT_ASSERT(buffWriter.close());
   
@@ -104,11 +106,14 @@ void TestBufferConsumer::AppendAndConsumeNotInterleaved_ReuseSegs()
   // } std::cout << std::endl;
   
   //ACT & ASSERT
+  std::cout << "Consuming..." << '\n';
   size_t i = 0;
   int expected = 0;
   size_t segmentSize = 0;
-  int* segment = (int*)buffConsumer.consume(segmentSize);  
+  int* segment = (int*)buffConsumer.consume(segmentSize);
+  std::cout << "Consumed first segment" << '\n';
   int* lastSegment;
+  
   while (segment != nullptr)
   {
     ++i;
@@ -180,7 +185,7 @@ void TestBufferConsumer::FourAppendersOneConsumerInterleaved_DontReuseSegs()
   bool *runConsumer = new bool(true);
   size_t* segmentsConsumed = new size_t(0);
   std::thread consumer([nodeServer, &bufferName, &runConsumer, segmentsConsumed, regClient](){
-    BufferConsumer buffConsumer(bufferName, regClient, nodeServer);
+    BufferConsumerBW buffConsumer(bufferName, regClient, nodeServer);
     size_t segmentSize = 0;
     int* lastSegment;
     while (*runConsumer)
@@ -289,7 +294,7 @@ void TestBufferConsumer::FourAppendersOneConsumerInterleaved_ReuseSegs()
   bool *runConsumer = new bool(true);
   size_t* segmentsConsumed = new size_t(0);
   std::thread consumer([nodeServer, &bufferName, &runConsumer, segmentsConsumed, regClient](){
-    BufferConsumer buffConsumer(bufferName, regClient, nodeServer);
+    BufferConsumerBW buffConsumer(bufferName, regClient, nodeServer);
 
     size_t segmentSize = 0;
     int* lastSegment;
@@ -374,7 +379,7 @@ void TestBufferConsumer::AppenderConsumerBenchmark()
   CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segsPerRing, true)));
 
   BufferHandle *buffHandle = m_regClient->createSegmentRingOnBuffer(bufferName);
-  BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, new RegistryClient());
+  BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, new RegistryClient());
   
 
 
@@ -387,7 +392,7 @@ void TestBufferConsumer::AppenderConsumerBenchmark()
   bool *runConsumer = new bool(true);
   size_t* segmentsConsumed = new size_t(0);
   std::thread consumer([nodeServer, &bufferName, &runConsumer, segmentsConsumed, regClient](){
-    BufferConsumer buffConsumer(bufferName, regClient, nodeServer);
+    BufferConsumerBW buffConsumer(bufferName, regClient, nodeServer);
     size_t segmentSize = 0;
     int* lastSegment;
     while (*runConsumer)

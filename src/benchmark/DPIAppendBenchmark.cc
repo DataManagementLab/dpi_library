@@ -28,7 +28,7 @@ DPIAppendBenchmarkThread::DPIAppendBenchmarkThread(NodeID nodeid, string &conns,
     usleep(100000);
     buffHandle = m_regClient->retrieveBuffer(bufferName);
   }
-  m_bufferWriter = new BufferWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
+  m_bufferWriter = new BufferWriterBW(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
   std::cout << "DPI append Thread constructed" << '\n';
 }
 
