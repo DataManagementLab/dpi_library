@@ -11,7 +11,7 @@ set(TEST_SRC
 	Tests.h
 )
 
-add_library(test ${TEST_SRC})
+add_library(test_lib ${TEST_SRC})
 
 add_executable(dpi_tests TestRunner.cc)
  
@@ -32,7 +32,7 @@ target_link_libraries(dpi_tests
 	examples_dpi
 	)
 	
-target_link_libraries(test 
+target_link_libraries(test_lib 
 	${CPPUNIT_LIBRARY}
 	test_thread
 	test_net

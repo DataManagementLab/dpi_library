@@ -19,35 +19,23 @@
 class TestBufferWriter : public CppUnit::TestFixture {
 DPI_UNIT_TEST_SUITE(TestBufferWriter);
   DPI_UNIT_TEST(testBuffer);
-  DPI_UNIT_TEST(testAppendPrivate_SingleInts);
-  DPI_UNIT_TEST(testAppendPrivate_SplitData);
-  DPI_UNIT_TEST(testAppendPrivate_SimpleData);
-  DPI_UNIT_TEST(testAppendPrivate_MultipleConcurrentClients);
-  DPI_UNIT_TEST(testAppendPrivate_VaryingDataSizes);
-  DPI_UNIT_TEST(testAppendShared_SimpleData);
-  DPI_UNIT_TEST(testAppendShared_AtomicHeaderManipulation);
-  DPI_UNIT_TEST(testAppendShared_MultipleConcurrentClients);  
-  DPI_UNIT_TEST(testAppendShared_VaryingDataSizes);  
+  DPI_UNIT_TEST(testAppend_SingleInts);
+  DPI_UNIT_TEST(testAppend_SplitData);
+  DPI_UNIT_TEST(testAppend_SimpleData);
+  DPI_UNIT_TEST(testAppend_MultipleConcurrentClients);
+  DPI_UNIT_TEST(testAppend_VaryingDataSizes);
 DPI_UNIT_TEST_SUITE_END();
  
  public:
   void setUp();
   void tearDown();
  
-  // Private Strategy
   void testBuffer();
-  void testAppendPrivate_SingleInts();
-  void testAppendPrivate_SplitData();
-  void testAppendPrivate_SimpleData();
-  void testAppendPrivate_MultipleConcurrentClients();
-  void testAppendPrivate_VaryingDataSizes();
-
-  // Shared Strategy
-  void testAppendShared_SimpleData();
-  void testAppendShared_AtomicHeaderManipulation();
-  void testAppendShared_MultipleConcurrentClients();
-  void testAppendShared_VaryingDataSizes();
-
+  void testAppend_SingleInts();
+  void testAppend_SplitData();
+  void testAppend_SimpleData();
+  void testAppend_MultipleConcurrentClients();
+  void testAppend_VaryingDataSizes();
 
   static std::atomic<int> bar;    // Counter of threads, faced barrier.
   static std::atomic<int> passed; // Number of barriers, passed by all threads.
@@ -56,9 +44,11 @@ DPI_UNIT_TEST_SUITE_END();
 
 private:
   void* readSegmentData(BufferSegment* segment, size_t &size);
+  void* readSegmentData(size_t offset, size_t &size);
+  Config::DPI_SEGMENT_HEADER_t *readSegmentHeader(size_t offset);
   Config::DPI_SEGMENT_HEADER_t *readSegmentHeader(BufferSegment* segment);
 
-  NodeClient* m_nodeClient;
+  RDMAClient* m_rdmaClient;
   NodeServer* m_nodeServer;
   RegistryClient* m_stub_regClient;
 
@@ -72,7 +62,7 @@ struct TestData
   TestData(int a, int b, int c, int d) : a(a), b(b), c(c), d(d){}
 };
 
-template <class DataType, class Strategy>
+template <class DataType>
 class BufferWriterClient : public Thread
 {
   NodeServer* nodeServer = nullptr;
@@ -89,7 +79,7 @@ public:
   {
     //ARRANGE
 
-    BufferWriter<Strategy> buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, regClient);
+    BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, regClient);
 
     barrier_wait();
 

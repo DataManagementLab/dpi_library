@@ -21,7 +21,7 @@ namespace dpi {
 class RDMAClient {
  public:
 #if RDMA_TRANSPORT==0
-  RDMAClient(rdma_transport_t transport = rc);
+  RDMAClient(size_t mem_size = Config::RDMA_MEMSIZE, rdma_transport_t transport = rc);
 #elif RDMA_TRANSPORT==1
   RDMAClient(rdma_transport_t transport = ud );
 #endif
@@ -43,6 +43,9 @@ class RDMAClient {
   bool remoteFree(const string& connection, const size_t size,
                   const size_t offset);
   void* getBuffer(const size_t offset = 0);
+
+  // DPI
+  bool remoteAllocSegments(const string& connection, const string& bufferName, const size_t segmentsCount, const size_t fullSegmentsSize, const bool reuseSegments, const bool newRing, size_t& offset);
 
   // one-sided
   // ip interface

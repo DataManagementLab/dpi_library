@@ -12,12 +12,14 @@
 #include "RDMAConnResponseMgmt.pb.h"
 #include "MemoryResourceRequest.pb.h"
 #include "MemoryResourceResponse.pb.h"
-#include "DPICreateBufferRequest.pb.h"
-#include "DPICreateBufferResponse.pb.h"
+#include "DPICreateRingOnBufferRequest.pb.h"
+#include "DPICreateRingOnBufferResponse.pb.h"
 #include "DPIRetrieveBufferRequest.pb.h"
 #include "DPIRetrieveBufferResponse.pb.h"
 #include "DPIAppendBufferRequest.pb.h"
 #include "DPIAppendBufferResponse.pb.h"
+#include "DPIAllocSegmentsRequest.pb.h"
+#include "DPIAllocSegmentsResponse.pb.h"
 
 #include "ErrorMessage.pb.h"
 
@@ -38,15 +40,27 @@ enum MessageTypesEnum : int
 class MessageTypes
 {
 public:
-  static Any createDPICreateBufferRequest(string &name, NodeID node_id, size_t size, size_t threshold)
+
+
+  static Any createDPIAllocSegmentsRequest(const string& bufferName, const size_t segmentsCount, const size_t segmentsSize, const bool reuseSegments, const bool newRing)
   {
-    DPICreateBufferRequest createBufferReq;
-    createBufferReq.set_name(name);
-    createBufferReq.set_node_id(node_id);
-    createBufferReq.set_size(size);
-    createBufferReq.set_threshold(threshold);
+    DPIAllocSegmentsRequest allocSegReq;
+    allocSegReq.set_name(bufferName);
+    allocSegReq.set_segments_count(segmentsCount);
+    allocSegReq.set_segments_size(segmentsSize);
+    allocSegReq.set_reuse_segments(reuseSegments);
+    allocSegReq.set_new_ring(newRing);
     Any anyMessage;
-    anyMessage.PackFrom(createBufferReq);
+    anyMessage.PackFrom(allocSegReq);
+    return anyMessage;
+  }
+
+  static Any createDPICreateRingOnBufferRequest(string &name)
+  {
+    DPICreateRingOnBufferRequest createRingReq;
+    createRingReq.set_name(name);
+    Any anyMessage;
+    anyMessage.PackFrom(createRingReq);
     return anyMessage;
   }
 
@@ -65,14 +79,17 @@ public:
     return anyMessage;
   }
 
-  static Any createDPIRegisterBufferRequest(string &name, NodeID node_id)
+  static Any createDPIRegisterBufferRequest(string &name, NodeID nodeId, size_t segmentsPerWriter, bool reuseSegments, size_t segmentSizes)
   {
     DPIAppendBufferRequest appendBufferReq;
     appendBufferReq.set_name(name);
-    appendBufferReq.set_node_id(node_id);
+    appendBufferReq.set_node_id(nodeId);
+    appendBufferReq.set_segmentsperwriter(segmentsPerWriter);
+    appendBufferReq.set_reusesegments(reuseSegments);
+    appendBufferReq.set_segmentsizes(segmentSizes);
     appendBufferReq.set_register_(true);
 
-    DPIAppendBufferRequest_Segment *segmentReq = appendBufferReq.add_segment();
+    // DPIAppendBufferRequest_Segment *segmentReq = appendBufferReq.add_segment();
     Any anyMessage;
     anyMessage.PackFrom(appendBufferReq);
     return anyMessage;

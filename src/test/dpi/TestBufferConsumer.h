@@ -15,25 +15,27 @@
 #include "../../dpi/NodeClient.h"
 #include "../../dpi/RegistryClient.h"
 #include "../../dpi/BufferWriter.h"
+#include "../../dpi/BufferConsumer.h"
 
 #include <atomic>
 
 
-class IntegrationTestsAppend : public CppUnit::TestFixture
+class TestBufferConsumer : public CppUnit::TestFixture
 {
-  DPI_UNIT_TEST_SUITE(IntegrationTestsAppend);
-    DPI_UNIT_TEST(SimpleIntegrationWithAppendInts_DontReuseSegs);
-    DPI_UNIT_TEST(FourAppendersConcurrent_DontReuseSegs);
+  DPI_UNIT_TEST_SUITE(TestBufferConsumer);
+    DPI_UNIT_TEST(AppendAndConsumeNotInterleaved_ReuseSegs);
+    DPI_UNIT_TEST(FourAppendersOneConsumerInterleaved_DontReuseSegs);
+    DPI_UNIT_TEST(FourAppendersOneConsumerInterleaved_ReuseSegs);
+    // DPI_UNIT_TEST(AppenderConsumerBenchmark);
   DPI_UNIT_TEST_SUITE_END();
 
 public:
   void setUp();
   void tearDown();
-  void SimpleIntegrationWithAppendInts_DontReuseSegs();
-  void FourAppendersConcurrent_DontReuseSegs();
-  // void testShared_SimpleIntegrationWithAppendInts_DontReuseSegs();
-  // void testShared_AtomicHeaderManipulation();
-  // void testShared_FourAppendersConcurrent_DontReuseSegs();
+  void AppendAndConsumeNotInterleaved_ReuseSegs();
+  void FourAppendersOneConsumerInterleaved_DontReuseSegs();
+  void FourAppendersOneConsumerInterleaved_ReuseSegs();
+  void AppenderConsumerBenchmark();
 
   static std::atomic<int> bar;    // Counter of threads, faced barrier.
   static std::atomic<int> passed; // Number of barriers, passed by all threads.

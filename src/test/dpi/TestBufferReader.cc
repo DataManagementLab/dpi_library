@@ -12,7 +12,7 @@ void TestBufferReader::setUp()
     string dpiTestNode = "127.0.0.1:" + to_string(Config::DPI_NODE_PORT);
     Config::DPI_NODES.push_back(dpiTestNode);
 
-    m_stub_regClient = new RegistryClientStub();
+    m_stub_regClient = new RegistryClientStub(new RDMAClient());
     m_nodeServer = new NodeServer();
     CPPUNIT_ASSERT(m_nodeServer->startServer());
 };
@@ -31,20 +31,21 @@ void TestBufferReader::testReadWithHeader()
 {
     //ARRANGE
     string bufferName = "buffer1";
-
+    std::cout << "testReadWithHeader" << '\n';
     size_t remoteOffset = 0;
     size_t memSize = sizeof(int);
 
     uint32_t numberSegments = 2;
     size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / memSize * numberSegments;
 
-    BufferHandle *buffHandle = new BufferHandle(bufferName, 1);
-    BufferWriter<BufferWriterPrivate> buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
-    m_stub_regClient->registerBuffer(buffHandle);
+    m_stub_regClient->registerBuffer(new BufferHandle(bufferName, 1, numberSegments));
+    BufferHandle *buffHandle = m_stub_regClient->createSegmentRingOnBuffer(bufferName);
+    
+    BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
 
     BufferReader bufferReader(buffHandle, m_stub_regClient);
     //ACT
-    for (int i = 0; i < numberElements; i++)
+    for (size_t i = 0; i < numberElements; i++)
     {
         CPPUNIT_ASSERT(buffWriter.append((void *)&i, memSize));
     }
@@ -69,6 +70,7 @@ void TestBufferReader::testReadWithHeader()
 void TestBufferReader::testReadWithoutHeader(){
     //ARRANGE
     string bufferName = "buffer1";
+    std::cout << "testReadWithoutHeader" << '\n';
 
     size_t remoteOffset = 0;
     size_t memSize = sizeof(int);
@@ -76,13 +78,14 @@ void TestBufferReader::testReadWithoutHeader(){
     uint32_t numberSegments = 2;
     size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / memSize * numberSegments;
 
-    BufferHandle *buffHandle = new BufferHandle(bufferName, 1);
-    BufferWriter<BufferWriterPrivate> buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
-    m_stub_regClient->registerBuffer(buffHandle);
+    m_stub_regClient->registerBuffer(new BufferHandle(bufferName, 1, numberSegments));
+    BufferHandle *buffHandle = m_stub_regClient->createSegmentRingOnBuffer(bufferName);
+
+    BufferWriter buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
 
     BufferReader bufferReader(buffHandle, m_stub_regClient);
     //ACT
-    for (int i = 0; i < numberElements; i++)
+    for (size_t i = 0; i < numberElements; i++)
     {
         CPPUNIT_ASSERT(buffWriter.append((void *)&i, memSize));
     }

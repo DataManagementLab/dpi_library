@@ -20,14 +20,15 @@ DPIAppendBenchmarkThread::DPIAppendBenchmarkThread(NodeID nodeid, string &conns,
 
   if (m_nodeId == 1)
   {
-    buffHandle = m_regClient->createBuffer(bufferName, m_nodeId, (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)), Config::DPI_SEGMENT_SIZE * Config::DPI_SEGMENT_THRESHOLD_FACTOR);
+    buffHandle = new BufferHandle(bufferName, m_nodeId, 100);
+    m_regClient->registerBuffer(buffHandle);
   }
   else
   {
     usleep(100000);
     buffHandle = m_regClient->retrieveBuffer(bufferName);
   }
-  m_bufferWriter = new BufferWriter<BufferWriterPrivate>(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
+  m_bufferWriter = new BufferWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
   std::cout << "DPI append Thread constructed" << '\n';
 }
 

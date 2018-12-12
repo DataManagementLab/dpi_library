@@ -10,12 +10,12 @@
 
 using namespace dpi;
 
-RDMAClient::RDMAClient(rdma_transport_t transport) {
+RDMAClient::RDMAClient(size_t mem_size, rdma_transport_t transport) {
   m_countWR = 0;
 
   switch (transport) {
     case rc:
-      m_rdmaManager = new RDMAManagerRC();
+      m_rdmaManager = new RDMAManagerRC(mem_size);
       break;
     case ud:
       m_rdmaManager = new RDMAManagerUD();
@@ -45,6 +45,35 @@ void* RDMAClient::localAlloc(const size_t& size) {
 
 bool RDMAClient::localFree(const void* ptr) {
   return m_rdmaManager->localFree(ptr);
+}
+
+
+//DPI specific function
+bool RDMAClient::remoteAllocSegments(const string& connection, const string& bufferName, const size_t segmentsCount, const size_t segmentsSize, const bool reuseSegments, const bool newRing, size_t& offset)
+{
+  if (!connect(connection)) {
+    return false;
+  }
+  ProtoClient* client = m_clients[connection];
+
+  Any sendAny = MessageTypes::createDPIAllocSegmentsRequest(bufferName, segmentsCount, segmentsSize, reuseSegments, newRing);
+  Any rcvAny;
+  if (!client->send(&sendAny, &rcvAny)) {
+    Logging::error(__FILE__, __LINE__, "cannot send message");
+    return false;
+  }
+
+  if (rcvAny.Is<DPIAllocSegmentsResponse>()) {
+    Logging::debug(__FILE__, __LINE__, "Received DPIAllocSegmentsResponse");
+    DPIAllocSegmentsResponse resResp;
+    rcvAny.UnpackTo(&resResp);
+    if (resResp.return_() == MessageErrors::NO_ERROR) {
+      offset = resResp.offset();
+      return true;
+    }
+    Logging::warn("RDMAClient: Got error code " + to_string(resResp.return_()));
+  }
+  return false;
 }
 
 
@@ -207,14 +236,14 @@ bool managementQueue) {
   return true;
 }
 
-bool __attribute__((always_inline)) RDMAClient::write(const NodeID& nodeid, size_t remoteOffset,
+bool RDMAClient::write(const NodeID& nodeid, size_t remoteOffset,
                                 void* localData, size_t size, bool signaled) {
   signaled = checkSignaled(signaled);
   return m_rdmaManager->remoteWrite(m_nodeIDsIBaddr[nodeid], remoteOffset, localData, size,
                                     signaled);
 }
 
-bool __attribute__((always_inline)) RDMAClient::writeRC(const NodeID& nodeid, size_t remoteOffset,
+bool RDMAClient::writeRC(const NodeID& nodeid, size_t remoteOffset,
                                 void* localData, size_t size, bool signaled) {
   signaled = checkSignaled(signaled);
   return (RDMAManagerRC*)m_rdmaManager->remoteWrite(m_nodeIDsIBaddr[nodeid], remoteOffset, localData, size,

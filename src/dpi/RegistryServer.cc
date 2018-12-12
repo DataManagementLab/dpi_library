@@ -4,8 +4,9 @@ RegistryServer::RegistryServer() : ProtoServer("Registry Server", Config::DPI_RE
 {
     m_rdmaClient = new RDMAClient();
     for(size_t i=0; i<Config::DPI_NODES.size(); ++i){
-        m_rdmaClient->connect(Config::DPI_NODES[i]);
+        m_rdmaClient->connect(Config::DPI_NODES[i], i+1);
     }
+    segmentHeaderBuffer = (Config::DPI_SEGMENT_HEADER_t*) m_rdmaClient->localAlloc(sizeof(Config::DPI_SEGMENT_HEADER_t));
 };
 
 RegistryServer::~RegistryServer()
@@ -18,34 +19,38 @@ RegistryServer::~RegistryServer()
 
 void RegistryServer::handle(Any *anyReq, Any *anyResp)
 {
-    if (anyReq->Is<DPICreateBufferRequest>())
+    if (anyReq->Is<DPICreateRingOnBufferRequest>())
     {
-        DPICreateBufferRequest createBuffReq;
-        DPICreateBufferResponse createBuffResp;
-        anyReq->UnpackTo(&createBuffReq);
+        Logging::debug(__FILE__, __LINE__, "Received DPICreateRingOnBufferRequest");
+        DPICreateRingOnBufferRequest createRingReq;
+        DPICreateRingOnBufferResponse createRingResp;
+        anyReq->UnpackTo(&createRingReq);
 
-        string name = createBuffReq.name();
-        BufferHandle *buffHandle = createBuffer(name, createBuffReq.node_id(), createBuffReq.size(), createBuffReq.threshold());
+        string name = createRingReq.name();
+        Logging::debug(__FILE__, __LINE__, "Retrieving buffer");
+        BufferHandle *buffHandle = retrieveBuffer(name);
         
         if (buffHandle == nullptr)
         {
-            createBuffResp.set_return_(MessageErrors::DPI_CREATE_BUFFHANDLE_FAILED);
+            createRingResp.set_return_(MessageErrors::DPI_CREATE_RING_ON_BUF_FAILED);
         }
         else
         {
-            createBuffResp.set_name(name);
-            createBuffResp.set_node_id(buffHandle->node_id);
-            for (BufferSegment BufferSegment : buffHandle->segments)
-            {
-                DPICreateBufferResponse_Segment *segmentResp = createBuffResp.add_segment();
-                segmentResp->set_offset(BufferSegment.offset);
-                segmentResp->set_size(BufferSegment.size);
-                segmentResp->set_threshold(BufferSegment.threshold);
-            }
-            createBuffResp.set_return_(MessageErrors::NO_ERROR);
+            BufferSegment* segment = createRingOnBuffer(buffHandle);
+            createRingResp.set_name(name);
+            createRingResp.set_node_id(buffHandle->node_id);
+            DPICreateRingOnBufferResponse_Segment *seg = createRingResp.mutable_segment();
+            seg->set_size(segment->size);
+            seg->set_offset(segment->offset);
+            seg->set_nextsegmentoffset(segment->nextSegmentOffset);
+            createRingResp.set_segmentsperwriter(buffHandle->segmentsPerWriter);
+            createRingResp.set_reusesegments(buffHandle->reuseSegments);
+            createRingResp.set_segmentsizes(buffHandle->segmentSizes);
+            createRingResp.set_return_(MessageErrors::NO_ERROR);
+            buffHandle->entrySegments.push_back(*segment);
         }
 
-        anyResp->PackFrom(createBuffResp);
+        anyResp->PackFrom(createRingResp);
     }
     else if (anyReq->Is<DPIRetrieveBufferRequest>())
     {
@@ -63,12 +68,12 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
         {
             retrieveBuffResp.set_name(name);
             retrieveBuffResp.set_node_id(buffHandle->node_id);
-            for (BufferSegment BufferSegment : buffHandle->segments)
+            for (BufferSegment BufferSegment : buffHandle->entrySegments)
             {
                 DPIRetrieveBufferResponse_Segment *segmentResp = retrieveBuffResp.add_segment();
                 segmentResp->set_offset(BufferSegment.offset);
                 segmentResp->set_size(BufferSegment.size);
-                segmentResp->set_threshold(BufferSegment.threshold);
+                segmentResp->set_nextsegmentoffset(BufferSegment.nextSegmentOffset);
             }
             retrieveBuffResp.set_return_(MessageErrors::NO_ERROR);
         }
@@ -82,9 +87,12 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
 
         bool registerSuccess = true;
         string name = appendBuffReq.name();
+        size_t segmentsPerWriter = appendBuffReq.segmentsperwriter();
+        bool reuseSegments = appendBuffReq.reusesegments();
+        size_t segmentSizes = appendBuffReq.segmentsizes();
         if (appendBuffReq.register_())
         {
-            BufferHandle buffHandle(name, appendBuffReq.node_id());
+            BufferHandle buffHandle(name, appendBuffReq.node_id(), segmentsPerWriter, reuseSegments, segmentSizes);
             registerSuccess = registerBuffer(&buffHandle);
             if (registerSuccess)
             {
@@ -142,37 +150,34 @@ bool RegistryServer::registerBuffer(BufferHandle *buffHandle)
     return true;
 }
 
-BufferHandle *RegistryServer::createBuffer(string &name, NodeID node_id, size_t size, size_t threshold)
+BufferSegment *RegistryServer::createRingOnBuffer(BufferHandle *bufferHandle)
 {
-    if (node_id > Config::DPI_NODES.size())
-    {
-        return nullptr;
-    }
-
-    if (m_bufferHandles.find(name) != m_bufferHandles.end())
+    if (bufferHandle->node_id > Config::DPI_NODES.size())
     {
         return nullptr;
     }
 
     size_t offset = 0;
-    string connection = Config::getIPFromNodeId(node_id);
-    std::cout << "Connection " << connection << '\n';
-    if (!m_rdmaClient->remoteAlloc(connection, size + sizeof(Config::DPI_SEGMENT_HEADER_t), offset))
+    string connection = Config::getIPFromNodeId(bufferHandle->node_id);
+    size_t fullSegmentSize = bufferHandle->segmentSizes + sizeof(Config::DPI_SEGMENT_HEADER_t);
+
+    if (!m_rdmaClient->remoteAllocSegments(connection, bufferHandle->name, bufferHandle->segmentsPerWriter, fullSegmentSize, bufferHandle->reuseSegments, true, offset))
     {
         return nullptr;
     }
 
-    BufferHandle buffHandle(name, node_id);
-    BufferSegment BufferSegment(offset, size, threshold); //lthostrup: todo encapsulate size of header into segment
-    buffHandle.segments.push_back(BufferSegment);
-    m_bufferHandles[name] = buffHandle;
-    return &m_bufferHandles[name];
+    Logging::debug(__FILE__, __LINE__, "Created ring with offset on entry segment: " + to_string(offset));
+
+    auto bufferSegment = new BufferSegment(offset, bufferHandle->segmentSizes, bufferHandle->segmentSizes + sizeof(Config::DPI_SEGMENT_HEADER_t));
+    return bufferSegment;
+
 }
 
 BufferHandle *RegistryServer::retrieveBuffer(string &name)
 {
     if (m_bufferHandles.find(name) == m_bufferHandles.end())
     {
+        Logging::error(__FILE__, __LINE__, "RegistryServer: Could not find Buffer Handle for buffer " + name);
         return nullptr;
     }
     return &m_bufferHandles[name];
@@ -184,7 +189,7 @@ bool RegistryServer::appendSegment(string &name, BufferSegment *segment)
     {
         return false;
     }
-    m_bufferHandles[name].segments.push_back(*segment);
+    m_bufferHandles[name].entrySegments.push_back(*segment);
     DPI_DEBUG("Registry Server: Appended new segment to %s \n", name.c_str());
     DPI_DEBUG("Segment offset: %zu, size: %zu \n", (*segment).offset, (*segment).size);
     return true;
