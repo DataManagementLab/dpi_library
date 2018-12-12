@@ -15,6 +15,8 @@ static void printUsage() {
   cout << "Benchmarks:" << endl;
   cout << "1: \t DPIAppendClient" << endl;
   cout << "2: \t DPIAppendServer" << endl;  
+  cout << "3: \t RDMA 1-sided RPC Client" << endl;
+  cout << "4: \t RDMA 1-sided RPC Server" << endl;  
 }
 
 BenchmarkRunner* createTest(config_t& config) {
@@ -26,6 +28,12 @@ BenchmarkRunner* createTest(config_t& config) {
     case 2:
       test = new DPIAppendBenchmark(config, false);
       break;
+    case 3:
+      test = new RDMAOneRPCBench(config, true);
+      break;
+    case 4:
+      test = new RDMAOneRPCBench(config, false);
+      break;  
     default:
       printUsage();
       exit(1);

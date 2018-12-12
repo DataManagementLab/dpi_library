@@ -10,5 +10,6 @@
 #define PERFTESTS_H_
 
 #include "DPIAppendBenchmark.h"
+#include "RDMA_oneSidedRPCBenchmark.h"
 
 #endif /* PERFTESTS_H_ */

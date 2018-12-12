@@ -1,6 +1,8 @@
 set(BENCHMARK_SRC
   DPIAppendBenchmark.h
   DPIAppendBenchmark.cc
+  RDMA_oneSidedRPCBenchmark.cc
+  RDMA_oneSidedRPCBenchmark.h
   Benchmarks.h
   BenchmarkRunner.h
   
