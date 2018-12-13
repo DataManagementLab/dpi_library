@@ -65,7 +65,7 @@ void IntegrationTestsAppend::SimpleIntegrationWithAppendInts_DontReuseSegs()
   uint32_t numberSegments = 2;
   size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / memSize * numberSegments;
   uint32_t segmentsPerWriter = 2;
-  BufferHandle *buffHandle = new BufferHandle(bufferName, 1, segmentsPerWriter-1); //Create 1 less segment in ring to test BufferWriterBW creating a segment on the ring
+  BufferHandle *buffHandle = new BufferHandle(bufferName, 1, 3); //Create 1 less segment in ring to test BufferWriterBW creating a segment on the ring
   DPI_DEBUG("Created BufferHandle\n");
   m_regClient->registerBuffer(buffHandle);
   DPI_DEBUG("Registered Buffer in Registry\n");

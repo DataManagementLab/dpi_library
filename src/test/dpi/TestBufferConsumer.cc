@@ -72,7 +72,7 @@ void TestBufferConsumer::AppendAndConsumeNotInterleaved_ReuseSegs()
 
   size_t numberSegments = 4;
   size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / memSize * numberSegments;
-  BufferHandle *buffHandle = new BufferHandle(bufferName, 1, numberSegments, true); //Create 1 less segment in ring to test BufferWriterBW creating a segment on the ring
+  BufferHandle *buffHandle = new BufferHandle(bufferName, 1, numberSegments); //Create 1 less segment in ring to test BufferWriterBW creating a segment on the ring
   DPI_DEBUG("Created BufferHandle\n");
   m_regClient->registerBuffer(buffHandle);
   DPI_DEBUG("Registered Buffer in Registry\n");
@@ -158,7 +158,7 @@ void TestBufferConsumer::FourAppendersOneConsumerInterleaved_DontReuseSegs()
     dataToWrite->push_back(i);
   }  
 
-  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segPerClient, true)));
+  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segPerClient)));
   BufferHandle *buffHandle1 = m_regClient->createSegmentRingOnBuffer(bufferName);
   BufferHandle *buffHandle2 = m_regClient->createSegmentRingOnBuffer(bufferName);
   BufferHandle *buffHandle3 = m_regClient->createSegmentRingOnBuffer(bufferName);
@@ -267,7 +267,7 @@ void TestBufferConsumer::FourAppendersOneConsumerInterleaved_ReuseSegs()
     dataToWrite->push_back(i);
   }
 
-  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segsPerRing, true)));
+  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segsPerRing)));
   BufferHandle *buffHandle1 = m_regClient->createSegmentRingOnBuffer(bufferName);
   BufferHandle *buffHandle2 = m_regClient->createSegmentRingOnBuffer(bufferName);
   BufferHandle *buffHandle3 = m_regClient->createSegmentRingOnBuffer(bufferName);
@@ -376,7 +376,7 @@ void TestBufferConsumer::AppenderConsumerBenchmark()
   void *scratchPad = malloc(dataSize);
   memset(scratchPad, 1, dataSize);
 
-  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segsPerRing, true)));
+  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segsPerRing)));
 
   BufferHandle *buffHandle = m_regClient->createSegmentRingOnBuffer(bufferName);
   BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, new RegistryClient());
