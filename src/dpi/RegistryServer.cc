@@ -44,7 +44,6 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
             seg->set_offset(segment->offset);
             seg->set_nextsegmentoffset(segment->nextSegmentOffset);
             createRingResp.set_segmentsperwriter(buffHandle->segmentsPerWriter);
-            createRingResp.set_reusesegments(buffHandle->reuseSegments);
             createRingResp.set_segmentsizes(buffHandle->segmentSizes);
             createRingResp.set_return_(MessageErrors::NO_ERROR);
             buffHandle->entrySegments.push_back(*segment);
@@ -92,7 +91,7 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
         size_t segmentSizes = appendBuffReq.segmentsizes();
         if (appendBuffReq.register_())
         {
-            BufferHandle buffHandle(name, appendBuffReq.node_id(), segmentsPerWriter, reuseSegments, segmentSizes);
+            BufferHandle buffHandle(name, appendBuffReq.node_id(), segmentsPerWriter, segmentSizes);
             registerSuccess = registerBuffer(&buffHandle);
             if (registerSuccess)
             {
@@ -161,7 +160,7 @@ BufferSegment *RegistryServer::createRingOnBuffer(BufferHandle *bufferHandle)
     string connection = Config::getIPFromNodeId(bufferHandle->node_id);
     size_t fullSegmentSize = bufferHandle->segmentSizes + sizeof(Config::DPI_SEGMENT_HEADER_t);
 
-    if (!m_rdmaClient->remoteAllocSegments(connection, bufferHandle->name, bufferHandle->segmentsPerWriter, fullSegmentSize, bufferHandle->reuseSegments, true, offset))
+    if (!m_rdmaClient->remoteAllocSegments(connection, bufferHandle->name, bufferHandle->segmentsPerWriter, fullSegmentSize, true, offset))
     {
         return nullptr;
     }

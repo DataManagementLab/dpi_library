@@ -167,7 +167,6 @@ void TestBufferWriter::testAppend_MultipleConcurrentClients()
 
   string bufferName = "test";
   // int nodeId = 1;
-  uint64_t expectedHasFollowSegment = 0;
   uint64_t expectedCounter = Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t);
   std::vector<int> expectedResult;
   std::vector<int> result;
@@ -185,7 +184,7 @@ void TestBufferWriter::testAppend_MultipleConcurrentClients()
       expectedResult.push_back(i);
     }
   }
-  m_stub_regClient->registerBuffer(new BufferHandle(bufferName, 1, 1));
+  m_stub_regClient->registerBuffer(new BufferHandle(bufferName, 1, 2));
   auto buffHandle1 = m_stub_regClient->createSegmentRingOnBuffer(bufferName);
   auto buffHandle2 = m_stub_regClient->createSegmentRingOnBuffer(bufferName);
 
@@ -215,7 +214,6 @@ void TestBufferWriter::testAppend_MultipleConcurrentClients()
       continue;
 
     CPPUNIT_ASSERT_EQUAL(expectedCounter, header[0].counter);
-    CPPUNIT_ASSERT_EQUAL(expectedHasFollowSegment, header[0].hasFollowSegment);
 
     for (size_t j = (buffHandle1->entrySegments[i].offset + sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int); j < (buffHandle1->entrySegments[i].offset + expectedCounter + sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int); j++)
     {
@@ -238,7 +236,6 @@ void TestBufferWriter::testAppend_MultipleConcurrentClients()
       continue;
 
     CPPUNIT_ASSERT_EQUAL(expectedCounter, header[0].counter);
-    CPPUNIT_ASSERT_EQUAL(expectedHasFollowSegment, header[0].hasFollowSegment);
 
     for (size_t j = (buffHandle2->entrySegments[i].offset + sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int); j < (buffHandle2->entrySegments[i].offset + expectedCounter + sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int); j++)
     {
@@ -262,7 +259,7 @@ void TestBufferWriter::testAppend_VaryingDataSizes()
   size_t intsWritten = 0;
   vector<int> expected;
 
-  m_stub_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, 1));
+  m_stub_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, 5));
   auto buffHandle = m_stub_regClient->createSegmentRingOnBuffer(bufferName);
   size_t offset = buffHandle->entrySegments.at(0).offset;
   BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);

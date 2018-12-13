@@ -50,7 +50,7 @@ public:
     string connection = Config::getIPFromNodeId(m_buffHandle->node_id);
     size_t fullSegmentSize = m_buffHandle->segmentSizes + sizeof(Config::DPI_SEGMENT_HEADER_t);
 
-    if (!m_rdmaClient->remoteAllocSegments(connection, name, m_buffHandle->segmentsPerWriter, fullSegmentSize, m_buffHandle->reuseSegments, true, offset))
+    if (!m_rdmaClient->remoteAllocSegments(connection, name, m_buffHandle->segmentsPerWriter, fullSegmentSize, true, offset))
     {
         return nullptr;
     }
@@ -59,7 +59,7 @@ public:
 
     m_buffHandle->entrySegments.emplace_back(offset, m_buffHandle->segmentSizes, m_buffHandle->segmentSizes + sizeof(Config::DPI_SEGMENT_HEADER_t));
 
-    BufferHandle*  copy_buffHandle = new BufferHandle(name, m_buffHandle->node_id, m_buffHandle->segmentsPerWriter, m_buffHandle->reuseSegments, m_buffHandle->segmentSizes);
+    BufferHandle*  copy_buffHandle = new BufferHandle(name, m_buffHandle->node_id, m_buffHandle->segmentsPerWriter, m_buffHandle->segmentSizes);
     copy_buffHandle->entrySegments.push_back(m_buffHandle->entrySegments.back()); //Only the newly created entrysegment into the returned buffer handle
     return copy_buffHandle;
   }
@@ -67,7 +67,7 @@ public:
   bool registerBuffer(BufferHandle* handle)
   {
     // std::cout << "Register Buffer" << '\n';
-    BufferHandle* copy_buffHandle = new BufferHandle(handle->name, handle->node_id, handle->segmentsPerWriter, handle->reuseSegments, handle->segmentSizes);
+    BufferHandle* copy_buffHandle = new BufferHandle(handle->name, handle->node_id, handle->segmentsPerWriter, handle->segmentSizes);
     for(auto segment : handle->entrySegments){
       copy_buffHandle->entrySegments.push_back(segment); 
     }
@@ -79,7 +79,7 @@ public:
     // std::cout << "Retrieve Buffer" << '\n';
     (void) name;
     //Copy a new BufferHandle to emulate distributed setting (Or else one nodes changes to the BufferHandle would affect another nodes BufferHandle without retrieving the buffer first)
-    BufferHandle*  copy_buffHandle = new BufferHandle(m_buffHandle->name, m_buffHandle->node_id, m_buffHandle->segmentsPerWriter, m_buffHandle->reuseSegments, m_buffHandle->segmentSizes);
+    BufferHandle*  copy_buffHandle = new BufferHandle(m_buffHandle->name, m_buffHandle->node_id, m_buffHandle->segmentsPerWriter, m_buffHandle->segmentSizes);
     for(auto segment : m_buffHandle->entrySegments){
       copy_buffHandle->entrySegments.push_back(segment); 
     }

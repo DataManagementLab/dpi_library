@@ -42,13 +42,12 @@ class MessageTypes
 public:
 
 
-  static Any createDPIAllocSegmentsRequest(const string& bufferName, const size_t segmentsCount, const size_t segmentsSize, const bool reuseSegments, const bool newRing)
+  static Any createDPIAllocSegmentsRequest(const string& bufferName, const size_t segmentsCount, const size_t segmentsSize, const bool newRing)
   {
     DPIAllocSegmentsRequest allocSegReq;
     allocSegReq.set_name(bufferName);
     allocSegReq.set_segments_count(segmentsCount);
     allocSegReq.set_segments_size(segmentsSize);
-    allocSegReq.set_reuse_segments(reuseSegments);
     allocSegReq.set_new_ring(newRing);
     Any anyMessage;
     anyMessage.PackFrom(allocSegReq);
@@ -79,13 +78,12 @@ public:
     return anyMessage;
   }
 
-  static Any createDPIRegisterBufferRequest(string &name, NodeID nodeId, size_t segmentsPerWriter, bool reuseSegments, size_t segmentSizes)
+  static Any createDPIRegisterBufferRequest(string &name, NodeID nodeId, size_t segmentsPerWriter, size_t segmentSizes)
   {
     DPIAppendBufferRequest appendBufferReq;
     appendBufferReq.set_name(name);
     appendBufferReq.set_node_id(nodeId);
     appendBufferReq.set_segmentsperwriter(segmentsPerWriter);
-    appendBufferReq.set_reusesegments(reuseSegments);
     appendBufferReq.set_segmentsizes(segmentSizes);
     appendBufferReq.set_register_(true);
 

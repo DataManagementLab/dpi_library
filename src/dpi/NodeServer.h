@@ -39,7 +39,6 @@ class NodeServer : public RDMAServer
             sendMsg->UnpackTo(&reqMsgUnpacked);
             size_t segmentsCount = reqMsgUnpacked.segments_count();
             size_t segmentsSize = reqMsgUnpacked.segments_size();
-            bool reuseSegments = reqMsgUnpacked.reuse_segments();
             // bool newRing = reqMsgUnpacked.new_ring();
             string name = reqMsgUnpacked.name();
             size_t offset = 0;
@@ -53,13 +52,13 @@ class NodeServer : public RDMAServer
                 bool lastSegment = i == segmentsCount - 1;
                 size_t nextSegOffset;
                 if (lastSegment)
-                    nextSegOffset = (reuseSegments ? offset : SIZE_MAX); //If reuseSegments is true, point last segment back to first (creating a ring), if not set it to max value
+                    nextSegOffset = offset; //If reuseSegments is true, point last segment back to first (creating a ring), if not set it to max value
                 else
                     nextSegOffset = offset + (i + 1) * segmentsSize;
 
                 Config::DPI_SEGMENT_HEADER_t segmentHeader;
                 segmentHeader.counter = 0;
-                segmentHeader.hasFollowSegment = (lastSegment && !reuseSegments ? 0 : 1);
+                segmentHeader.hasFollowSegment = 1;
                 segmentHeader.nextSegmentOffset = nextSegOffset;
                 Config::DPI_SEGMENT_HEADER_FLAGS::setCanWriteToSegment(segmentHeader.segmentFlags);
 

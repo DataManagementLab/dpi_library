@@ -11,7 +11,6 @@ message DPICreateRingOnBufferResponse {
     uint64 node_id = 2;
     Segment segment = 3;
     uint64 segmentsPerWriter = 4;
-    bool reuseSegments = 5;
-    uint64 segmentSizes = 6;
-    uint32 return = 7;
+    uint64 segmentSizes = 5;
+    uint32 return = 6;
 }

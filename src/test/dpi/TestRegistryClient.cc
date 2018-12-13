@@ -45,7 +45,7 @@ void TestRegistryClient::tearDown()
 void TestRegistryClient::testRetrieveBuffer()
 {
   string name = "buffer2";
-  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(name, 1, 1, false, 1024)));
+  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(name, 1, 1, 1024)));
 
   auto buffHandle = m_regClient->retrieveBuffer(name);
   CPPUNIT_ASSERT(buffHandle != nullptr);
@@ -69,7 +69,7 @@ void TestRegistryClient::testRegisterBuffer()
 void TestRegistryClient::testcreateSegmentRingOnBuffer()
 {
   string name = "buffer1";
-  BufferHandle *buffHandle = new BufferHandle(name, 1, 1, false, 1024);
+  BufferHandle *buffHandle = new BufferHandle(name, 1, 1, 1024);
   CPPUNIT_ASSERT(m_regClient->registerBuffer(buffHandle));
 
   BufferHandle* handle_ret = m_regClient->createSegmentRingOnBuffer(name);
