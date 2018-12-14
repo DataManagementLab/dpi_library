@@ -65,11 +65,11 @@ void IntegrationTestsAppend::SimpleIntegrationWithAppendInts_DontReuseSegs()
   uint32_t numberSegments = 2;
   size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / memSize * numberSegments;
   uint32_t segmentsPerWriter = 2;
-  BufferHandle *buffHandle = new BufferHandle(bufferName, 1, 3); //Create 1 less segment in ring to test BufferWriterBW creating a segment on the ring
+  BufferHandle *buffHandle = new BufferHandle(bufferName, 1,  3, 1); //Create 1 less segment in ring to test BufferWriterBW creating a segment on the ring
   DPI_DEBUG("Created BufferHandle\n");
   m_regClient->registerBuffer(buffHandle);
   DPI_DEBUG("Registered Buffer in Registry\n");
-  buffHandle = m_regClient->createSegmentRingOnBuffer(bufferName);
+  buffHandle = m_regClient->joinBuffer(bufferName);
   DPI_DEBUG("Created segment ring on buffer\n");
 
 
@@ -128,11 +128,11 @@ void IntegrationTestsAppend::FourAppendersConcurrent_DontReuseSegs()
     dataToWrite->push_back(i);
   }  
 
-  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segPerClient)));
-  BufferHandle *buffHandle1 = m_regClient->createSegmentRingOnBuffer(bufferName);
-  BufferHandle *buffHandle2 = m_regClient->createSegmentRingOnBuffer(bufferName);
-  BufferHandle *buffHandle3 = m_regClient->createSegmentRingOnBuffer(bufferName);
-  BufferHandle *buffHandle4 = m_regClient->createSegmentRingOnBuffer(bufferName);
+  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segPerClient, 4)));
+  BufferHandle *buffHandle1 = m_regClient->joinBuffer(bufferName);
+  BufferHandle *buffHandle2 = m_regClient->joinBuffer(bufferName);
+  BufferHandle *buffHandle3 = m_regClient->joinBuffer(bufferName);
+  BufferHandle *buffHandle4 = m_regClient->joinBuffer(bufferName);
 
   int64_t *rdma_buffer = (int64_t *)m_nodeServer->getBuffer();
 

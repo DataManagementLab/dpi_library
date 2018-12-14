@@ -7,7 +7,7 @@ condition_variable DPIAppendBenchmark::waitCv;
 bool DPIAppendBenchmark::signaled;
 
 DPIAppendBenchmarkThread::DPIAppendBenchmarkThread(NodeID nodeid, string &conns,
-                                                   size_t size, size_t iter)
+                                                   size_t size, size_t iter, size_t numberAppenders)
 {
   m_size = size;
   m_iter = iter;
@@ -20,7 +20,7 @@ DPIAppendBenchmarkThread::DPIAppendBenchmarkThread(NodeID nodeid, string &conns,
 
   if (m_nodeId == 1)
   {
-    buffHandle = new BufferHandle(bufferName, m_nodeId, 100);
+    buffHandle = new BufferHandle(bufferName, m_nodeId, numberAppenders, 100);
     m_regClient->registerBuffer(buffHandle);
   }
   else
@@ -164,7 +164,7 @@ void DPIAppendBenchmark::runClient()
   {
     DPIAppendBenchmarkThread *perfThread = new DPIAppendBenchmarkThread(i, m_conns,
                                                                         m_size,
-                                                                        m_iter);
+                                                                        m_iter, m_numThreads);
     perfThread->start();
     if (!perfThread->ready())
     {

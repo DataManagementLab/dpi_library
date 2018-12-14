@@ -30,7 +30,7 @@ namespace dpi
 class DPIAppendBenchmarkThread : public Thread
 {
 public:
-  DPIAppendBenchmarkThread(NodeID nodeid,string &conns, size_t size, size_t iter);
+  DPIAppendBenchmarkThread(NodeID nodeid,string &conns, size_t size, size_t iter, size_t numberAppenders);
   ~DPIAppendBenchmarkThread();
   void run();
   bool ready()

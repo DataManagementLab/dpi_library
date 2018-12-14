@@ -45,38 +45,68 @@ void TestRegistryClient::tearDown()
 void TestRegistryClient::testRetrieveBuffer()
 {
   string name = "buffer2";
-  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(name, 1, 1, 1024)));
+  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(name, 1, 1, 2, 1024)));
 
   auto buffHandle = m_regClient->retrieveBuffer(name);
   CPPUNIT_ASSERT(buffHandle != nullptr);
   CPPUNIT_ASSERT_EQUAL(buffHandle->name, name);
 
-  CPPUNIT_ASSERT_EQUAL(0, ((int)buffHandle->entrySegments.size()));
+  CPPUNIT_ASSERT_EQUAL(2, ((int)buffHandle->entrySegments.size()));
 };
 
 void TestRegistryClient::testRegisterBuffer()
 {
   string name = "buffer1";
-  BufferHandle *buffHandle = new BufferHandle(name,1,1);
-  CPPUNIT_ASSERT( m_regClient->registerBuffer(buffHandle));
-
-  BufferHandle* handle_ret = m_regClient->retrieveBuffer(name);
-  CPPUNIT_ASSERT(handle_ret != nullptr);
-  CPPUNIT_ASSERT_EQUAL(handle_ret->name, name);
-  CPPUNIT_ASSERT_EQUAL(0, ((int)handle_ret->entrySegments.size()));
-};
-
-void TestRegistryClient::testcreateSegmentRingOnBuffer()
-{
-  string name = "buffer1";
-  BufferHandle *buffHandle = new BufferHandle(name, 1, 1, 1024);
+  BufferHandle *buffHandle = new BufferHandle(name, 1, 1, 2);
   CPPUNIT_ASSERT(m_regClient->registerBuffer(buffHandle));
 
-  BufferHandle* handle_ret = m_regClient->createSegmentRingOnBuffer(name);
-  std::cout << "Received buffer handle from createSegmentRingOnBuffer()" << '\n';
+  BufferHandle *handle_ret = m_regClient->retrieveBuffer(name);
   CPPUNIT_ASSERT(handle_ret != nullptr);
   CPPUNIT_ASSERT_EQUAL(handle_ret->name, name);
-  CPPUNIT_ASSERT_EQUAL(1, ((int)handle_ret->entrySegments.size()));  
-  BufferSegment segment = handle_ret->entrySegments[0];
-  CPPUNIT_ASSERT_EQUAL(1024, ((int)segment.size));
+  CPPUNIT_ASSERT_EQUAL(2, ((int)handle_ret->entrySegments.size()));
 };
+
+void TestRegistryClient::testJoinBuffer()
+{
+  string name = "buffer1";
+  BufferHandle *buffHandle = new BufferHandle(name, 1, 1, 2);
+  CPPUNIT_ASSERT(m_regClient->registerBuffer(buffHandle));
+  {
+    BufferHandle *handle_ret = m_regClient->joinBuffer(name);
+    CPPUNIT_ASSERT(handle_ret != nullptr);
+    CPPUNIT_ASSERT_EQUAL(handle_ret->name, name);
+    CPPUNIT_ASSERT_EQUAL(1, ((int)handle_ret->entrySegments.size()));
+    CPPUNIT_ASSERT_EQUAL(1, ((int)handle_ret->node_id));
+  }
+  {
+    BufferHandle *handle_ret = m_regClient->joinBuffer(name);
+    CPPUNIT_ASSERT(handle_ret != nullptr);
+    CPPUNIT_ASSERT_EQUAL(handle_ret->name, name);
+    CPPUNIT_ASSERT_EQUAL(1, ((int)handle_ret->entrySegments.size()));
+    CPPUNIT_ASSERT_EQUAL(1, ((int)handle_ret->node_id));
+  }
+
+  /*@ToDo: Fix error handling, then this test should return nullptr, instead of crashing the whole exe
+  */
+
+  // {
+  //   BufferHandle *handle_ret = m_regClient->joinBuffer(name);
+  //   CPPUNIT_ASSERT(handle_ret == nullptr);
+  //   CPPUNIT_ASSERT_EQUAL(0, ((int)handle_ret->entrySegments.size()));
+  // }
+};
+
+// void TestRegistryClient::testcreateSegmentRingOnBuffer()
+// {
+//   string name = "buffer1";
+//   BufferHandle *buffHandle = new BufferHandle(name, 1, 1, 1, 1024);
+//   CPPUNIT_ASSERT(m_regClient->registerBuffer(buffHandle));
+
+//   BufferHandle* handle_ret = m_regClient->createSegmentRingOnBuffer(name);
+//   std::cout << "Received buffer handle from createSegmentRingOnBuffer()" << '\n';
+//   CPPUNIT_ASSERT(handle_ret != nullptr);
+//   CPPUNIT_ASSERT_EQUAL(handle_ret->name, name);
+//   CPPUNIT_ASSERT_EQUAL(1, ((int)handle_ret->entrySegments.size()));
+//   BufferSegment segment = handle_ret->entrySegments[0];
+//   CPPUNIT_ASSERT_EQUAL(1024, ((int)segment.size));
+// };

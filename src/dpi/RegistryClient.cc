@@ -52,10 +52,26 @@ RegistryClient::~RegistryClient()
 
 BufferHandle *RegistryClient::retrieveBuffer(string &name)
 {
-    Any sendAny = MessageTypes::createDPIRetrieveBufferRequest(name);
-    Any rcvAny;
+    Any sendAny = MessageTypes::createDPIRetrieveBufferRequest(name,false);
 
-    if (!this->send(&sendAny, &rcvAny))
+    BufferHandle *buffHandle = retrieveOrJoinBuffer(&sendAny, name);
+    return buffHandle;
+}
+
+
+
+BufferHandle *RegistryClient::joinBuffer(string &name){
+    Any sendAny = MessageTypes::createDPIRetrieveBufferRequest(name,true);
+    BufferHandle *buffHandle = retrieveOrJoinBuffer(&sendAny, name);
+    return buffHandle;
+
+}
+
+
+BufferHandle *RegistryClient::retrieveOrJoinBuffer(Any* sendAny, string &name){
+        Any rcvAny;
+
+    if (!this->send(sendAny, &rcvAny))
     {
         Logging::fatal(__FILE__, __LINE__, "Can not send message");
         return nullptr;
@@ -94,13 +110,7 @@ BufferHandle *RegistryClient::retrieveBuffer(string &name)
 //Change so private can use this instead of create buffer
 bool RegistryClient::registerBuffer(BufferHandle *handle)
 {
-    if (handle->entrySegments.size() != 0)
-    {
-        Logging::error(__FILE__, __LINE__, "Can only register handle without segments");
-        return false;
-    }
-
-    Any sendAny = MessageTypes::createDPIRegisterBufferRequest(handle->name, handle->node_id, handle->segmentsPerWriter, handle->segmentSizes);
+    Any sendAny = MessageTypes::createDPIRegisterBufferRequest(*handle);
     return appendOrRetrieveSegment(&sendAny);
 }
 

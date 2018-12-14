@@ -23,6 +23,7 @@
 
 #include "ErrorMessage.pb.h"
 
+#include "../../dpi/BufferHandle.h"
 
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/message.h>
@@ -78,25 +79,28 @@ public:
     return anyMessage;
   }
 
-  static Any createDPIRegisterBufferRequest(string &name, NodeID nodeId, size_t segmentsPerWriter, size_t segmentSizes)
+  static Any createDPIRegisterBufferRequest(BufferHandle& handle)
   {
     DPIAppendBufferRequest appendBufferReq;
-    appendBufferReq.set_name(name);
-    appendBufferReq.set_node_id(nodeId);
-    appendBufferReq.set_segmentsperwriter(segmentsPerWriter);
-    appendBufferReq.set_segmentsizes(segmentSizes);
+    appendBufferReq.set_name(handle.name);
+    appendBufferReq.set_node_id(handle.node_id);
+    appendBufferReq.set_segmentsperwriter(handle.segmentsPerWriter);
+    appendBufferReq.set_segmentsizes(handle.segmentSizes);
+    appendBufferReq.set_numberappenders(handle.numberOfAppenders);
     appendBufferReq.set_register_(true);
 
+    std::cout << "handle.numberOfAppenders " << handle.numberOfAppenders << '\n';
     // DPIAppendBufferRequest_Segment *segmentReq = appendBufferReq.add_segment();
     Any anyMessage;
     anyMessage.PackFrom(appendBufferReq);
     return anyMessage;
   }
 
-  static Any createDPIRetrieveBufferRequest(string &name)
+  static Any createDPIRetrieveBufferRequest(string &name, bool isAppender)
   {
     DPIRetrieveBufferRequest retrieveBufferReq;
     retrieveBufferReq.set_name(name);
+    retrieveBufferReq.set_isappender(isAppender);
 
     Any anyMessage;
     anyMessage.PackFrom(retrieveBufferReq);

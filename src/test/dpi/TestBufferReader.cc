@@ -4,27 +4,47 @@
 void TestBufferReader::setUp()
 {
     //Setup Test DPI
-    Config::RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 1; //1GB
-    Config::DPI_SEGMENT_SIZE = (2048 + sizeof(Config::DPI_SEGMENT_HEADER_t));
-    Config::DPI_INTERNAL_BUFFER_SIZE = 1024;
-    Config::DPI_REGISTRY_SERVER = "127.0.0.1";
-    Config::DPI_NODES.clear();
-    string dpiTestNode = "127.0.0.1:" + to_string(Config::DPI_NODE_PORT);
-    Config::DPI_NODES.push_back(dpiTestNode);
+  Config::RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 1; //1GB
+  Config::DPI_SEGMENT_SIZE = (2048 + sizeof(Config::DPI_SEGMENT_HEADER_t));
+  Config::DPI_INTERNAL_BUFFER_SIZE = 1024;
+  Config::DPI_REGISTRY_SERVER = "127.0.0.1";
+  Config::DPI_REGISTRY_PORT = 5300;
+  Config::DPI_NODE_PORT = 5400;
+  Config::DPI_NODES.clear();
+  string dpiTestNode = "127.0.0.1:" + to_string(Config::DPI_NODE_PORT);
+  Config::DPI_NODES.push_back(dpiTestNode);
 
-    m_stub_regClient = new RegistryClientStub(new RDMAClient());
+
     m_nodeServer = new NodeServer();
     CPPUNIT_ASSERT(m_nodeServer->startServer());
+
+    m_regServer = new RegistryServer();
+    std::cout << "Start RegServer" << '\n';
+    CPPUNIT_ASSERT(m_regServer->startServer());
+    std::cout << "Started RegServer" << '\n';
+
+    m_regClient = new RegistryClient();
 };
 
 void TestBufferReader::tearDown()
 {
-    delete m_stub_regClient;
-    if (m_nodeServer->running())
-    { 
-        m_nodeServer->stopServer();
+    if (m_regServer != nullptr)
+    {
+        m_regServer->stopServer();
+        delete m_regServer;
+        m_regServer = nullptr;
     }
-    delete m_nodeServer;
+    if (m_nodeServer != nullptr)
+    {
+        m_nodeServer->stopServer();
+        delete m_nodeServer;
+        m_nodeServer = nullptr;
+    }
+    if (m_regClient != nullptr)
+    {
+        delete m_regClient;
+        m_regClient = nullptr;
+    }
 };
 
 void TestBufferReader::testReadWithHeader()
@@ -38,12 +58,15 @@ void TestBufferReader::testReadWithHeader()
     uint32_t numberSegments = 2;
     size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / memSize * numberSegments;
 
-    m_stub_regClient->registerBuffer(new BufferHandle(bufferName, 1, numberSegments));
-    BufferHandle *buffHandle = m_stub_regClient->createSegmentRingOnBuffer(bufferName);
-    
-    BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
+    m_regClient->registerBuffer(new BufferHandle(bufferName, 1, numberSegments, 1));
+    BufferHandle *buffHandle = m_regClient->joinBuffer(bufferName);
 
-    BufferReader bufferReader(buffHandle, m_stub_regClient);
+    std::cout << "join" << '\n';
+    BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
+    
+
+    BufferReader bufferReader(buffHandle, m_regClient);
+    std::cout << "Reader" << '\n';
     //ACT
     for (size_t i = 0; i < numberElements; i++)
     {
@@ -67,7 +90,8 @@ void TestBufferReader::testReadWithHeader()
     m_nodeServer->localFree(read_buffer);
 };
 
-void TestBufferReader::testReadWithoutHeader(){
+void TestBufferReader::testReadWithoutHeader()
+{
     //ARRANGE
     string bufferName = "buffer1";
     std::cout << "testReadWithoutHeader" << '\n';
@@ -78,12 +102,12 @@ void TestBufferReader::testReadWithoutHeader(){
     uint32_t numberSegments = 2;
     size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / memSize * numberSegments;
 
-    m_stub_regClient->registerBuffer(new BufferHandle(bufferName, 1, numberSegments));
-    BufferHandle *buffHandle = m_stub_regClient->createSegmentRingOnBuffer(bufferName);
+    m_regClient->registerBuffer(new BufferHandle(bufferName, 1, numberSegments, 1));
+    BufferHandle *buffHandle = m_regClient->joinBuffer(bufferName);
 
-    BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_stub_regClient);
+    BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
 
-    BufferReader bufferReader(buffHandle, m_stub_regClient);
+    BufferReader bufferReader(buffHandle, m_regClient);
     //ACT
     for (size_t i = 0; i < numberElements; i++)
     {
@@ -104,5 +128,5 @@ void TestBufferReader::testReadWithoutHeader(){
         CPPUNIT_ASSERT_EQUAL((int)i, read_buffer[i]);
     }
     m_nodeServer->localFree(rdma_buffer);
-    m_nodeServer->localFree(read_buffer); 
+    m_nodeServer->localFree(read_buffer);
 };

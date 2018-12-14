@@ -3,17 +3,19 @@
 RegistryServer::RegistryServer() : ProtoServer("Registry Server", Config::DPI_REGISTRY_PORT)
 {
     m_rdmaClient = new RDMAClient();
-    for(size_t i=0; i<Config::DPI_NODES.size(); ++i){
-        m_rdmaClient->connect(Config::DPI_NODES[i], i+1);
+    for (size_t i = 0; i < Config::DPI_NODES.size(); ++i)
+    {
+        m_rdmaClient->connect(Config::DPI_NODES[i], i + 1);
     }
-    segmentHeaderBuffer = (Config::DPI_SEGMENT_HEADER_t*) m_rdmaClient->localAlloc(sizeof(Config::DPI_SEGMENT_HEADER_t));
+    segmentHeaderBuffer = (Config::DPI_SEGMENT_HEADER_t *)m_rdmaClient->localAlloc(sizeof(Config::DPI_SEGMENT_HEADER_t));
 };
 
 RegistryServer::~RegistryServer()
 {
-    if(m_rdmaClient!=nullptr){
+    if (m_rdmaClient != nullptr)
+    {
         delete m_rdmaClient;
-        m_rdmaClient=nullptr;
+        m_rdmaClient = nullptr;
     }
 };
 
@@ -29,14 +31,14 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
         string name = createRingReq.name();
         Logging::debug(__FILE__, __LINE__, "Retrieving buffer");
         BufferHandle *buffHandle = retrieveBuffer(name);
-        
+
         if (buffHandle == nullptr)
         {
             createRingResp.set_return_(MessageErrors::DPI_CREATE_RING_ON_BUF_FAILED);
         }
         else
         {
-            BufferSegment* segment = createRingOnBuffer(buffHandle);
+            BufferSegment *segment = createRingOnBuffer(buffHandle);
             createRingResp.set_name(name);
             createRingResp.set_node_id(buffHandle->node_id);
             DPICreateRingOnBufferResponse_Segment *seg = createRingResp.mutable_segment();
@@ -62,6 +64,31 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
         if (buffHandle == nullptr)
         {
             retrieveBuffResp.set_return_(MessageErrors::DPI_RTRV_BUFFHANDLE_FAILED);
+        }
+        else if (retrieveBuffReq.isappender())
+        {
+            auto &numberAppenders = m_appendersJoinedBuffer[name];
+            if (numberAppenders == buffHandle->entrySegments.size())
+            {
+                retrieveBuffResp.set_return_(MessageErrors::DPI_JOIN_BUFFER_FAILED);
+                Logging::error(
+                    __FILE__,
+                    __LINE__,
+                    "DPI Join Buffer failed, all rings are in use. Increase number of appenders in creation of Buffer ");
+            }
+            else
+            {
+                retrieveBuffResp.set_name(name);
+                retrieveBuffResp.set_node_id(buffHandle->node_id);
+                BufferSegment BufferSegment = buffHandle->entrySegments[numberAppenders];
+                DPIRetrieveBufferResponse_Segment *segmentResp = retrieveBuffResp.add_segment();
+                segmentResp->set_offset(BufferSegment.offset);
+                segmentResp->set_size(BufferSegment.size);
+                segmentResp->set_nextsegmentoffset(BufferSegment.nextSegmentOffset);
+                ++numberAppenders;
+                retrieveBuffResp.set_return_(MessageErrors::NO_ERROR);
+            }
+            
         }
         else
         {
@@ -89,6 +116,9 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
         size_t segmentsPerWriter = appendBuffReq.segmentsperwriter();
         bool reuseSegments = appendBuffReq.reusesegments();
         size_t segmentSizes = appendBuffReq.segmentsizes();
+
+        std::cout << "appendBuffReq.numberappenders() " << appendBuffReq.numberappenders() << '\n';
+
         if (appendBuffReq.register_())
         {
             BufferHandle buffHandle(name, appendBuffReq.node_id(), segmentsPerWriter, segmentSizes);
@@ -101,6 +131,19 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
             {
                 appendBuffResp.set_return_(MessageErrors::DPI_APPEND_BUFFHANDLE_FAILED);
             }
+
+            BufferHandle *buffHandlePtr = retrieveBuffer(name);
+
+            // Creating as many rings as appenders
+            for (size_t i = 0; i < appendBuffReq.numberappenders(); i++)
+            {
+                std::cout << "Register Callend: Creating new Ring" << '\n';
+                BufferSegment *segment = createRingOnBuffer(buffHandlePtr);
+                buffHandlePtr->entrySegments.push_back(*segment);
+            }
+
+            m_appendersJoinedBuffer[name] = 0;
+
             anyResp->PackFrom(appendBuffResp);
             return;
         }
@@ -169,7 +212,6 @@ BufferSegment *RegistryServer::createRingOnBuffer(BufferHandle *bufferHandle)
 
     auto bufferSegment = new BufferSegment(offset, bufferHandle->segmentSizes, bufferHandle->segmentSizes + sizeof(Config::DPI_SEGMENT_HEADER_t));
     return bufferSegment;
-
 }
 
 BufferHandle *RegistryServer::retrieveBuffer(string &name)

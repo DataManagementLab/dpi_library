@@ -43,18 +43,30 @@ class RegistryClient: public ProtoClient
      */
     virtual BufferHandle *retrieveBuffer(string &name);
     
+
+      /**
+     * @brief joins a BufferHandle for appending, identified by name. 
+     * 
+     * @param name of buffer
+     * @return BufferHandle* - BufferHandle will contain a full list of all entry-segments into all rings
+     */
+    virtual BufferHandle *joinBuffer(string &name);
+
     /**
+     * DEPRECATED
      * @brief Create a Segment Ring On Buffer specific for one BufferWriterBW
      * 
      * @param name of buffer
      * @return BufferHandle* - BufferHandle only contains one element in the vector with the entry segment to the ring
      */
+    [[deprecated("Not needed anymore, the ring is created at the beginning, later it will be elastic by joinBuffer")]]
     virtual BufferHandle *createSegmentRingOnBuffer(string &name);
 
     // virtual bool appendSegment(string &name, BufferSegment &segment);
 
   private:
     bool appendOrRetrieveSegment(Any* sendAny);
+    BufferHandle* retrieveOrJoinBuffer(Any* sendAny,  string &name);
     ProtoClient *m_client;
 };
 

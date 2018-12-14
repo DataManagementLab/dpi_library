@@ -11,6 +11,7 @@
 #include "../../dpi/NodeServer.h" 
 #include "../../dpi/NodeClient.h"
 #include "../../dpi/RegistryClient.h"
+#include "../../dpi/RegistryServer.h"
 #include "../../dpi/BufferWriter.h"
 #include "RegistryClientStub.h"
 
@@ -18,10 +19,11 @@
 
 class TestBufferWriter : public CppUnit::TestFixture {
 DPI_UNIT_TEST_SUITE(TestBufferWriter);
+
   DPI_UNIT_TEST(testBuffer);
+  DPI_UNIT_TEST(testAppend_SimpleData);
   DPI_UNIT_TEST(testAppend_SingleInts);
   DPI_UNIT_TEST(testAppend_SplitData);
-  DPI_UNIT_TEST(testAppend_SimpleData);
   DPI_UNIT_TEST(testAppend_MultipleConcurrentClients);
   DPI_UNIT_TEST(testAppend_VaryingDataSizes);
 DPI_UNIT_TEST_SUITE_END();
@@ -50,7 +52,8 @@ private:
 
   RDMAClient* m_rdmaClient;
   NodeServer* m_nodeServer;
-  RegistryClient* m_stub_regClient;
+  RegistryClient* m_regClient;
+  RegistryServer *m_regServer;
 
  
 struct TestData

@@ -10,6 +10,7 @@
 
 #include "../../dpi/NodeServer.h" 
 #include "../../dpi/RegistryClient.h"
+#include "../../dpi/RegistryServer.h"
 #include "../../dpi/BufferWriter.h"
 #include "../../dpi/BufferReader.h"
 #include "RegistryClientStub.h"
@@ -19,7 +20,7 @@
 class TestBufferReader : public CppUnit::TestFixture {
 DPI_UNIT_TEST_SUITE(TestBufferReader);
   DPI_UNIT_TEST(testReadWithHeader);
-  DPI_UNIT_TEST(testReadWithoutHeader);
+  // DPI_UNIT_TEST(testReadWithoutHeader);
 DPI_UNIT_TEST_SUITE_END();
  
  public:
@@ -31,5 +32,6 @@ DPI_UNIT_TEST_SUITE_END();
 
 private:
   NodeServer* m_nodeServer;
-  RegistryClient* m_stub_regClient;
+  RegistryClient* m_regClient;
+  RegistryServer* m_regServer;
 };

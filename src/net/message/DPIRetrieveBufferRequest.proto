@@ -3,4 +3,5 @@ package dpi;
 
 message DPIRetrieveBufferRequest {
 	string name = 1;
+	bool isAppender = 2;
 }

@@ -40,6 +40,7 @@ private:
   // Members
   RDMAClient *m_rdmaClient;
   map<string, BufferHandle> m_bufferHandles;
+  map<string, size_t> m_appendersJoinedBuffer;
 
   // Methods
 

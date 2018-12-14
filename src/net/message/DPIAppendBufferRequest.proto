@@ -12,7 +12,8 @@ message DPIAppendBufferRequest {
     repeated Segment segment = 3;
     uint64 segmentsPerWriter = 4;
     bool reuseSegments = 5;
-    uint64 segmentSizes = 6;
-    bool register = 7;
+    uint64 numberAppenders = 6;
+    uint64 segmentSizes = 7;
+    bool register = 8;
 
 }
