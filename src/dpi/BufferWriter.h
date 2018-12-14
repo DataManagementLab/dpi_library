@@ -117,6 +117,7 @@ class BufferWriterBW : public BufferWriter
         m_segmentHeader->hasFollowSegment = 0;
         if (m_localBufferSegment == nullptr)
             return true;
+        
         return writeHeaderToRemote(m_localBufferSegment->offset);
     }
 

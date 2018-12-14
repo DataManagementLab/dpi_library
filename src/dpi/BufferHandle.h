@@ -7,6 +7,7 @@
 #pragma once
 
 #include "../utils/Config.h"
+#include "iterators/SegmentIterator.h"
 
 namespace dpi
 {
@@ -24,6 +25,16 @@ struct BufferSegment //todo: clean up in redundant data between SegmentHeader an
 
     BufferSegment(){};
     BufferSegment(size_t offset, size_t size, size_t nextSegmentOffset = 0) : offset(offset), size(size), nextSegmentOffset(nextSegmentOffset){};
+
+    SegmentIterator begin(char* rdmaBuffer){
+        return SegmentIterator(offset, rdmaBuffer);
+    }
+
+    SegmentIterator end(){
+        return SegmentIterator();
+    }
+
+
 };
 
 
