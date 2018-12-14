@@ -47,12 +47,13 @@ template <class DataType>
 class BufferWriterClient : public Thread
 {
   BufferHandle* buffHandle = nullptr;
+  string& bufferName = "";
   std::vector<DataType> *dataToWrite = nullptr; //tuple<ptr to data, size in bytes>
 
 public: 
 
-  BufferWriterClient(BufferHandle* buffHandle, std::vector<DataType> *dataToWrite, int numThread = 4) : 
-    Thread(), buffHandle(buffHandle), dataToWrite(dataToWrite), NUMBER_THREADS(numThread) {}
+  BufferWriterClient(string& bufferName, std::vector<DataType> *dataToWrite, int numThread = 4) : 
+    Thread(), bufferName(bufferName), dataToWrite(dataToWrite), NUMBER_THREADS(numThread) {}
 
   int NUMBER_THREADS;
   
@@ -60,7 +61,7 @@ public:
   {
     //ARRANGE
 
-    BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, new RegistryClient());
+    BufferWriterBW buffWriter(bufferName, new RegistryClient(), Config::DPI_INTERNAL_BUFFER_SIZE);
 
     barrier_wait(); //Use barrier to simulate concurrent appends between BufferWriters
 

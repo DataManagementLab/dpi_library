@@ -71,18 +71,19 @@ class BufferWriterClient : public Thread
   NodeServer* nodeServer = nullptr;
   RegistryClient* regClient = nullptr;
   BufferHandle* buffHandle = nullptr;
+  string& buffername = "";
   std::vector<DataType> *dataToWrite = nullptr; //tuple<ptr to data, size in bytes>
 
 public: 
 
-  BufferWriterClient(NodeServer* nodeServer, RegistryClient* regClient, BufferHandle* buffHandle, std::vector<DataType> *dataToWrite) : 
-    Thread(), nodeServer(nodeServer), regClient(regClient), buffHandle(buffHandle), dataToWrite(dataToWrite) {}
+  BufferWriterClient(NodeServer* nodeServer, string& bufferName, std::vector<DataType> *dataToWrite) : 
+    Thread(), nodeServer(nodeServer), buffername(bufferName), dataToWrite(dataToWrite) {}
 
   void run() 
   {
     //ARRANGE
 
-    BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, regClient);
+    BufferWriterBW buffWriter(buffername, new RegistryClient(), Config::DPI_INTERNAL_BUFFER_SIZE);
 
     barrier_wait();
 

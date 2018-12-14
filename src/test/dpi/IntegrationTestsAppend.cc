@@ -69,8 +69,8 @@ void IntegrationTestsAppend::SimpleIntegrationWithAppendInts_DontReuseSegs()
   DPI_DEBUG("Created BufferHandle\n");
   m_regClient->registerBuffer(buffHandle);
   DPI_DEBUG("Registered Buffer in Registry\n");
-  buffHandle = m_regClient->joinBuffer(bufferName);
-  DPI_DEBUG("Created segment ring on buffer\n");
+  // buffHandle = m_regClient->joinBuffer(bufferName);
+  // DPI_DEBUG("Created segment ring on buffer\n");
 
 
   int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
@@ -79,7 +79,7 @@ void IntegrationTestsAppend::SimpleIntegrationWithAppendInts_DontReuseSegs()
   //   std::cout << rdma_buffer[i] << " ";
   // }
 
-  BufferWriterBW buffWriter(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, m_regClient);
+  BufferWriterBW buffWriter(bufferName, m_regClient, Config::DPI_INTERNAL_BUFFER_SIZE);
 
   //ACT
   for (size_t i = 0; i < numberElements; i++)
@@ -129,10 +129,10 @@ void IntegrationTestsAppend::FourAppendersConcurrent_DontReuseSegs()
   }  
 
   CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segPerClient, 4)));
-  BufferHandle *buffHandle1 = m_regClient->joinBuffer(bufferName);
-  BufferHandle *buffHandle2 = m_regClient->joinBuffer(bufferName);
-  BufferHandle *buffHandle3 = m_regClient->joinBuffer(bufferName);
-  BufferHandle *buffHandle4 = m_regClient->joinBuffer(bufferName);
+  // BufferHandle *buffHandle1 = m_regClient->joinBuffer(bufferName);
+  // BufferHandle *buffHandle2 = m_regClient->joinBuffer(bufferName);
+  // BufferHandle *buffHandle3 = m_regClient->joinBuffer(bufferName);
+  // BufferHandle *buffHandle4 = m_regClient->joinBuffer(bufferName);
 
   int64_t *rdma_buffer = (int64_t *)m_nodeServer->getBuffer();
 
@@ -142,10 +142,10 @@ void IntegrationTestsAppend::FourAppendersConcurrent_DontReuseSegs()
   //   std::cout << rdma_buffer[i] << ' ';
   // }
 
-  BufferWriterClient<int64_t> *client1 = new BufferWriterClient<int64_t>(buffHandle1, dataToWrite);
-  BufferWriterClient<int64_t> *client2 = new BufferWriterClient<int64_t>(buffHandle2, dataToWrite);
-  BufferWriterClient<int64_t> *client3 = new BufferWriterClient<int64_t>(buffHandle3, dataToWrite);
-  BufferWriterClient<int64_t> *client4 = new BufferWriterClient<int64_t>(buffHandle4, dataToWrite);
+  BufferWriterClient<int64_t> *client1 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
+  BufferWriterClient<int64_t> *client2 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
+  BufferWriterClient<int64_t> *client3 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
+  BufferWriterClient<int64_t> *client4 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
 
   //ACT
   client1->start();

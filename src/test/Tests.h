@@ -14,7 +14,6 @@
 #include "dpi/IntegrationTestsAppend.h"
 #include "dpi/TestBufferConsumer.h"
 #include "examples/append_examples.h"
-#include "dpi/TestBufferReader.h"
 
 
 #endif /* TESTS_H_ */

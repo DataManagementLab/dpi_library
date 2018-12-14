@@ -6,8 +6,6 @@ TestBufferWriter.h
 TestBufferWriter.cc
 IntegrationTestsAppend.h
 IntegrationTestsAppend.cc
-TestBufferReader.h
-TestBufferReader.cc
 RegistryClientStub.h
 TestBufferConsumer.h
 TestBufferConsumer.cc

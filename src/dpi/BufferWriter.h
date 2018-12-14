@@ -54,8 +54,10 @@ class BufferWriterBW : public BufferWriter
 {
 
   public:
-    BufferWriterBW(BufferHandle *handle, size_t internalBufferSize = Config::DPI_INTERNAL_BUFFER_SIZE, RegistryClient *regClient = nullptr, RDMAClient *rdmaClient = nullptr) : m_handle(handle), m_regClient(regClient), m_rdmaClient(rdmaClient)
-    {
+    BufferWriterBW(string& bufferName, RegistryClient *regClient, size_t internalBufferSize = Config::DPI_INTERNAL_BUFFER_SIZE,  RDMAClient *rdmaClient = nullptr) : m_regClient(regClient), m_rdmaClient(rdmaClient)
+    {   
+        m_handle = regClient->joinBuffer(bufferName);
+        
         if (m_handle->entrySegments.size() != 1)
         {
             Logging::error(__FILE__, __LINE__, "BufferWriterBW expects only one entry segment in segment ring");
@@ -69,7 +71,7 @@ class BufferWriterBW : public BufferWriter
         if (m_rdmaClient == nullptr)
         {
             m_rdmaClient = new RDMAClient(internalBufferSize + sizeof(Config::DPI_SEGMENT_HEADER_t));
-            m_rdmaClient->connect(Config::getIPFromNodeId(handle->node_id), handle->node_id);
+            m_rdmaClient->connect(Config::getIPFromNodeId(m_handle->node_id), m_handle->node_id);
             deleteRdmaClient = true;
         }
 

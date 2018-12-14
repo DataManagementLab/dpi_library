@@ -25,8 +25,8 @@ inline int DPI_Create_buffer(std::string &name, NodeID node_id, DPI_Context& con
     if (context.registry_client == nullptr) return DPI_NOT_INITIALIZED;
 
     context.registry_client->registerBuffer(new BufferHandle(name, node_id,1, 1));
-    BufferHandle *buffHandle = context.registry_client->createSegmentRingOnBuffer(name);
-    context.buffer_writers[name] = new BufferWriterBW(buffHandle, Config::DPI_INTERNAL_BUFFER_SIZE, context.registry_client);
+    BufferHandle *buffHandle = context.registry_client->retrieveBuffer(name);
+    context.buffer_writers[name] = new BufferWriterBW(name, context.registry_client, Config::DPI_INTERNAL_BUFFER_SIZE);
     
     context.buffer_readers[name] = new BufferReader(buffHandle, context.registry_client);
     return DPI_SUCCESS;
