@@ -44,12 +44,17 @@ class BufferIterator
             // check if end
             if ((*pointer_to_iter).iter != (*pointer_to_iter).end)
             {
-                // TODO CHECK FOLLOW SEGMENTS
-                //TODO: Check logic
+                if (!(*(*pointer_to_iter).iter).isConsumable())
+                {
+                    // std::cout << "Writer was not consumable!" << '\n';
+                    continue;
+                }
+
                 return true;
             }
             else
             {
+                mark_prev_segment();
                 // remove from segment iterators
                 segment_iterators.erase(pointer_to_iter++);
                 continue;
@@ -59,10 +64,10 @@ class BufferIterator
         return has_next();
     }
 
+
     void *next(size_t &ret_size)
     {
-
-        //TODO: Reuse Prev Element;
+        mark_prev_segment();
 
         //increment SegmentIterator
         void *ret_ptr = (*pointer_to_iter).iter.getRawData(ret_size);
@@ -88,12 +93,28 @@ class BufferIterator
     }
 
   private:
+    void mark_prev_segment()
+    {
+        if ((*pointer_to_iter).prev != (*pointer_to_iter).end)
+        {
+            std::cout << "Before updating prev iter: counter: " << (*pointer_to_iter).prev->counter << ", nextSegOffset: " << (*pointer_to_iter).prev->nextSegmentOffset << " flags: " << (*pointer_to_iter).prev->segmentFlags << '\n';
+            (*pointer_to_iter).prev->counter = 0;
+            (*pointer_to_iter).prev->setConsumable(false);
+            (*pointer_to_iter).prev->setWriteable(true);
+            std::cout << "After updating prev iter: counter: " << (*pointer_to_iter).prev->counter << ", nextSegOffset: " << (*pointer_to_iter).prev->nextSegmentOffset << " flags: " << (*pointer_to_iter).prev->segmentFlags << '\n';
+        }
+        else
+        {
+            std::cout << "Tried to update prev iter, but it was end!" << '\n';
+        }
+    }
+
     struct IterHelper
     {
         SegmentIterator iter;
         SegmentIterator end;
         SegmentIterator prev;
-        IterHelper(SegmentIterator iter, SegmentIterator end) : iter(iter), end(end), prev(iter){};
+        IterHelper(SegmentIterator iter, SegmentIterator end) : iter(iter), end(end), prev(end){};
     };
 
     std::list<IterHelper> segment_iterators;

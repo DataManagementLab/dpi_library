@@ -15,8 +15,8 @@ class SegmentIterator : public std::iterator<
                             std::input_iterator_tag,              // iterator_category
                             Config::DPI_SEGMENT_HEADER_t,         // value_type
                             Config::DPI_SEGMENT_HEADER_t,         // difference_type
-                            const Config::DPI_SEGMENT_HEADER_t *, // pointer
-                            Config::DPI_SEGMENT_HEADER_t          // reference
+                            Config::DPI_SEGMENT_HEADER_t *, // pointer
+                            Config::DPI_SEGMENT_HEADER_t&         // reference
                             >
 {
 
@@ -67,8 +67,8 @@ class SegmentIterator : public std::iterator<
 
     bool operator==(SegmentIterator other) const { return (prevIsEndSegment == other.prevIsEndSegment); }
     bool operator!=(SegmentIterator other) const {return !(*this == other);}
-    reference operator*() const { return *current_header; }
-    pointer operator->() const { return current_header;}
+    reference operator*() { return *current_header; }
+    pointer operator->() { return current_header;}
 
     
 

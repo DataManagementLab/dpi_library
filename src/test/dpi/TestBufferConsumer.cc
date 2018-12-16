@@ -92,7 +92,9 @@ void TestBufferConsumer::testSegmentIterator()
   auto endIterator = handle_ret->entrySegments[0].end();
 
   int count = 0;
-  for (auto it = handle_ret->entrySegments[0].begin((char *)m_nodeServer->getBuffer()); it != endIterator; it++)
+  auto it = handle_ret->entrySegments[0].begin((char *)m_nodeServer->getBuffer());
+  auto it2 = it;
+  for (; it != endIterator; it++)
   {
     size_t dataSize;
     int *data = (int *)it.getRawData(dataSize);
@@ -103,7 +105,23 @@ void TestBufferConsumer::testSegmentIterator()
       count++;
     }
   }
+  
   CPPUNIT_ASSERT_EQUAL(numberElements, count);
+  it2->markEndSegment();
+  it2->counter = 0;
+  count = 0;
+  for (; it2 != endIterator; it2++)
+  {
+    size_t dataSize;
+    int *data = (int *)it2.getRawData(dataSize);
+
+    for (int i = 0; i < dataSize / memSize; i++, data++)
+    {
+      CPPUNIT_ASSERT_EQUAL(count, *data);
+      count++;
+    }
+  }
+  CPPUNIT_ASSERT_EQUAL(0, count);
 }
 
 void TestBufferConsumer::testBufferIterator()
@@ -203,7 +221,7 @@ void TestBufferConsumer::testBufferIteratorFourAppender_NotInterleaved()
     size_t dataSize;
     int64_t *data = (int64_t *)bufferIterator.next(dataSize);
     int64_t start_counter = (iterCounter / numClients) * (numberElements / segPerClient);
-    for (int64_t i = start_counter; i < ((dataSize   / sizeof(int64_t)) + + start_counter); i++, data++)
+    for (int64_t i = start_counter; i < (int64_t)((dataSize   / sizeof(int64_t)) + + start_counter); i++, data++)
     {
       CPPUNIT_ASSERT_EQUAL(i, *data);
       count++;
@@ -212,6 +230,86 @@ void TestBufferConsumer::testBufferIteratorFourAppender_NotInterleaved()
   }
 
   CPPUNIT_ASSERT_EQUAL(numberElements * numClients, count);
+}
+
+
+void TestBufferConsumer::testBufferIteratorFourAppender_Interleaved()
+{
+  //ARRANGE
+  string bufferName = "test";
+  int nodeId = 1;
+
+  size_t segsPerRing = 3;  //Only create 3 segments per ring
+  size_t segPerClient = 6; //Each appender wants to write 6 segments
+  int64_t numberElements = segPerClient * (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int64_t);
+  std::vector<int64_t> *dataToWrite = new std::vector<int64_t>();
+
+  for (int64_t i = 0; i < numberElements; i++)
+  {
+    dataToWrite->push_back(i);
+  }
+
+  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segsPerRing, 4, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t))));
+
+  BufferWriterClient<int64_t> *client1 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
+  BufferWriterClient<int64_t> *client2 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
+  BufferWriterClient<int64_t> *client3 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
+  BufferWriterClient<int64_t> *client4 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
+
+  //ACT & ASSERT
+  auto nodeServer = m_nodeServer;
+  auto regClient = m_regClient;
+  auto numClients = 4;
+  size_t segmentsConsumed = 0;
+  std::thread consumer([nodeServer, &bufferName, numClients, &segmentsConsumed, numberElements, segPerClient, regClient]() {
+   
+  
+  auto handle_ret = regClient->retrieveBuffer(bufferName);
+
+  int64_t count = 0;
+  auto bufferIterator = handle_ret->getIterator((char *)nodeServer->getBuffer());
+
+  size_t iterCounter = 0;
+
+  while (bufferIterator.has_next())
+  {
+    size_t dataSize;
+    int64_t *data = (int64_t *)bufferIterator.next(dataSize);
+    int64_t start_counter = (iterCounter / numClients) * (numberElements / segPerClient);
+    for (int64_t i = start_counter; i < ((dataSize   / sizeof(int64_t)) + + start_counter); i++, data++)
+    {
+      CPPUNIT_ASSERT_EQUAL(i, *data);
+      count++;
+    }
+    iterCounter++;
+    segmentsConsumed++;
+  }
+
+  CPPUNIT_ASSERT_EQUAL(numberElements * numClients, count); 
+   
+  });
+
+  client1->start();
+  client2->start();
+  client3->start();
+  client4->start();
+
+  client1->join();
+  client2->join();
+  client3->join();
+  client4->join();
+  consumer.join();
+
+  // std::cout << "Buffer after appending, total int64_t's: " << numberElements << " * 4" << '\n';
+  // for (size_t i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int64_t)*segsPerRing*4; i++)
+  // {
+  //   if (i % (Config::DPI_SEGMENT_SIZE/sizeof(int64_t)) == 0)
+  //     std::cout << std::endl;
+  //   std::cout << rdma_buffer[i] << ' ';
+  // }
+  CPPUNIT_ASSERT_EQUAL_MESSAGE("Consumed number of segments did not match expected", (size_t)segPerClient * 4, (size_t)segmentsConsumed);
+
+  // m_nodeServer->localFree(rdma_buffer);
 }
 
 // void TestBufferConsumer::AppendAndConsumeNotInterleaved_ReuseSegs()
@@ -385,99 +483,6 @@ void TestBufferConsumer::testBufferIteratorFourAppender_NotInterleaved()
 //   // m_nodeServer->localFree(rdma_buffer);
 // }
 
-// void TestBufferConsumer::FourAppendersOneConsumerInterleaved_ReuseSegs()
-// {
-//   //ARRANGE
-//   string bufferName = "test";
-//   int nodeId = 1;
-
-//   size_t segsPerRing = 3;  //Only create 3 segments per ring
-//   size_t segPerClient = 6; //Each appender wants to write 6 segments
-//   int64_t numberElements = segPerClient * (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int64_t);
-//   std::vector<int64_t> *dataToWrite = new std::vector<int64_t>();
-
-//   for (int64_t i = 0; i < numberElements; i++)
-//   {
-//     dataToWrite->push_back(i);
-//   }
-
-//   CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segsPerRing, 4)));
-
-//   BufferWriterClient<int64_t> *client1 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
-//   BufferWriterClient<int64_t> *client2 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
-//   BufferWriterClient<int64_t> *client3 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
-//   BufferWriterClient<int64_t> *client4 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
-
-//   //ACT & ASSERT
-//   auto nodeServer = m_nodeServer;
-//   auto regClient = m_regClient;
-//   bool *runConsumer = new bool(true);
-//   size_t *segmentsConsumed = new size_t(0);
-//   std::thread consumer([nodeServer, &bufferName, &runConsumer, segmentsConsumed, regClient]() {
-//     BufferConsumerBW buffConsumer(bufferName, regClient, nodeServer);
-
-//     size_t segmentSize = 0;
-//     int *lastSegment;
-//     while (*runConsumer)
-//     {
-//       int *segment = (int *)buffConsumer.consume(segmentSize);
-//       while (segment != nullptr)
-//       {
-//         ++(*segmentsConsumed);
-//         // std::cout << "Offset: " << (char*)segment - (char*)rdma_buffer << '\n';
-//         if (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t) != segmentSize)
-//         {
-//           std::cout << "SEGMENT SIZE DID NOT MATCH COUNTER!!! counter: " << segmentSize << '\n';
-//           // int64_t *rdma_buffer = (int64_t *)segment;
-//           // for (uint32_t j = 0; j < segmentSize/sizeof(int64_t); j++)
-//           // {
-//           //   std::cout << rdma_buffer[j] << ' ';
-//           // }
-//           break;
-//         }
-//         CPPUNIT_ASSERT_EQUAL_MESSAGE("Segment size did not match expected", Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t), segmentSize);
-//         // for (uint32_t j = 0; j < segmentSize/sizeof(int64_t); j++)
-//         // {
-//         //   CPPUNIT_ASSERT_EQUAL_MESSAGE("Data value did not match", expected, segment[j]);
-//         //   expected++;
-//         // }
-//         lastSegment = segment;
-//         segment = (int *)buffConsumer.consume(segmentSize);
-
-//         //Assert header on last segment
-//         Config::DPI_SEGMENT_HEADER_t *header = (Config::DPI_SEGMENT_HEADER_t *)((char *)lastSegment - sizeof(Config::DPI_SEGMENT_HEADER_t));
-//         auto offsetStr = to_string((char *)lastSegment - (char *)nodeServer->getBuffer());
-//         CPPUNIT_ASSERT_EQUAL_MESSAGE("Counter did not reset, on offset: " + offsetStr, (uint64_t)0, header->counter);
-//         CPPUNIT_ASSERT_EQUAL_MESSAGE("CanConsume did not match expected on offset: " + offsetStr, false, Config::DPI_SEGMENT_HEADER_FLAGS::isConsumable(header->segmentFlags));
-//         CPPUNIT_ASSERT_EQUAL_MESSAGE("CanWrite did not match expected on offset: " + offsetStr, true, Config::DPI_SEGMENT_HEADER_FLAGS::isWriteable(header->segmentFlags));
-//       }
-//       usleep(100);
-//     }
-//   });
-
-//   client1->start();
-//   client2->start();
-//   client3->start();
-//   client4->start();
-
-//   client1->join();
-//   client2->join();
-//   client3->join();
-//   client4->join();
-//   *runConsumer = false;
-//   consumer.join();
-
-//   // std::cout << "Buffer after appending, total int64_t's: " << numberElements << " * 4" << '\n';
-//   // for (size_t i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int64_t)*segsPerRing*4; i++)
-//   // {
-//   //   if (i % (Config::DPI_SEGMENT_SIZE/sizeof(int64_t)) == 0)
-//   //     std::cout << std::endl;
-//   //   std::cout << rdma_buffer[i] << ' ';
-//   // }
-//   CPPUNIT_ASSERT_EQUAL_MESSAGE("Consumed number of segments did not match expected", (size_t)segPerClient * 4, (size_t)*segmentsConsumed);
-
-//   // m_nodeServer->localFree(rdma_buffer);
-// }
 
 // void TestBufferConsumer::AppenderConsumerBenchmark()
 // {
