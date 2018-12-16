@@ -135,9 +135,17 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
                 std::cout << "Register Callend: Creating new Ring" << '\n';
                 BufferSegment *segment = createRingOnBuffer(buffHandlePtr);
                 buffHandlePtr->entrySegments.push_back(*segment);
+
+                if(buffHandlePtr->buffertype == BufferHandle::Buffertype::LAT){
+                // ToDo: Create counters!
+                }      
             }
 
+
+            
+
             m_appendersJoinedBuffer[name] = 0;
+
 
             anyResp->PackFrom(appendBuffResp);
             return;
