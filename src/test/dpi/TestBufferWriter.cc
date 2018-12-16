@@ -72,7 +72,7 @@ void TestBufferWriter::testAppend_SimpleData()
   uint32_t numberSegments = 2;
   size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int) * numberSegments;
   std::cout << "Test" << '\n';
-  m_regClient->registerBuffer(new BufferHandle(bufferName, 1, numberSegments, 1));
+  m_regClient->registerBuffer(new BufferHandle(bufferName, 1, numberSegments, 1, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)));
   std::cout << "Reg" << '\n';
   // auto buffHandle = m_regClient->joinBuffer(bufferName);
   // CPPUNIT_ASSERT(buffHandle != nullptr);
@@ -119,7 +119,7 @@ void TestBufferWriter::testAppend_SplitData()
   size_t numberElements = (Config::DPI_INTERNAL_BUFFER_SIZE / sizeof(int)) * 4;
   uint32_t numberSegments = (numberElements * sizeof(int)) / (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t));
   size_t memSize = numberElements * sizeof(int);
-  m_regClient->registerBuffer(new BufferHandle(bufferName, 1, numberSegments, 1));
+  m_regClient->registerBuffer(new BufferHandle(bufferName, 1, numberSegments, 1, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)));
   // auto buffHandle = m_regClient->joinBuffer(bufferName);
   BufferWriterBW buffWriter(bufferName,m_regClient, Config::DPI_INTERNAL_BUFFER_SIZE);
 
@@ -160,8 +160,7 @@ void TestBufferWriter::testAppend_SingleInts()
   uint32_t numberSegments = 2;
   size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int) * numberSegments;
   uint64_t expectedCounter = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t));
-  uint64_t expectedhasFollowSegment = 1;
-  m_regClient->registerBuffer(new BufferHandle(bufferName, 1, numberSegments, 1));
+  m_regClient->registerBuffer(new BufferHandle(bufferName, 1, numberSegments, 1, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)));
   // auto buffHandle = m_regClient->joinBuffer(bufferName);
   BufferWriterBW buffWriter(bufferName,m_regClient, Config::DPI_INTERNAL_BUFFER_SIZE);
 
@@ -178,7 +177,7 @@ void TestBufferWriter::testAppend_SingleInts()
   int *rdma_buffer = (int *)m_nodeServer->getBuffer(remoteOffset);
 
   CPPUNIT_ASSERT_EQUAL(expectedCounter, header[0].counter);
-  CPPUNIT_ASSERT_EQUAL(expectedhasFollowSegment, header[0].hasFollowSegment);
+  CPPUNIT_ASSERT(!header[0].isEndSegment());
 
   for (uint32_t j = 0; j < numberSegments; j++)
   {
@@ -214,7 +213,7 @@ void TestBufferWriter::testAppend_MultipleConcurrentClients()
       expectedResult.push_back(i);
     }
   }
-  m_regClient->registerBuffer(new BufferHandle(bufferName, 1, 2, 2));
+  m_regClient->registerBuffer(new BufferHandle(bufferName, 1, 2, 2, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)));
   auto buffHandle = m_regClient->retrieveBuffer(bufferName);
   
 
@@ -292,7 +291,7 @@ void TestBufferWriter::testAppend_VaryingDataSizes()
   size_t intsWritten = 0;
   vector<int> expected;
 
-  m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, 5, 1));
+  m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, 5, 1, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)));
   auto buffHandle = m_regClient->retrieveBuffer(bufferName);
   size_t offset = buffHandle->entrySegments.at(0).offset;
   BufferWriterBW buffWriter(bufferName,m_regClient, Config::DPI_INTERNAL_BUFFER_SIZE);
@@ -327,7 +326,7 @@ void TestBufferWriter::testAppend_VaryingDataSizes()
   //ASSERT
   int expectedIdx = 0;
   Config::DPI_SEGMENT_HEADER_t *header = (Config::DPI_SEGMENT_HEADER_t *)((char *)m_nodeServer->getBuffer() + offset);
-  while (header->hasFollowSegment == (uint64_t)1)
+  while (!header->isEndSegment())
   {
     CPPUNIT_ASSERT_EQUAL_MESSAGE("Counter in not-last segment did not match expected, segment offset: " + to_string(offset), (uint64_t)(Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)), header->counter);
 

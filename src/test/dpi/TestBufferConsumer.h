@@ -28,17 +28,17 @@ class TestBufferConsumer : public CppUnit::TestFixture
     // DPI_UNIT_TEST(FourAppendersOneConsumerInterleaved_ReuseSegs);
     // DPI_UNIT_TEST(AppenderConsumerBenchmark);
     // DPI_UNIT_TEST(testSegmentIterator);
-    // DPI_UNIT_TEST(testBufferIterator);
-    DPI_UNIT_TEST(testBufferIteratorFourAppender_NotInterleaved);
+    DPI_UNIT_TEST(testBufferIterator);
+    // DPI_UNIT_TEST(testBufferIteratorFourAppender_NotInterleaved);
   DPI_UNIT_TEST_SUITE_END();
 
 public:
   void setUp();
   void tearDown();
-  void AppendAndConsumeNotInterleaved_ReuseSegs();
-  void FourAppendersOneConsumerInterleaved_DontReuseSegs();
-  void FourAppendersOneConsumerInterleaved_ReuseSegs();
-  void AppenderConsumerBenchmark();
+  // void AppendAndConsumeNotInterleaved_ReuseSegs();
+  // void FourAppendersOneConsumerInterleaved_DontReuseSegs();
+  // void FourAppendersOneConsumerInterleaved_ReuseSegs();
+  // void AppenderConsumerBenchmark();
 
   void testBufferIteratorFourAppender_NotInterleaved();
 

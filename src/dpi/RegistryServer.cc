@@ -7,7 +7,6 @@ RegistryServer::RegistryServer() : ProtoServer("Registry Server", Config::DPI_RE
     {
         m_rdmaClient->connect(Config::DPI_NODES[i], i + 1);
     }
-    segmentHeaderBuffer = (Config::DPI_SEGMENT_HEADER_t *)m_rdmaClient->localAlloc(sizeof(Config::DPI_SEGMENT_HEADER_t));
 };
 
 RegistryServer::~RegistryServer()
@@ -44,7 +43,6 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
             DPICreateRingOnBufferResponse_Segment *seg = createRingResp.mutable_segment();
             seg->set_size(segment->size);
             seg->set_offset(segment->offset);
-            seg->set_nextsegmentoffset(segment->nextSegmentOffset);
             createRingResp.set_segmentsperwriter(buffHandle->segmentsPerWriter);
             createRingResp.set_segmentsizes(buffHandle->segmentSizes);
             createRingResp.set_return_(MessageErrors::NO_ERROR);
@@ -84,7 +82,7 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
                 DPIRetrieveBufferResponse_Segment *segmentResp = retrieveBuffResp.add_segment();
                 segmentResp->set_offset(BufferSegment.offset);
                 segmentResp->set_size(BufferSegment.size);
-                segmentResp->set_nextsegmentoffset(BufferSegment.nextSegmentOffset);
+                retrieveBuffResp.set_segmentsizes(buffHandle->segmentSizes);
                 ++numberAppenders;
                 retrieveBuffResp.set_return_(MessageErrors::NO_ERROR);
             }
@@ -99,7 +97,6 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
                 DPIRetrieveBufferResponse_Segment *segmentResp = retrieveBuffResp.add_segment();
                 segmentResp->set_offset(BufferSegment.offset);
                 segmentResp->set_size(BufferSegment.size);
-                segmentResp->set_nextsegmentoffset(BufferSegment.nextSegmentOffset);
             }
             retrieveBuffResp.set_return_(MessageErrors::NO_ERROR);
         }
@@ -114,12 +111,12 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
         bool registerSuccess = true;
         string name = appendBuffReq.name();
         size_t segmentsPerWriter = appendBuffReq.segmentsperwriter();
-        bool reuseSegments = appendBuffReq.reusesegments();
         size_t segmentSizes = appendBuffReq.segmentsizes();
+        size_t numberAppenders = appendBuffReq.numberappenders();
 
         if (appendBuffReq.register_())
         {
-            BufferHandle buffHandle(name, appendBuffReq.node_id(), segmentsPerWriter, segmentSizes);
+            BufferHandle buffHandle(name, appendBuffReq.node_id(), segmentsPerWriter, numberAppenders, segmentSizes); //todo lbe: 
             registerSuccess = registerBuffer(&buffHandle);
             if (registerSuccess)
             {
@@ -133,7 +130,7 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
             BufferHandle *buffHandlePtr = retrieveBuffer(name);
 
             // Creating as many rings as appenders
-            for (size_t i = 0; i < appendBuffReq.numberappenders(); i++)
+            for (size_t i = 0; i < numberAppenders; i++)
             {
                 std::cout << "Register Callend: Creating new Ring" << '\n';
                 BufferSegment *segment = createRingOnBuffer(buffHandlePtr);
@@ -152,7 +149,7 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
             for (int64_t i = 0; i < appendBuffReq.segment_size(); ++i)
             {
                 DPIAppendBufferRequest_Segment segmentReq = appendBuffReq.segment(i);
-                BufferSegment segment(segmentReq.offset(), segmentReq.size(), segmentReq.threshold());
+                BufferSegment segment(segmentReq.offset(), segmentReq.size());
                 if (!appendSegment(name, &segment))
                 {
                     appendSuccess = false;
@@ -208,7 +205,7 @@ BufferSegment *RegistryServer::createRingOnBuffer(BufferHandle *bufferHandle)
 
     Logging::debug(__FILE__, __LINE__, "Created ring with offset on entry segment: " + to_string(offset));
 
-    auto bufferSegment = new BufferSegment(offset, bufferHandle->segmentSizes, bufferHandle->segmentSizes + sizeof(Config::DPI_SEGMENT_HEADER_t));
+    auto bufferSegment = new BufferSegment(offset, bufferHandle->segmentSizes);
     return bufferSegment;
 }
 

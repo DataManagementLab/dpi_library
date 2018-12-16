@@ -28,8 +28,8 @@ class SegmentIterator : public std::iterator<
         SegmentIterator endIter(0, nullptr);
         
         endIter.current_header = new Config::DPI_SEGMENT_HEADER_t();
-        endIter.current_header->hasFollowSegment = 0;
-        endIter.prevHasFollowSegment = 0;
+        endIter.current_header->markEndSegment();
+        endIter.prevIsEndSegment = true;
         endIter.current_position = 0;
         return endIter;
     }
@@ -37,12 +37,12 @@ class SegmentIterator : public std::iterator<
     explicit SegmentIterator(size_t offset, char *rdmaBufferPtr) : current_position(offset), m_rdmaBuffer(rdmaBufferPtr)
     {
         current_header = (header_ptr)(m_rdmaBuffer + offset);
-        prevHasFollowSegment = 1;
+        prevIsEndSegment = false;
     };
 
     SegmentIterator& operator=(SegmentIterator other){
         current_position =  other.current_position;
-        prevHasFollowSegment =  other.prevHasFollowSegment;
+        prevIsEndSegment =  other.prevIsEndSegment;
         current_header =  other.current_header;
         m_rdmaBuffer =  other.m_rdmaBuffer;
         return *this;
@@ -53,7 +53,7 @@ class SegmentIterator : public std::iterator<
     SegmentIterator &operator++()
     {
         current_position = current_header->nextSegmentOffset;
-        prevHasFollowSegment = current_header->hasFollowSegment;
+        prevIsEndSegment = current_header->isEndSegment();
         current_header = (header_ptr)(m_rdmaBuffer + current_position);
         return *this;
     }
@@ -65,7 +65,7 @@ class SegmentIterator : public std::iterator<
         return retval;
     }
 
-    bool operator==(SegmentIterator other) const { return (prevHasFollowSegment == other.prevHasFollowSegment); }
+    bool operator==(SegmentIterator other) const { return (prevIsEndSegment == other.prevIsEndSegment); }
     bool operator!=(SegmentIterator other) const {return !(*this == other);}
     reference operator*() const { return *current_header; }
     pointer operator->() const { return current_header;}
@@ -80,7 +80,7 @@ class SegmentIterator : public std::iterator<
 
   private:
     size_t current_position = 0;
-    size_t prevHasFollowSegment = 1;
+    bool prevIsEndSegment = false;
     Config::DPI_SEGMENT_HEADER_t *current_header = nullptr;
     char *m_rdmaBuffer = nullptr;
 };

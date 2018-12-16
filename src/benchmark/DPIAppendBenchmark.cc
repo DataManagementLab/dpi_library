@@ -20,7 +20,7 @@ DPIAppendBenchmarkThread::DPIAppendBenchmarkThread(NodeID nodeid, string &conns,
 
   if (m_nodeId == 1)
   {
-    buffHandle = new BufferHandle(bufferName, m_nodeId, numberAppenders, 100);
+    buffHandle = new BufferHandle(bufferName, m_nodeId, numberAppenders, 100, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t));
     m_regClient->registerBuffer(buffHandle);
   }
   else

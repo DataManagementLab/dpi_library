@@ -5,7 +5,6 @@ message DPICreateRingOnBufferResponse {
 	message Segment {
         uint64 offset = 1;
         uint64 size = 2;
-        uint64 nextSegmentOffset = 3;
     }
     string name = 1;
     uint64 node_id = 2;

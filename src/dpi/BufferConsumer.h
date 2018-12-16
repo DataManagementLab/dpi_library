@@ -1,135 +1,135 @@
-/**
- * @file BufferConsumer.h
- * @author cbinnig, lthostrup, tziegler
- * @date 2018-12-10
- */
+// /**
+//  * @file BufferConsumer.h
+//  * @author cbinnig, lthostrup, tziegler
+//  * @date 2018-12-10
+//  */
 
-#pragma once
+// #pragma once
 
-#include "../utils/Config.h"
-#include "NodeServer.h"
-#include "RegistryClient.h"
-#include <mutex> // For std::unique_lock
-#include <shared_mutex>
+// #include "../utils/Config.h"
+// #include "NodeServer.h"
+// #include "RegistryClient.h"
+// #include <mutex> // For std::unique_lock
+// #include <shared_mutex>
 
-namespace dpi
-{
-
-
-
-
-class BufferConsumer
-{
-public:
-    virtual void *consume(size_t &size, bool freeLastSegment = true) = 0;
-};
-
-
-class BufferConsumerLat : public BufferConsumer
-{
-public:
-    void *consume(size_t &size, bool freeLastSegment = true)
-    {
-        (void)size;
-        (void)freeLastSegment;
-        return nullptr;
-    }
-};
-
-
-class BufferConsumerBW : public BufferConsumer
-{
-  private:
-    //For each buffer, a list of offsets for pointing to the segment in a ring (an offset for each ring).
-    //As the consumer moves around the ring, the corresponding offset is updated to the next segment to be consumed.
-    list<size_t> ringPosOffsets;
-    list<size_t>::iterator ringPosOffsetsIter; //Iterator for continuing the iteration of the ring. This gives fairness, so that iterating list in ringPosOffsets, doesn't start from first each time
-    size_t lastReturnedOffset = SIZE_MAX; //When consumeSegment is called second time, last returned segments header needs to be updated to allow reuse
-    RegistryClient *m_regClient = nullptr;
-    NodeServer *m_nodeServer = nullptr;
-    string m_bufferName;
-    char *rdmaBufPtr = nullptr;
-
-  public:
-
-    BufferConsumerBW(string &bufferName, RegistryClient *regClient, NodeServer *nodeServer) : m_regClient(regClient), m_nodeServer(nodeServer), m_bufferName(bufferName)
-    {
-        this->rdmaBufPtr = (char*)nodeServer->getBuffer();
-        auto bufferHandle = m_regClient->retrieveBuffer(bufferName);
-
-        for (auto &entrySeg : bufferHandle->entrySegments)
-        {
-            ringPosOffsets.push_back(entrySeg.offset);
-        }
-        ringPosOffsetsIter = ringPosOffsets.begin();
-    }
-
-    /**
-     * @brief consume finds the next segment in any of the rings that has the canConsume flag sat. 
-     * Implementation is not threadsafe! Two BufferConsumer can also not consume on the same Buffer!
-     * 
-     * @param size - will be updated to the size of returned segment (in bytes)
-     * @param freeLastSegment - if true: The last returned segment within a buffer is freed to be overwritten (canWrite flag = true). If false: segment will not be freed (canWrite flag = false)
-     * @return void* - pointer to the start of segments payload. If no candidate segment is found: nullptr is returned
-     */
-    void *consume(size_t &size, bool freeLastSegment = true)
-    {
-        std::cout << "Consume called." << '\n';
-        //Iterate the ring-position-offsets of all rings - continue in list from where last consumeSegment returned
-        size_t lastsegmentOffset = *ringPosOffsetsIter;
-        std::cout << "lastsegmentOffset " << lastsegmentOffset << '\n';
-        for (size_t i = 0; i < ringPosOffsets.size(); ++i)
-        {
-            ++ringPosOffsetsIter; //Go to next ring
-
-            if (ringPosOffsetsIter == ringPosOffsets.end())
-            {
-                std::cout << "ringPosOffsetsIter hit end of list, offset list size " << ringPosOffsets.size() << '\n';
-                ringPosOffsetsIter = ringPosOffsets.begin();
-            }
-
-            size_t segmentOffset = *ringPosOffsetsIter;
-            std::cout << "SegmentOffset " << segmentOffset << '\n';
-            Config::DPI_SEGMENT_HEADER_t* segmentHeader = (Config::DPI_SEGMENT_HEADER_t*) (rdmaBufPtr + segmentOffset);
-            if (Config::DPI_SEGMENT_HEADER_FLAGS::getCanConsumeSegment(segmentHeader->segmentFlags))
-            {
-                //Update last returned segment header
-                if (lastReturnedOffset != SIZE_MAX)
-                {
-                    std::cout << "Updating last seg header, old offset: " << lastReturnedOffset << '\n';
-                    Config::DPI_SEGMENT_HEADER_t* lastSegHeader = (Config::DPI_SEGMENT_HEADER_t*) (rdmaBufPtr + lastReturnedOffset);
-                    // std::cout << "Next seg offset - before updating last seg header" << lastSegHeader->nextSegmentOffset << '\n';
-                    lastSegHeader->counter = 0;
-                    Config::DPI_SEGMENT_HEADER_FLAGS::setCanWriteToSegment(lastSegHeader->segmentFlags, freeLastSegment);
-                    Config::DPI_SEGMENT_HEADER_FLAGS::setCanConsumeSegment(lastSegHeader->segmentFlags, false);
-                    // std::cout << "Next seg offset - after updating last seg header" << lastSegHeader->nextSegmentOffset << '\n';
-                }
-                if (lastReturnedOffset == segmentOffset)
-                {
-                    Logging::fatal(__FILE__, __LINE__, "Error, found candidate segment which was the last (non-updated) segment returned for the given buffer: " + m_bufferName);
-                }
-                lastReturnedOffset = segmentOffset;
-                size = segmentHeader->counter;
-                *ringPosOffsetsIter = segmentHeader->nextSegmentOffset; //Update the offset for current ring to next segment offset
-                std::cout << "Returning candidate seg offset: " << segmentOffset << ", updated ringPosOffset to next offset: " << segmentHeader->nextSegmentOffset << '\n';
-                return ++segmentHeader; //Return start of data portion in segment (by shifting segmentHeader to after the header)
-            }
-        }
-
-        //Update last returned segment header
-        if (lastReturnedOffset != SIZE_MAX)
-        {
-            std::cout << "No candidate seg - updating last seg header offset: " << lastReturnedOffset << '\n';
-            Config::DPI_SEGMENT_HEADER_t* lastSegHeader = (Config::DPI_SEGMENT_HEADER_t*) (rdmaBufPtr + lastReturnedOffset);
-            lastSegHeader->counter = 0;
-            Config::DPI_SEGMENT_HEADER_FLAGS::setCanWriteToSegment(lastSegHeader->segmentFlags, freeLastSegment);
-            Config::DPI_SEGMENT_HEADER_FLAGS::setCanConsumeSegment(lastSegHeader->segmentFlags, false);
-            lastReturnedOffset = SIZE_MAX;
-        }
-        return nullptr;
-    }
-};
+// namespace dpi
+// {
 
 
 
-} // namespace dpi
+
+// class BufferConsumer
+// {
+// public:
+//     virtual void *consume(size_t &size, bool freeLastSegment = true) = 0;
+// };
+
+
+// class BufferConsumerLat : public BufferConsumer
+// {
+// public:
+//     void *consume(size_t &size, bool freeLastSegment = true)
+//     {
+//         (void)size;
+//         (void)freeLastSegment;
+//         return nullptr;
+//     }
+// };
+
+
+// class BufferConsumerBW : public BufferConsumer
+// {
+//   private:
+//     //For each buffer, a list of offsets for pointing to the segment in a ring (an offset for each ring).
+//     //As the consumer moves around the ring, the corresponding offset is updated to the next segment to be consumed.
+//     list<size_t> ringPosOffsets;
+//     list<size_t>::iterator ringPosOffsetsIter; //Iterator for continuing the iteration of the ring. This gives fairness, so that iterating list in ringPosOffsets, doesn't start from first each time
+//     size_t lastReturnedOffset = SIZE_MAX; //When consumeSegment is called second time, last returned segments header needs to be updated to allow reuse
+//     RegistryClient *m_regClient = nullptr;
+//     NodeServer *m_nodeServer = nullptr;
+//     string m_bufferName;
+//     char *rdmaBufPtr = nullptr;
+
+//   public:
+
+//     BufferConsumerBW(string &bufferName, RegistryClient *regClient, NodeServer *nodeServer) : m_regClient(regClient), m_nodeServer(nodeServer), m_bufferName(bufferName)
+//     {
+//         this->rdmaBufPtr = (char*)nodeServer->getBuffer();
+//         auto bufferHandle = m_regClient->retrieveBuffer(bufferName);
+
+//         for (auto &entrySeg : bufferHandle->entrySegments)
+//         {
+//             ringPosOffsets.push_back(entrySeg.offset);
+//         }
+//         ringPosOffsetsIter = ringPosOffsets.begin();
+//     }
+
+//     /**
+//      * @brief consume finds the next segment in any of the rings that has the canConsume flag sat. 
+//      * Implementation is not threadsafe! Two BufferConsumer can also not consume on the same Buffer!
+//      * 
+//      * @param size - will be updated to the size of returned segment (in bytes)
+//      * @param freeLastSegment - if true: The last returned segment within a buffer is freed to be overwritten (canWrite flag = true). If false: segment will not be freed (canWrite flag = false)
+//      * @return void* - pointer to the start of segments payload. If no candidate segment is found: nullptr is returned
+//      */
+//     void *consume(size_t &size, bool freeLastSegment = true)
+//     {
+//         std::cout << "Consume called." << '\n';
+//         //Iterate the ring-position-offsets of all rings - continue in list from where last consumeSegment returned
+//         size_t lastsegmentOffset = *ringPosOffsetsIter;
+//         std::cout << "lastsegmentOffset " << lastsegmentOffset << '\n';
+//         for (size_t i = 0; i < ringPosOffsets.size(); ++i)
+//         {
+//             ++ringPosOffsetsIter; //Go to next ring
+
+//             if (ringPosOffsetsIter == ringPosOffsets.end())
+//             {
+//                 std::cout << "ringPosOffsetsIter hit end of list, offset list size " << ringPosOffsets.size() << '\n';
+//                 ringPosOffsetsIter = ringPosOffsets.begin();
+//             }
+
+//             size_t segmentOffset = *ringPosOffsetsIter;
+//             std::cout << "SegmentOffset " << segmentOffset << '\n';
+//             Config::DPI_SEGMENT_HEADER_t* segmentHeader = (Config::DPI_SEGMENT_HEADER_t*) (rdmaBufPtr + segmentOffset);
+//             if (segmentHeader->isConsumable())
+//             {
+//                 //Update last returned segment header
+//                 if (lastReturnedOffset != SIZE_MAX)
+//                 {
+//                     std::cout << "Updating last seg header, old offset: " << lastReturnedOffset << '\n';
+//                     Config::DPI_SEGMENT_HEADER_t* lastSegHeader = (Config::DPI_SEGMENT_HEADER_t*) (rdmaBufPtr + lastReturnedOffset);
+//                     // std::cout << "Next seg offset - before updating last seg header" << lastSegHeader->nextSegmentOffset << '\n';
+//                     lastSegHeader->counter = 0;
+//                     segmentHeader->setWriteable(freeLastSegment);
+//                     segmentHeader->setConsumable(false);
+//                     // std::cout << "Next seg offset - after updating last seg header" << lastSegHeader->nextSegmentOffset << '\n';
+//                 }
+//                 if (lastReturnedOffset == segmentOffset)
+//                 {
+//                     Logging::fatal(__FILE__, __LINE__, "Error, found candidate segment which was the last (non-updated) segment returned for the given buffer: " + m_bufferName);
+//                 }
+//                 lastReturnedOffset = segmentOffset;
+//                 size = segmentHeader->counter;
+//                 *ringPosOffsetsIter = segmentHeader->nextSegmentOffset; //Update the offset for current ring to next segment offset
+//                 std::cout << "Returning candidate seg offset: " << segmentOffset << ", updated ringPosOffset to next offset: " << segmentHeader->nextSegmentOffset << '\n';
+//                 return ++segmentHeader; //Return start of data portion in segment (by shifting segmentHeader to after the header)
+//             }
+//         }
+
+//         //Update last returned segment header
+//         if (lastReturnedOffset != SIZE_MAX)
+//         {
+//             std::cout << "No candidate seg - updating last seg header offset: " << lastReturnedOffset << '\n';
+//             Config::DPI_SEGMENT_HEADER_t* lastSegHeader = (Config::DPI_SEGMENT_HEADER_t*) (rdmaBufPtr + lastReturnedOffset);
+//             lastSegHeader->counter = 0;
+//             lastSegHeader->setWriteable(lastSegHeader->segmentFlags, freeLastSegment);
+//             lastSegHeader->setConsumable(lastSegHeader->segmentFlags, false);
+//             lastReturnedOffset = SIZE_MAX;
+//         }
+//         return nullptr;
+//     }
+// };
+
+
+
+// } // namespace dpi

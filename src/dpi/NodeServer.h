@@ -58,9 +58,8 @@ class NodeServer : public RDMAServer
 
                 Config::DPI_SEGMENT_HEADER_t segmentHeader;
                 segmentHeader.counter = 0;
-                segmentHeader.hasFollowSegment = 1;
                 segmentHeader.nextSegmentOffset = nextSegOffset;
-                Config::DPI_SEGMENT_HEADER_FLAGS::setCanWriteToSegment(segmentHeader.segmentFlags);
+                segmentHeader.setWriteable(true);
 
                 //Write the header
                 memcpy((char *)this->getBuffer() + offset + i * segmentsSize, &segmentHeader, sizeof(segmentHeader));

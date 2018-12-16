@@ -148,36 +148,26 @@ class Config
     static uint32_t DPI_SEGMENT_SIZE;
 
     /**
-     * @brief DPI_SEGMENT_HEADER_t describes the header of a segmnet
-     * NOTE: if modified please adapt the DPI_SEGMENT_HEADER_META and update 
-     *       the offsets accordingly
+     * @brief Config::DPI_SEGMENT_HEADER_t describes the header of a segmnet
      */
     struct DPI_SEGMENT_HEADER_t
     {
         uint64_t counter = 0;
-        uint64_t hasFollowSegment = 0;
         uint64_t nextSegmentOffset = 0;
         uint64_t segmentFlags = 0;
         DPI_SEGMENT_HEADER_t(){};
-        DPI_SEGMENT_HEADER_t(uint64_t counter, uint64_t hasFollowSegment, uint64_t nextSegmentOffset, uint64_t segmentFlags) : counter(counter), hasFollowSegment(hasFollowSegment), nextSegmentOffset(nextSegmentOffset), segmentFlags(segmentFlags){};
+        DPI_SEGMENT_HEADER_t(uint64_t counter, uint64_t nextSegmentOffset, uint64_t segmentFlags) : counter(counter), nextSegmentOffset(nextSegmentOffset), segmentFlags(segmentFlags){};
+
+        bool isWriteable() { return (segmentFlags & 0b0001) != 0; }
+        void setWriteable(bool writeable) { segmentFlags = (writeable ? segmentFlags | 0b0001 : segmentFlags & 0b1110); }
+
+        bool isConsumable() { return (segmentFlags & 0b0010) != 0; }
+        void setConsumable(bool consumable) { segmentFlags = (consumable ? segmentFlags | 0b0010 : segmentFlags & 0b1101); }
+
+        bool isEndSegment() { return (segmentFlags & 0b0100) != 0; }
+        void markEndSegment() { segmentFlags = segmentFlags | 0b0100; }
     };
 
-    struct DPI_SEGMENT_HEADER_FLAGS
-    {
-        static bool getCanWriteToSegment(uint64_t segmentFlags) { return (segmentFlags & 0b0001) != 0; }
-        static void setCanWriteToSegment(uint64_t &segmentFlags, bool canWrite = true) { segmentFlags = (canWrite ? segmentFlags | 0b0001 : segmentFlags & 0b1110); }
-
-        static bool getCanConsumeSegment(uint64_t segmentFlags) { return (segmentFlags & 0b0010) != 0; }
-        static void setCanConsumeSegment(uint64_t &segmentFlags, bool canConsume = true) { segmentFlags = (canConsume ? segmentFlags | 0b0010 : segmentFlags & 0b1101); }
-    };
-
-    struct DPI_SEGMENT_HEADER_META
-    {
-        static const size_t getCounterOffset = 0;
-        static const size_t getHasFollowSegmentOffset = sizeof(DPI_SEGMENT_HEADER_t::counter);
-        static const size_t getNextSegmentPtrOffset = sizeof(DPI_SEGMENT_HEADER_t::counter) + sizeof(DPI_SEGMENT_HEADER_t::hasFollowSegment);
-        static const size_t getSegmentFlagsOffset = sizeof(DPI_SEGMENT_HEADER_t::counter) + sizeof(DPI_SEGMENT_HEADER_t::hasFollowSegment) + sizeof(DPI_SEGMENT_HEADER_t::nextSegmentOffset);
-    };
 
     //RDMA
     static size_t RDMA_MEMSIZE;

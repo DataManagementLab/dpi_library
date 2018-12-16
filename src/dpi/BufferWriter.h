@@ -112,9 +112,9 @@ class BufferWriterBW : public BufferWriter
     bool close()
     {
         m_segmentHeader->counter = m_sizeUsed;
-        Config::DPI_SEGMENT_HEADER_FLAGS::setCanWriteToSegment(m_segmentHeader->segmentFlags, false);
-        Config::DPI_SEGMENT_HEADER_FLAGS::setCanConsumeSegment(m_segmentHeader->segmentFlags);
-        m_segmentHeader->hasFollowSegment = 0;
+        m_segmentHeader->setWriteable(false);
+        m_segmentHeader->setConsumable(true);
+        m_segmentHeader->markEndSegment();
         if (m_localBufferSegment == nullptr)
             return true;
         
@@ -137,7 +137,7 @@ class BufferWriterBW : public BufferWriter
                 return false;
             }
             m_sizeUsed = m_localBufferSegment->size;
-            getNextSegment(*m_localBufferSegment);
+            getNextSegment();
             m_sizeUsed = 0;
 
             return super_append((void*) ((char*)data + firstPartSize), size - firstPartSize);
@@ -190,31 +190,32 @@ class BufferWriterBW : public BufferWriter
     }
 
             
-    bool getNextSegment(BufferSegment& newSegment_ret)
+    bool getNextSegment()
     {
         auto nextSegmentOffset = m_segmentHeader->nextSegmentOffset;
-
         Logging::debug(__FILE__, __LINE__, "BufferWriterBW getting new segment (reuseSegments = true)");
         //Set CanConsume flag on old segment
-        Config::DPI_SEGMENT_HEADER_FLAGS::setCanConsumeSegment(m_segmentHeader->segmentFlags);
-        Config::DPI_SEGMENT_HEADER_FLAGS::setCanWriteToSegment(m_segmentHeader->segmentFlags, false);
+        m_segmentHeader->setConsumable(true);
+        m_segmentHeader->setWriteable(false);
         m_segmentHeader->counter = m_sizeUsed;
         writeHeaderToRemote(m_localBufferSegment->offset);
 
         //Update m_segmentHeader to header of next segment
         m_rdmaClient->read(m_handle->node_id, nextSegmentOffset, m_segmentHeader, sizeof(Config::DPI_SEGMENT_HEADER_t), true);
+
+        // std::cout << "New segment header, counter: " << m_segmentHeader->counter << ", nextSegOffset: " << m_segmentHeader->nextSegmentOffset << " flags: " << m_segmentHeader->segmentFlags << '\n';
         
         //Check if segment is free - todo: need a timeout??
-        while (!Config::DPI_SEGMENT_HEADER_FLAGS::getCanWriteToSegment(m_segmentHeader->segmentFlags))
+        while (!m_segmentHeader->isWriteable())
         {
             usleep(100);
             m_rdmaClient->read(m_handle->node_id, nextSegmentOffset, m_segmentHeader, sizeof(Config::DPI_SEGMENT_HEADER_t), true);
         }
 
         //Update segment with new data            
-        newSegment_ret.offset = nextSegmentOffset;
-        newSegment_ret.size = m_handle->segmentSizes;
-        newSegment_ret.nextSegmentOffset = m_segmentHeader->nextSegmentOffset;
+        m_localBufferSegment->offset = nextSegmentOffset;
+        // m_localBufferSegment->size = m_handle->segmentSizes;
+
 
         return true;
     

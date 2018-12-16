@@ -94,13 +94,13 @@ BufferHandle *RegistryClient::retrieveOrJoinBuffer(Any* sendAny, string &name){
 
     NodeID node_id = rtrvBufferResp.node_id();
     size_t segmentsPerWriter = rtrvBufferResp.segmentsperwriter();
-    bool reuseSegments = rtrvBufferResp.reusesegments();
     size_t segmentSizes = rtrvBufferResp.segmentsizes();
-    BufferHandle *buffHandle = new BufferHandle(name, node_id, segmentsPerWriter, segmentSizes);
-    for (int64_t i = 0; i < rtrvBufferResp.segment_size(); ++i)
+    size_t numberAppenders = rtrvBufferResp.segment_size();
+    BufferHandle *buffHandle = new BufferHandle(name, node_id, segmentsPerWriter, numberAppenders, segmentSizes);
+    for (int64_t i = 0; i < numberAppenders; ++i)
     {
         DPIRetrieveBufferResponse_Segment segmentResp = rtrvBufferResp.segment(i);
-        BufferSegment segment(segmentResp.offset(), segmentResp.size(), segmentResp.nextsegmentoffset());
+        BufferSegment segment(segmentResp.offset(), segmentResp.size());
         buffHandle->entrySegments.push_back(segment);
     }
 
@@ -175,10 +175,10 @@ BufferHandle *RegistryClient::createSegmentRingOnBuffer(string &name)
     NodeID node_id = createRingResp.node_id();
     size_t segmentsPerWriter = createRingResp.segmentsperwriter();
     size_t segmentSizes = createRingResp.segmentsizes();
-    BufferHandle *buffHandle = new BufferHandle(name, node_id, segmentsPerWriter, segmentSizes);
+    BufferHandle *buffHandle = new BufferHandle(name, node_id, segmentsPerWriter, 0, segmentSizes);
 
     DPICreateRingOnBufferResponse_Segment segmentResp = createRingResp.segment();
-    BufferSegment segment(segmentResp.offset(), segmentResp.size(), segmentResp.nextsegmentoffset());
+    BufferSegment segment(segmentResp.offset(), segmentResp.size());
     buffHandle->entrySegments.push_back(segment);
 
     return buffHandle;

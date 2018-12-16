@@ -5,13 +5,11 @@ message DPIRetrieveBufferResponse {
 	message Segment {
         uint64 offset = 1;
         uint64 size = 2;
-        uint64 nextSegmentOffset = 3;
     }
     string name = 1;
     uint64 node_id = 2;
     repeated Segment segment = 3;
     uint64 segmentsPerWriter = 4;
-    bool reuseSegments = 5;
-    uint64 segmentSizes = 6;
-    uint32 return = 7;
+    uint64 segmentSizes = 5;
+    uint32 return = 6;
 }

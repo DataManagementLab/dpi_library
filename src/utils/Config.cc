@@ -28,9 +28,8 @@ vector<string> Config::DPI_NODES = {  "10.116.60.16:"
     + to_string(Config::DPI_NODE_PORT) };
 
 
-
 uint32_t Config::DPI_INTERNAL_BUFFER_SIZE = 1024 * 1024 * 1;
-uint32_t Config::DPI_SEGMENT_SIZE = (1024 * 1024 * 512) + sizeof(DPI_SEGMENT_HEADER_t);
+uint32_t Config::DPI_SEGMENT_SIZE = (1024 * 1024 * 512) + sizeof(Config::DPI_SEGMENT_HEADER_t);
 
 //RDMA
 size_t Config::RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 5;  //1GB

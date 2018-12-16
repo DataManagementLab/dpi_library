@@ -57,7 +57,7 @@ void TestRegistryClient::testRetrieveBuffer()
 void TestRegistryClient::testRegisterBuffer()
 {
   string name = "buffer1";
-  BufferHandle *buffHandle = new BufferHandle(name, 1, 1, 2);
+  BufferHandle *buffHandle = new BufferHandle(name, 1, 1, 2, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t));
   CPPUNIT_ASSERT(m_regClient->registerBuffer(buffHandle));
 
   BufferHandle *handle_ret = m_regClient->retrieveBuffer(name);
@@ -69,7 +69,7 @@ void TestRegistryClient::testRegisterBuffer()
 void TestRegistryClient::testJoinBuffer()
 {
   string name = "buffer1";
-  BufferHandle *buffHandle = new BufferHandle(name, 1, 1, 2);
+  BufferHandle *buffHandle = new BufferHandle(name, 1, 1, 2, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t));
   CPPUNIT_ASSERT(m_regClient->registerBuffer(buffHandle));
   {
     BufferHandle *handle_ret = m_regClient->joinBuffer(name);

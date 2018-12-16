@@ -31,7 +31,7 @@ struct BufferHandle
     Buffertype buffertype;
 
     BufferHandle(){};
-    BufferHandle(string name, NodeID node_id, size_t segmentsPerWriter, size_t numberOfAppenders, size_t segmentSizes = Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t),
+    BufferHandle(string name, NodeID node_id, size_t segmentsPerWriter, size_t numberOfAppenders, size_t segmentSizes,
      Buffertype buffertype = Buffertype::BW)
         : name(name), node_id(node_id), segmentsPerWriter(segmentsPerWriter), numberOfAppenders(numberOfAppenders), segmentSizes(segmentSizes), buffertype(buffertype){};
 
