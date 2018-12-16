@@ -24,10 +24,14 @@ class SegmentIterator : public std::iterator<
 
   public:
     // empty Iterator
-    explicit SegmentIterator(){
-        current_header = new Config::DPI_SEGMENT_HEADER_t();
-        current_header->hasFollowSegment = 0;
-        prevHasFollowSegment = 0;
+    static SegmentIterator getEndSegmentIterator(){
+        SegmentIterator endIter(0, nullptr);
+        
+        endIter.current_header = new Config::DPI_SEGMENT_HEADER_t();
+        endIter.current_header->hasFollowSegment = 0;
+        endIter.prevHasFollowSegment = 0;
+        endIter.current_position = 0;
+        return endIter;
     }
 
     explicit SegmentIterator(size_t offset, char *rdmaBufferPtr) : current_position(offset), m_rdmaBuffer(rdmaBufferPtr)
@@ -35,14 +39,25 @@ class SegmentIterator : public std::iterator<
         current_header = (header_ptr)(m_rdmaBuffer + offset);
         prevHasFollowSegment = 1;
     };
+
+    SegmentIterator& operator=(SegmentIterator other){
+        current_position =  other.current_position;
+        prevHasFollowSegment =  other.prevHasFollowSegment;
+        current_header =  other.current_header;
+        m_rdmaBuffer =  other.m_rdmaBuffer;
+        return *this;
+    }
+
+
+
     SegmentIterator &operator++()
     {
         current_position = current_header->nextSegmentOffset;
         prevHasFollowSegment = current_header->hasFollowSegment;
         current_header = (header_ptr)(m_rdmaBuffer + current_position);
-        
         return *this;
     }
+    
     SegmentIterator operator++(int)
     {
         SegmentIterator retval = *this;
@@ -50,10 +65,12 @@ class SegmentIterator : public std::iterator<
         return retval;
     }
 
-    bool operator==(SegmentIterator other) const { return (prevHasFollowSegment == other.prevHasFollowSegment) && (current_position == other.current_position); }
+    bool operator==(SegmentIterator other) const { return (prevHasFollowSegment == other.prevHasFollowSegment); }
     bool operator!=(SegmentIterator other) const {return !(*this == other);}
     reference operator*() const { return *current_header; }
     pointer operator->() const { return current_header;}
+
+    
 
     void* getRawData(size_t& dataSizeInBytes){
         dataSizeInBytes = current_header->counter;

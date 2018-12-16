@@ -27,7 +27,9 @@ class TestBufferConsumer : public CppUnit::TestFixture
     // DPI_UNIT_TEST(FourAppendersOneConsumerInterleaved_DontReuseSegs);
     // DPI_UNIT_TEST(FourAppendersOneConsumerInterleaved_ReuseSegs);
     // DPI_UNIT_TEST(AppenderConsumerBenchmark);
-    DPI_UNIT_TEST(testSegmentIterator);
+    // DPI_UNIT_TEST(testSegmentIterator);
+    // DPI_UNIT_TEST(testBufferIterator);
+    DPI_UNIT_TEST(testBufferIteratorFourAppender_NotInterleaved);
   DPI_UNIT_TEST_SUITE_END();
 
 public:
@@ -38,8 +40,11 @@ public:
   void FourAppendersOneConsumerInterleaved_ReuseSegs();
   void AppenderConsumerBenchmark();
 
+  void testBufferIteratorFourAppender_NotInterleaved();
+
 
   void testSegmentIterator();
+  void testBufferIterator();
 
   static std::atomic<int> bar;    // Counter of threads, faced barrier.
   static std::atomic<int> passed; // Number of barriers, passed by all threads.

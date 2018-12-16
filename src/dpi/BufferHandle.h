@@ -7,36 +7,12 @@
 #pragma once
 
 #include "../utils/Config.h"
-#include "iterators/SegmentIterator.h"
+#include "local_iterators/SegmentIterator.h"
+#include "local_iterators/BufferIterator.h"
+#include "BufferSegment.h"
 
 namespace dpi
 {
-
-
-/**
- * @brief BufferSegments are stored in a ring-buffer fashion, with the DPI_SEGMENT_HEADER_t holding a ptr to the next segment in the ring
- * 
- */
-struct BufferSegment //todo: clean up in redundant data between SegmentHeader and BufferSegment types
-{
-    size_t offset;
-    size_t size; //Size of data portion (without header)
-    size_t nextSegmentOffset;
-
-    BufferSegment(){};
-    BufferSegment(size_t offset, size_t size, size_t nextSegmentOffset = 0) : offset(offset), size(size), nextSegmentOffset(nextSegmentOffset){};
-
-    SegmentIterator begin(char* rdmaBuffer){
-        return SegmentIterator(offset, rdmaBuffer);
-    }
-
-    SegmentIterator end(){
-        return SegmentIterator();
-    }
-
-
-};
-
 
 struct BufferHandle
 {
@@ -50,6 +26,11 @@ struct BufferHandle
     BufferHandle(){};
     BufferHandle(string name, NodeID node_id, size_t segmentsPerWriter,size_t numberOfAppenders,size_t segmentSizes = Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) 
         : name(name), node_id(node_id), segmentsPerWriter(segmentsPerWriter), numberOfAppenders(numberOfAppenders) ,segmentSizes(segmentSizes){};
+
+
+    BufferIterator getIterator(char* rdmaBuffer){
+        return BufferIterator(rdmaBuffer, entrySegments, name);
+    }
 };
 
 } // namespace dpi

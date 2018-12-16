@@ -64,7 +64,7 @@ void TestBufferConsumer::tearDown()
 void TestBufferConsumer::testSegmentIterator()
 {
 
-    //ARRANGE
+  //ARRANGE
   string bufferName = "buffer1";
 
   // size_t remoteOffset = 0;
@@ -88,14 +88,14 @@ void TestBufferConsumer::testSegmentIterator()
 
   CPPUNIT_ASSERT(buffWriter.close());
 
-  auto handle_ret =  m_regClient->retrieveBuffer(bufferName);
+  auto handle_ret = m_regClient->retrieveBuffer(bufferName);
   auto endIterator = handle_ret->entrySegments[0].end();
 
   int count = 0;
-  for (auto it  = handle_ret->entrySegments[0].begin((char *)m_nodeServer->getBuffer()); it != endIterator; it++)
+  for (auto it = handle_ret->entrySegments[0].begin((char *)m_nodeServer->getBuffer()); it != endIterator; it++)
   {
     size_t dataSize;
-    int* data = (int*) it.getRawData(dataSize);
+    int *data = (int *)it.getRawData(dataSize);
 
     for (int i = 0; i < dataSize / memSize; i++, data++)
     {
@@ -103,8 +103,117 @@ void TestBufferConsumer::testSegmentIterator()
       count++;
     }
   }
-    CPPUNIT_ASSERT_EQUAL(numberElements, count);
+  CPPUNIT_ASSERT_EQUAL(numberElements, count);
 }
+
+void TestBufferConsumer::testBufferIterator()
+{
+
+  //ARRANGE
+  string bufferName = "buffer1";
+
+  // size_t remoteOffset = 0;
+  size_t memSize = sizeof(int);
+
+  size_t numberSegments = 4;
+  int numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / memSize * numberSegments;
+  BufferHandle *buffHandle = new BufferHandle(bufferName, 1, numberSegments, 1); //Create 1 less segment in ring to test BufferWriterBW creating a segment on the ring
+  DPI_DEBUG("Created BufferHandle\n");
+  m_regClient->registerBuffer(buffHandle);
+  DPI_DEBUG("Registered Buffer in Registry\n");
+
+  BufferWriterBW buffWriter(bufferName, m_regClient, Config::DPI_INTERNAL_BUFFER_SIZE);
+
+  for (size_t i = 0; i < numberElements; i++)
+  {
+    CPPUNIT_ASSERT(m_nodeClient->dpi_append(&buffWriter, (void *)&i, memSize));
+  }
+
+  std::cout << "Finished appending. Closing..." << '\n';
+
+  CPPUNIT_ASSERT(buffWriter.close());
+
+  auto handle_ret = m_regClient->retrieveBuffer(bufferName);
+  std::cout << "Interator creation" << '\n';
+
+  int count;
+
+  auto bufferIterator = handle_ret->getIterator((char *)m_nodeServer->getBuffer());
+
+  std::cout << "Interator enters while" << '\n';
+  while (bufferIterator.has_next())
+  {
+    std::cout << "Interator Segemnt" << '\n';
+    size_t dataSize;
+    int *data = (int *)bufferIterator.next(dataSize);
+
+    for (int i = 0; i < dataSize / memSize; i++, data++)
+    {
+      std::cout << "data " << *data << '\n';
+      CPPUNIT_ASSERT_EQUAL(count, *data);
+      count++;
+    }
+  }
+  CPPUNIT_ASSERT_EQUAL(numberElements, count);
+}
+
+void TestBufferConsumer::testBufferIteratorFourAppender_NotInterleaved()
+{
+
+  //ARRANGE
+  string bufferName = "test";
+  int nodeId = 1;
+  int numClients = 4;
+
+  size_t segPerClient = 4;
+  int64_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / sizeof(int64_t) * segPerClient;
+  std::vector<int64_t> *dataToWrite = new std::vector<int64_t>();
+
+  for (int64_t i = 0; i < numberElements; i++)
+  {
+    dataToWrite->push_back(i);
+  }
+
+  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segPerClient, numClients)));
+
+  for (size_t i = 0; i < numClients; i++)
+  {
+    BufferWriterBW buffWriter(bufferName, m_regClient, Config::DPI_INTERNAL_BUFFER_SIZE);
+
+    for (size_t i = 0; i < numberElements; i++)
+    {
+      CPPUNIT_ASSERT(m_nodeClient->dpi_append(&buffWriter, (void *)&i, sizeof(int64_t)));
+    }
+
+    std::cout << "Finished appending. Closing..." << '\n';
+
+    CPPUNIT_ASSERT(buffWriter.close());
+  }
+  
+
+  auto handle_ret = m_regClient->retrieveBuffer(bufferName);
+
+  int64_t count = 0;
+  auto bufferIterator = handle_ret->getIterator((char *)m_nodeServer->getBuffer());
+
+  size_t iterCounter = 0;
+
+  while (bufferIterator.has_next())
+  {
+    size_t dataSize;
+    int64_t *data = (int64_t *)bufferIterator.next(dataSize);
+    int64_t start_counter = (iterCounter / numClients) * (numberElements / segPerClient);
+    for (int64_t i = start_counter; i < ((dataSize   / sizeof(int64_t)) + + start_counter); i++, data++)
+    {
+      CPPUNIT_ASSERT_EQUAL(i, *data);
+      count++;
+    }
+    iterCounter++;
+  }
+
+  CPPUNIT_ASSERT_EQUAL(numberElements * numClients, count);
+}
+
 void TestBufferConsumer::AppendAndConsumeNotInterleaved_ReuseSegs()
 {
   //ARRANGE
@@ -200,20 +309,6 @@ void TestBufferConsumer::FourAppendersOneConsumerInterleaved_DontReuseSegs()
   }
 
   CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segPerClient, 4)));
-  // BufferHandle *buffHandle1 = m_regClient->joinBuffer(bufferName);
-  // BufferHandle *buffHandle2 = m_regClient->joinBuffer(bufferName);
-  // BufferHandle *buffHandle3 = m_regClient->joinBuffer(bufferName);
-  // BufferHandle *buffHandle4 = m_regClient->joinBuffer(bufferName);
-
-  // int64_t *rdma_buffer = (int64_t *)m_nodeServer->getBuffer();
-
-  // std::cout << "Buffer before appending" << '\n';
-  // for (size_t i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int64_t)*segPerClient*4; i++)
-  // {
-  //   if (i % (Config::DPI_SEGMENT_SIZE/sizeof(int64_t)) == 0)
-  //     std::cout << std::endl;
-  //   std::cout << rdma_buffer[i] << ' ';
-  // }
 
   BufferWriterClient<int64_t> *client1 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
   BufferWriterClient<int64_t> *client2 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
@@ -307,20 +402,6 @@ void TestBufferConsumer::FourAppendersOneConsumerInterleaved_ReuseSegs()
   }
 
   CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segsPerRing, 4)));
-  // BufferHandle *buffHandle1 = m_regClient->joinBuffer(bufferName);
-  // BufferHandle *buffHandle2 = m_regClient->joinBuffer(bufferName);
-  // BufferHandle *buffHandle3 = m_regClient->joinBuffer(bufferName);
-  // BufferHandle *buffHandle4 = m_regClient->joinBuffer(bufferName);
-
-  // int64_t *rdma_buffer = (int64_t *)m_nodeServer->getBuffer();
-
-  // std::cout << "Buffer before appending" << '\n';
-  // for (size_t i = 0; i < Config::DPI_SEGMENT_SIZE/sizeof(int64_t)*segsPerRing*4; i++)
-  // {
-  //   if (i % (Config::DPI_SEGMENT_SIZE/sizeof(int64_t)) == 0)
-  //     std::cout << std::endl;
-  //   std::cout << rdma_buffer[i] << ' ';
-  // }
 
   BufferWriterClient<int64_t> *client1 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
   BufferWriterClient<int64_t> *client2 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
