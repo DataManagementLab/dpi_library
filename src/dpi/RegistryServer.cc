@@ -117,8 +117,6 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
         bool reuseSegments = appendBuffReq.reusesegments();
         size_t segmentSizes = appendBuffReq.segmentsizes();
 
-        std::cout << "appendBuffReq.numberappenders() " << appendBuffReq.numberappenders() << '\n';
-
         if (appendBuffReq.register_())
         {
             BufferHandle buffHandle(name, appendBuffReq.node_id(), segmentsPerWriter, segmentSizes);

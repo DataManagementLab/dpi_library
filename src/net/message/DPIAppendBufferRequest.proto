@@ -15,10 +15,5 @@ message DPIAppendBufferRequest {
     uint64 numberAppenders = 6;
     uint64 segmentSizes = 7;
     bool register = 8;
-    enum Buffertype {
-    BW = 0;
-    LAT = 1;
-    }
-    Buffertype buffertype = 9;
-
+    uint32 buffertype = 9;
 }

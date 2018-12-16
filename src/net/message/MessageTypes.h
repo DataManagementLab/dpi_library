@@ -88,8 +88,8 @@ public:
     appendBufferReq.set_segmentsizes(handle.segmentSizes);
     appendBufferReq.set_numberappenders(handle.numberOfAppenders);
     appendBufferReq.set_register_(true);
+    appendBufferReq.set_buffertype(handle.buffertype);
 
-    std::cout << "handle.numberOfAppenders " << handle.numberOfAppenders << '\n';
     // DPIAppendBufferRequest_Segment *segmentReq = appendBufferReq.add_segment();
     Any anyMessage;
     anyMessage.PackFrom(appendBufferReq);
