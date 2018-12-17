@@ -60,6 +60,8 @@ private:
   bool appendSegment(string &name, BufferSegment *segment);
 
   BufferSegment *createRingOnBuffer(BufferHandle *bufferHandle);
+
+  uint64_t *counterRdmaBuf = nullptr;
 };
 
 } // namespace dpi

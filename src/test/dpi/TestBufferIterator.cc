@@ -1,10 +1,10 @@
-#include "TestBufferConsumer.h"
+#include "TestBufferIterator.h"
 #include <chrono>
 
-std::atomic<int> TestBufferConsumer::bar{0};    // Counter of threads, faced barrier.
-std::atomic<int> TestBufferConsumer::passed{0}; // Number of barriers, passed by all threads.
+std::atomic<int> TestBufferIterator::bar{0};    // Counter of threads, faced barrier.
+std::atomic<int> TestBufferIterator::passed{0}; // Number of barriers, passed by all threads.
 
-void TestBufferConsumer::setUp()
+void TestBufferIterator::setUp()
 {
   //Setup Test DPI
   Config::RDMA_MEMSIZE = 1024ul * 1024 * 1024 * 1; //1GB
@@ -35,7 +35,7 @@ void TestBufferConsumer::setUp()
   std::cout << "Start RegClient" << '\n';
 }
 
-void TestBufferConsumer::tearDown()
+void TestBufferIterator::tearDown()
 {
   if (m_nodeClient != nullptr)
   {
@@ -61,7 +61,7 @@ void TestBufferConsumer::tearDown()
   }
 }
 
-void TestBufferConsumer::testSegmentIterator()
+void TestBufferIterator::testSegmentIterator()
 {
 
   //ARRANGE
@@ -124,7 +124,7 @@ void TestBufferConsumer::testSegmentIterator()
   CPPUNIT_ASSERT_EQUAL(0, count);
 }
 
-void TestBufferConsumer::testBufferIterator()
+void TestBufferIterator::testBufferIterator()
 {
 
   //ARRANGE
@@ -176,7 +176,7 @@ void TestBufferConsumer::testBufferIterator()
 }
 
 
-void TestBufferConsumer::testBufferIteratorSegmentsSameSizeAsMsgs_NotInterleaved()
+void TestBufferIterator::testBufferIteratorSegmentsSameSizeAsMsgs_NotInterleaved()
 {
 
   //ARRANGE
@@ -227,7 +227,77 @@ void TestBufferConsumer::testBufferIteratorSegmentsSameSizeAsMsgs_NotInterleaved
   CPPUNIT_ASSERT_EQUAL(numberElements, count);
 }
 
-void TestBufferConsumer::testBufferIteratorFourAppender_NotInterleaved()
+
+void TestBufferIterator::testBufferIteratorFourAppenderSegSizeSameAsMsg_Interleaved()
+{
+  //ARRANGE
+  string bufferName = "test";
+  int nodeId = 1;
+
+  auto numClients = 4;
+  size_t segsPerRing = 50;  //# of segments in each ring
+  size_t segPerClient = 200; //# of segments each client will write
+  int64_t numberElements = segPerClient;
+  size_t memSize = sizeof(int64_t);
+  std::vector<int64_t> *dataToWrite = new std::vector<int64_t>();
+
+  for (int64_t i = 0; i < numberElements; i++)
+  {
+    dataToWrite->push_back(i);
+  }
+
+  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segsPerRing, numClients, memSize)));
+
+  BufferWriterClient<int64_t> *client1 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
+  BufferWriterClient<int64_t> *client2 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
+  BufferWriterClient<int64_t> *client3 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
+  BufferWriterClient<int64_t> *client4 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
+
+  //ACT & ASSERT
+  auto nodeServer = m_nodeServer;
+  auto regClient = m_regClient;
+  size_t segmentsConsumed = 0;
+  std::thread consumer([nodeServer, &bufferName, numClients, &segmentsConsumed, numberElements, segPerClient, regClient]() {
+    auto handle_ret = regClient->retrieveBuffer(bufferName);
+
+    int64_t count = 0;
+    auto bufferIterator = handle_ret->getIterator((char *)nodeServer->getBuffer());
+
+    size_t iterCounter = 0;
+
+    while (bufferIterator.has_next())
+    {
+      size_t dataSize;
+      int64_t *data = (int64_t *)bufferIterator.next(dataSize);
+      int64_t start_counter = (iterCounter / numClients) * (numberElements / segPerClient);
+      for (int64_t i = start_counter; i < ((dataSize   / sizeof(int64_t)) + + start_counter); i++, data++)
+      {
+        CPPUNIT_ASSERT_EQUAL(i, *data);
+        count++;
+      }
+      iterCounter++;
+      segmentsConsumed++;
+    }
+
+    CPPUNIT_ASSERT_EQUAL(numberElements * numClients, count); 
+  });
+
+  client1->start();
+  client2->start();
+  client3->start();
+  client4->start();
+
+  client1->join();
+  client2->join();
+  client3->join();
+  client4->join();
+  consumer.join();
+  CPPUNIT_ASSERT_EQUAL_MESSAGE("Consumed number of segments did not match expected", (size_t)segPerClient * 4, (size_t)segmentsConsumed);
+
+}
+
+
+void TestBufferIterator::testBufferIteratorFourAppender_NotInterleaved()
 {
 
   //ARRANGE
@@ -285,7 +355,7 @@ void TestBufferConsumer::testBufferIteratorFourAppender_NotInterleaved()
 }
 
 
-void TestBufferConsumer::testBufferIteratorFourAppender_Interleaved()
+void TestBufferIterator::testBufferIteratorFourAppender_Interleaved()
 {
   //ARRANGE
   string bufferName = "test";
@@ -358,75 +428,7 @@ void TestBufferConsumer::testBufferIteratorFourAppender_Interleaved()
 }
 
 
-void TestBufferConsumer::testBufferIteratorFourAppenderSegSizeSameAsMsg_Interleaved()
-{
-  //ARRANGE
-  string bufferName = "test";
-  int nodeId = 1;
-
-  auto numClients = 4;
-  size_t segsPerRing = 50;  //# of segments in each ring
-  size_t segPerClient = 200; //# of segments each client will write
-  int64_t numberElements = segPerClient;
-  size_t memSize = sizeof(int64_t);
-  std::vector<int64_t> *dataToWrite = new std::vector<int64_t>();
-
-  for (int64_t i = 0; i < numberElements; i++)
-  {
-    dataToWrite->push_back(i);
-  }
-
-  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segsPerRing, numClients, memSize)));
-
-  BufferWriterClient<int64_t> *client1 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
-  BufferWriterClient<int64_t> *client2 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
-  BufferWriterClient<int64_t> *client3 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
-  BufferWriterClient<int64_t> *client4 = new BufferWriterClient<int64_t>(bufferName, dataToWrite);
-
-  //ACT & ASSERT
-  auto nodeServer = m_nodeServer;
-  auto regClient = m_regClient;
-  size_t segmentsConsumed = 0;
-  std::thread consumer([nodeServer, &bufferName, numClients, &segmentsConsumed, numberElements, segPerClient, regClient]() {
-    auto handle_ret = regClient->retrieveBuffer(bufferName);
-
-    int64_t count = 0;
-    auto bufferIterator = handle_ret->getIterator((char *)nodeServer->getBuffer());
-
-    size_t iterCounter = 0;
-
-    while (bufferIterator.has_next())
-    {
-      size_t dataSize;
-      int64_t *data = (int64_t *)bufferIterator.next(dataSize);
-      int64_t start_counter = (iterCounter / numClients) * (numberElements / segPerClient);
-      for (int64_t i = start_counter; i < ((dataSize   / sizeof(int64_t)) + + start_counter); i++, data++)
-      {
-        CPPUNIT_ASSERT_EQUAL(i, *data);
-        count++;
-      }
-      iterCounter++;
-      segmentsConsumed++;
-    }
-
-    CPPUNIT_ASSERT_EQUAL(numberElements * numClients, count); 
-  });
-
-  client1->start();
-  client2->start();
-  client3->start();
-  client4->start();
-
-  client1->join();
-  client2->join();
-  client3->join();
-  client4->join();
-  consumer.join();
-  CPPUNIT_ASSERT_EQUAL_MESSAGE("Consumed number of segments did not match expected", (size_t)segPerClient * 4, (size_t)segmentsConsumed);
-
-}
-
-// void TestBufferConsumer::AppendAndConsumeNotInterleaved_ReuseSegs()
+// void TestBufferIterator::AppendAndConsumeNotInterleaved_ReuseSegs()
 // {
 //   //ARRANGE
 //   string bufferName = "buffer1";
@@ -505,7 +507,7 @@ void TestBufferConsumer::testBufferIteratorFourAppenderSegSizeSameAsMsg_Interlea
 //   // } std::cout << std::endl;
 // }
 
-// void TestBufferConsumer::FourAppendersOneConsumerInterleaved_DontReuseSegs()
+// void TestBufferIterator::FourAppendersOneConsumerInterleaved_DontReuseSegs()
 // {
 //   //ARRANGE
 //   string bufferName = "test";
@@ -598,7 +600,7 @@ void TestBufferConsumer::testBufferIteratorFourAppenderSegSizeSameAsMsg_Interlea
 // }
 
 
-// void TestBufferConsumer::AppenderConsumerBenchmark()
+// void TestBufferIterator::AppenderConsumerBenchmark()
 // {
 //   //ARRANGE
 

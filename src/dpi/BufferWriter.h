@@ -28,6 +28,7 @@ struct InternalBuffer
 
 class BufferWriter
 {
+public:
     virtual bool append(void *data, size_t size) = 0;
     virtual bool close() = 0;
 };
@@ -35,17 +36,188 @@ class BufferWriter
 
 class BufferWriterLat : public BufferWriter
 {
+   
+  public:
+    BufferWriterLat(string& bufferName, RegistryClient *regClient, size_t internalBufferSize = Config::DPI_INTERNAL_BUFFER_SIZE,  RDMAClient *rdmaClient = nullptr) : m_regClient(regClient), m_rdmaClient(rdmaClient)
+    {   
+        m_handle = regClient->joinBuffer(bufferName);
+        
+        if (m_handle->buffertype != BufferHandle::Buffertype::LAT)
+        {
+            Logging::error(__FILE__, __LINE__, "BufferWriterLat expects the buffer to be Buffertype::LAT)");
+            return;
+        }
+
+        if (m_handle->entrySegments.size() != 1)
+        {
+            Logging::error(__FILE__, __LINE__, "BufferWriterLat expects only one entry segment in segment ring");
+            return;
+        }
+
+        auto entrySegment = &m_handle->entrySegments.front();
+        currentSegmentOffset = entrySegment->offset;
+
+        Logging::debug(__FILE__, __LINE__, "BufferWriterLat ctor: offset on entry segment: " + to_string(currentSegmentOffset));
+
+        if (m_rdmaClient == nullptr)
+        {
+            m_rdmaClient = new RDMAClient(internalBufferSize + sizeof(Config::DPI_SEGMENT_HEADER_t) + sizeof(uint64_t)); //Internal buffer, segmentHeader, consumedCnt
+            m_rdmaClient->connect(Config::getIPFromNodeId(m_handle->node_id), m_handle->node_id);
+            deleteRdmaClient = true;
+        }
+
+        m_segmentHeader = (Config::DPI_SEGMENT_HEADER_t *)m_rdmaClient->localAlloc(sizeof(Config::DPI_SEGMENT_HEADER_t));
+        consumedCnt = (uint64_t *)m_rdmaClient->localAlloc(sizeof(uint64_t));
+
+        //Read header
+        readHeaderFromRemote(); 
+        readCounterFromRemote();
+        writeableFreeSegments = *consumedCnt;
+        std::cout << "writeableFreeSegments: " << writeableFreeSegments << '\n';
+
+        m_internalBuffer = new InternalBuffer(m_rdmaClient->localAlloc(internalBufferSize), internalBufferSize);
+    }
+    ~BufferWriterLat()
+    {
+        if (m_internalBuffer != nullptr && m_internalBuffer->bufferPtr != nullptr)
+        {
+            m_rdmaClient->localFree(m_internalBuffer->bufferPtr);
+        }
+        if (deleteRdmaClient)
+            delete m_rdmaClient;
+    };
+
+    //data: ptr to data, size: size in bytes. return: true if successful, false otherwise
     bool append(void *data, size_t size)
     {
-        (void)data;
-        (void)size;
-        return false;
+        // if (size > m_handle->segmentSizes)
+        //     return false;
+
+        while (size > this->m_internalBuffer->size)
+        {
+            // update size move pointer
+            size = size - this->m_internalBuffer->size;
+            if (!this->super_append(data, this->m_internalBuffer->size))
+                return false;
+            data = ((char *)data + this->m_internalBuffer->size);
+        }
+        return this->super_append(data, size);
     }
 
     bool close()
     {
-        return false;
+        m_segmentHeader->counter = m_handle->segmentSizes;
+        m_segmentHeader->setWriteable(false);
+        m_segmentHeader->setConsumable(true);
+        m_segmentHeader->markEndSegment();
+
+        return writeHeaderToRemote();
     }
+
+
+  private:
+
+    bool super_append(void *data, size_t size)
+    {
+        if (writeableFreeSegments == 0)
+        {
+            Logging::debug(__FILE__, __LINE__, "No more segments to write to, reading updated remote counter.");
+            uint64_t consumedCntOld = *consumedCnt;
+            while (consumedCntOld == *consumedCnt)
+            {
+                readCounterFromRemote();
+            }
+            if (*consumedCnt < consumedCntOld) //uint64_t rolled over
+            {
+                Logging::fatal(__FILE__, __LINE__, "Consumed segments counter rolled over!");
+            }
+            writeableFreeSegments += *consumedCnt - consumedCntOld;
+            std::cout << "New writeableFreeSegments: " << writeableFreeSegments << '\n';
+            //Shift to new segment
+            currentSegmentOffset = m_segmentHeader->nextSegmentOffset;
+            //Calculate next segment offset
+            // m_segmentHeader->nextSegmentOffset = ??
+            readHeaderFromRemote();
+        }
+
+        if (!writeToSegment(size, data))
+        {
+            Logging::error(__FILE__, __LINE__, "BufferWriterBW failed to write to segment");
+            return false;
+        }
+        --writeableFreeSegments;
+
+        if (writeableFreeSegments != 0)
+        {
+            currentSegmentOffset = m_segmentHeader->nextSegmentOffset;
+            //Calculate next segment offset
+            // m_segmentHeader->nextSegmentOffset = ??
+            readHeaderFromRemote();
+        }
+        
+
+        return true;
+    }
+
+    inline bool __attribute__((always_inline)) writeToSegment(size_t size, void *data)
+    {
+        //Update header, that will be written along with msg
+        m_segmentHeader->counter = size;
+        m_segmentHeader->setConsumable(true);
+
+        //Increase size to also contain the header
+        size += sizeof(Config::DPI_SEGMENT_HEADER_t); //Also include the header in the write
+
+        if (size + m_internalBuffer->offset > m_internalBuffer->size)
+        {
+            writeHeaderToRemote(); //Writing to the header is signalled, i.e. call only returns when all prior writes are sent
+            m_internalBuffer->offset = 0;
+        }
+        memcpy((void *)((char *)m_internalBuffer->bufferPtr + m_internalBuffer->offset), m_segmentHeader, sizeof(Config::DPI_SEGMENT_HEADER_t));
+        memcpy((void *)((char *)m_internalBuffer->bufferPtr + m_internalBuffer->offset + sizeof(Config::DPI_SEGMENT_HEADER_t)), data, size);
+
+        void *bufferTmp = (void *)((char *)m_internalBuffer->bufferPtr + m_internalBuffer->offset);
+        m_internalBuffer->offset += size;
+
+        return m_rdmaClient->writeRC(m_handle->node_id, currentSegmentOffset, bufferTmp, size, false);
+    }
+
+    inline bool __attribute__((always_inline)) writeHeaderToRemote()
+    {
+        return m_rdmaClient->writeRC(m_handle->node_id, currentSegmentOffset, (void *)m_segmentHeader, sizeof(Config::DPI_SEGMENT_HEADER_t), true);
+    }
+
+    inline bool __attribute__((always_inline)) readHeaderFromRemote()
+    {
+        if (!m_rdmaClient->read(m_handle->node_id, currentSegmentOffset, m_segmentHeader, sizeof(Config::DPI_SEGMENT_HEADER_t), true))
+        {
+            Logging::error(__FILE__, __LINE__, "BufferWriterBW tried to remotely read the next segment, but failed");
+            return false;
+        }
+        return true;
+    }
+
+    inline bool __attribute__((always_inline)) readCounterFromRemote()
+    {
+        if (!m_rdmaClient->read(m_handle->node_id, m_handle->entrySegments[0].offset - sizeof(uint64_t), consumedCnt, sizeof(uint64_t), true)) //Counter is located just before the entrySegment
+        {
+            Logging::error(__FILE__, __LINE__, "BufferWriterBW tried to remotely read the consumed segments counter, but failed");
+            return false;
+        }
+        // std::cout << "Reading counter from remote. offset: " << m_handle->entrySegments[0].offset - sizeof(uint64_t) << " value: " << *consumedCnt << '\n';
+        return true;
+    }
+
+    size_t m_sizeUsed = 0;
+    InternalBuffer *m_internalBuffer = nullptr;
+    BufferHandle *m_handle = nullptr;
+    RegistryClient *m_regClient = nullptr;
+    RDMAClient *m_rdmaClient = nullptr; //
+    Config::DPI_SEGMENT_HEADER_t* m_segmentHeader;
+    bool deleteRdmaClient = false;
+    size_t currentSegmentOffset = 0;
+    uint64_t *consumedCnt = 0;
+    uint64_t writeableFreeSegments = 0;
 };
 
 

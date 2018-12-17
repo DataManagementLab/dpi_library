@@ -11,5 +11,7 @@ message DPIRetrieveBufferResponse {
     repeated Segment segment = 3;
     uint64 segmentsPerWriter = 4;
     uint64 segmentSizes = 5;
-    uint32 return = 6;
+    uint64 counter_offset = 6;
+    uint32 buffertype = 7;
+    uint32 return = 8;
 }

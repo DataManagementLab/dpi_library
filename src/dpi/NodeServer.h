@@ -39,7 +39,6 @@ class NodeServer : public RDMAServer
             sendMsg->UnpackTo(&reqMsgUnpacked);
             size_t segmentsCount = reqMsgUnpacked.segments_count();
             size_t segmentsSize = reqMsgUnpacked.segments_size();
-            // bool newRing = reqMsgUnpacked.new_ring();
             string name = reqMsgUnpacked.name();
             size_t offset = 0;
 
@@ -66,22 +65,6 @@ class NodeServer : public RDMAServer
             }
             respMsg->PackFrom(respMsgUnpacked);
 
-            // if (newRing)
-            // {
-            //     // Logging::debug(__FILE__, __LINE__, "New ring");
-            //     unique_lock<shared_timed_mutex> lck(mtx_ringPosOffsets);
-            //     if (ringPosOffsets.find(name) == ringPosOffsets.end())
-            //     {
-            //         // Logging::debug(__FILE__, __LINE__, "Creating new list of offset");
-            //         ringPosOffsets[name] = list<size_t>{offset};
-            //         ringPosOffsetsIter[name] = ringPosOffsets[name].begin();
-            //     }
-            //     else
-            //     {
-            //         // Logging::debug(__FILE__, __LINE__, "Pushing new offset to existing list");
-            //         ringPosOffsets[name].push_back(offset);
-            //     }
-            // }
             Logging::debug(__FILE__, __LINE__, "Finished DPIAllocSegmentsRequest");
         }
         else

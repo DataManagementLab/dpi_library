@@ -49,14 +49,14 @@ bool RDMAClient::localFree(const void* ptr) {
 
 
 //DPI specific function
-bool RDMAClient::remoteAllocSegments(const string& connection, const string& bufferName, const size_t segmentsCount, const size_t segmentsSize, const bool newRing, size_t& offset)
+bool RDMAClient::remoteAllocSegments(const string& connection, const string& bufferName, const size_t segmentsCount, const size_t segmentsSize, size_t& offset)
 {
   if (!connect(connection)) {
     return false;
   }
   ProtoClient* client = m_clients[connection];
 
-  Any sendAny = MessageTypes::createDPIAllocSegmentsRequest(bufferName, segmentsCount, segmentsSize, newRing);
+  Any sendAny = MessageTypes::createDPIAllocSegmentsRequest(bufferName, segmentsCount, segmentsSize);
   Any rcvAny;
   if (!client->send(&sendAny, &rcvAny)) {
     Logging::error(__FILE__, __LINE__, "cannot send message");

@@ -7,6 +7,8 @@ RegistryServer::RegistryServer() : ProtoServer("Registry Server", Config::DPI_RE
     {
         m_rdmaClient->connect(Config::DPI_NODES[i], i + 1);
     }
+
+    counterRdmaBuf = (uint64_t*)m_rdmaClient->localAlloc(sizeof(uint64_t));
 };
 
 RegistryServer::~RegistryServer()
@@ -83,6 +85,7 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
                 segmentResp->set_offset(BufferSegment.offset);
                 segmentResp->set_size(BufferSegment.size);
                 retrieveBuffResp.set_segmentsizes(buffHandle->segmentSizes);
+                retrieveBuffResp.set_buffertype(buffHandle->buffertype);
                 ++numberAppenders;
                 retrieveBuffResp.set_return_(MessageErrors::NO_ERROR);
             }
@@ -98,6 +101,7 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
                 segmentResp->set_offset(BufferSegment.offset);
                 segmentResp->set_size(BufferSegment.size);
             }
+            retrieveBuffResp.set_buffertype(buffHandle->buffertype);
             retrieveBuffResp.set_return_(MessageErrors::NO_ERROR);
         }
         anyResp->PackFrom(retrieveBuffResp);
@@ -113,39 +117,60 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
         size_t segmentsPerWriter = appendBuffReq.segmentsperwriter();
         size_t segmentSizes = appendBuffReq.segmentsizes();
         size_t numberAppenders = appendBuffReq.numberappenders();
+        BufferHandle::Buffertype bufferType = static_cast<BufferHandle::Buffertype>(appendBuffReq.buffertype());
 
         if (appendBuffReq.register_())
         {
-            BufferHandle buffHandle(name, appendBuffReq.node_id(), segmentsPerWriter, numberAppenders, segmentSizes); //todo lbe: 
+            BufferHandle buffHandle(name, appendBuffReq.node_id(), segmentsPerWriter, numberAppenders, segmentSizes, bufferType);
             registerSuccess = registerBuffer(&buffHandle);
+            
+
+            BufferHandle *buffHandlePtr = retrieveBuffer(name);
+            if (registerSuccess)
+            {
+                // Creating as many rings as appenders
+                for (size_t i = 0; i < numberAppenders; i++)
+                {
+                    //Create counters
+                    size_t counterOffset = 0;
+                    if(buffHandlePtr->buffertype == BufferHandle::Buffertype::LAT){
+                        if (!m_rdmaClient->remoteAlloc(Config::getIPFromNodeId(buffHandle.node_id), sizeof(uint64_t), counterOffset))
+                        {
+                            registerSuccess = false;
+                            break;
+                        }
+
+                        //Initial counter value = number of segments in ring
+                        *counterRdmaBuf = buffHandle.segmentsPerWriter;
+                        m_rdmaClient->writeRC(buffHandle.node_id, counterOffset, counterRdmaBuf, sizeof(uint64_t), true);
+                        std::cout << "Registry Server created counter, initial value: " << *counterRdmaBuf << " offset: " << counterOffset << '\n';
+                    }
+
+                    std::cout << "Register Called: Creating new Ring" << '\n';
+                    BufferSegment *segment = createRingOnBuffer(buffHandlePtr);
+                    if (segment == nullptr)
+                    {
+                        registerSuccess = false;
+                        break;
+                    }
+
+                    buffHandlePtr->entrySegments.push_back(*segment);
+                    if(buffHandlePtr->buffertype == BufferHandle::Buffertype::LAT)//remove!
+                        assert(segment->offset - sizeof(uint64_t) == counterOffset);
+                }
+            }
+            
+
+            m_appendersJoinedBuffer[name] = 0;
+
             if (registerSuccess)
             {
                 appendBuffResp.set_return_(MessageErrors::NO_ERROR);
             }
             else
             {
-                appendBuffResp.set_return_(MessageErrors::DPI_APPEND_BUFFHANDLE_FAILED);
+                appendBuffResp.set_return_(MessageErrors::DPI_REGISTER_BUFFHANDLE_FAILED);
             }
-
-            BufferHandle *buffHandlePtr = retrieveBuffer(name);
-
-            // Creating as many rings as appenders
-            for (size_t i = 0; i < numberAppenders; i++)
-            {
-                std::cout << "Register Callend: Creating new Ring" << '\n';
-                BufferSegment *segment = createRingOnBuffer(buffHandlePtr);
-                buffHandlePtr->entrySegments.push_back(*segment);
-
-                if(buffHandlePtr->buffertype == BufferHandle::Buffertype::LAT){
-                // ToDo: Create counters!
-                }      
-            }
-
-
-            
-
-            m_appendersJoinedBuffer[name] = 0;
-
 
             anyResp->PackFrom(appendBuffResp);
             return;
@@ -206,7 +231,7 @@ BufferSegment *RegistryServer::createRingOnBuffer(BufferHandle *bufferHandle)
     string connection = Config::getIPFromNodeId(bufferHandle->node_id);
     size_t fullSegmentSize = bufferHandle->segmentSizes + sizeof(Config::DPI_SEGMENT_HEADER_t);
 
-    if (!m_rdmaClient->remoteAllocSegments(connection, bufferHandle->name, bufferHandle->segmentsPerWriter, fullSegmentSize, true, offset))
+    if (!m_rdmaClient->remoteAllocSegments(connection, bufferHandle->name, bufferHandle->segmentsPerWriter, fullSegmentSize, offset))
     {
         return nullptr;
     }

@@ -22,15 +22,19 @@
 class IntegrationTestsAppend : public CppUnit::TestFixture
 {
   DPI_UNIT_TEST_SUITE(IntegrationTestsAppend);
-    DPI_UNIT_TEST(SimpleIntegrationWithAppendInts_DontReuseSegs);
-    DPI_UNIT_TEST(FourAppendersConcurrent_DontReuseSegs);
+    // DPI_UNIT_TEST(SimpleIntegrationWithAppendInts_BW);
+    // DPI_UNIT_TEST(FourAppendersConcurrent_BW);
+    DPI_UNIT_TEST(SimpleAppendAndConsume_LAT);
+    DPI_UNIT_TEST(FourAppendersConcurrent_LAT);
   DPI_UNIT_TEST_SUITE_END();
 
 public:
   void setUp();
   void tearDown();
-  void SimpleIntegrationWithAppendInts_DontReuseSegs();
-  void FourAppendersConcurrent_DontReuseSegs();
+  void SimpleIntegrationWithAppendInts_BW();
+  void FourAppendersConcurrent_BW();
+  void SimpleAppendAndConsume_LAT();
+  void FourAppendersConcurrent_LAT();
 
   static std::atomic<int> bar;    // Counter of threads, faced barrier.
   static std::atomic<int> passed; // Number of barriers, passed by all threads.
@@ -52,26 +56,33 @@ class BufferWriterClient : public Thread
 
 public: 
 
-  BufferWriterClient(string& bufferName, std::vector<DataType> *dataToWrite, int numThread = 4) : 
-    Thread(), bufferName(bufferName), dataToWrite(dataToWrite), NUMBER_THREADS(numThread) {}
+  BufferWriterClient(string& bufferName, std::vector<DataType> *dataToWrite, int numThread = 4, BufferHandle::Buffertype buffertype = BufferHandle::Buffertype::BW) : 
+    Thread(), bufferName(bufferName), dataToWrite(dataToWrite), NUMBER_THREADS(numThread), buffertype(buffertype) {}
 
   int NUMBER_THREADS;
-  
+  BufferHandle::Buffertype buffertype;
   void run() 
   {
     //ARRANGE
-
-    BufferWriterBW buffWriter(bufferName, new RegistryClient(), Config::DPI_INTERNAL_BUFFER_SIZE);
+    BufferWriter *buffWriter = nullptr;
+    if (buffertype == BufferHandle::Buffertype::LAT)
+    {
+      buffWriter = new BufferWriterLat(bufferName, new RegistryClient(), Config::DPI_INTERNAL_BUFFER_SIZE);
+    }
+    else
+    {
+      buffWriter = new BufferWriterBW(bufferName, new RegistryClient(), Config::DPI_INTERNAL_BUFFER_SIZE);
+    }
 
     barrier_wait(); //Use barrier to simulate concurrent appends between BufferWriters
 
     //ACT
     for(size_t i = 0; i < dataToWrite->size(); i++)
     {
-      buffWriter.append(&dataToWrite->operator[](i), sizeof(DataType));
+      buffWriter->append(&dataToWrite->operator[](i), sizeof(DataType));
     }
 
-    buffWriter.close();
+    buffWriter->close();
   }
 
     void barrier_wait()

@@ -96,7 +96,8 @@ BufferHandle *RegistryClient::retrieveOrJoinBuffer(Any* sendAny, string &name){
     size_t segmentsPerWriter = rtrvBufferResp.segmentsperwriter();
     size_t segmentSizes = rtrvBufferResp.segmentsizes();
     size_t numberAppenders = rtrvBufferResp.segment_size();
-    BufferHandle *buffHandle = new BufferHandle(name, node_id, segmentsPerWriter, numberAppenders, segmentSizes);
+    BufferHandle::Buffertype buffertype =  static_cast<BufferHandle::Buffertype>(rtrvBufferResp.buffertype());
+    BufferHandle *buffHandle = new BufferHandle(name, node_id, segmentsPerWriter, numberAppenders, segmentSizes, buffertype);
     for (int64_t i = 0; i < numberAppenders; ++i)
     {
         DPIRetrieveBufferResponse_Segment segmentResp = rtrvBufferResp.segment(i);

@@ -54,7 +54,7 @@ void IntegrationTestsAppend::tearDown()
   }
 }
 
-void IntegrationTestsAppend::SimpleIntegrationWithAppendInts_DontReuseSegs()
+void IntegrationTestsAppend::SimpleIntegrationWithAppendInts_BW()
 {
   //ARRANGE
   string bufferName = "buffer1";
@@ -113,7 +113,7 @@ void IntegrationTestsAppend::SimpleIntegrationWithAppendInts_DontReuseSegs()
 }
 
 
-void IntegrationTestsAppend::FourAppendersConcurrent_DontReuseSegs()
+void IntegrationTestsAppend::FourAppendersConcurrent_BW()
 {
   //ARRANGE
   string bufferName = "test";
@@ -188,29 +188,137 @@ void IntegrationTestsAppend::FourAppendersConcurrent_DontReuseSegs()
   }
 
   CPPUNIT_ASSERT_EQUAL(numberElements * numClients, count);
-
-
-
-  // for(size_t i = 0; i < segPerClient*4; i++)
-  // {
-  //   int64_t segmentStart = i*Config::DPI_SEGMENT_SIZE/sizeof(int64_t);
-  //   //Assert counter in header
-  //   CPPUNIT_ASSERT_EQUAL_MESSAGE("Counter in header check", (int64_t)(sizeof(int64_t)*numberElements/segPerClient), rdma_buffer[segmentStart]);
-  //   if (rdma_buffer[segmentStart+1] == (int64_t)1) //Has follow segment, data should be dataToWrite[0 -> numberElements/2]
-  //   {
-  //     for(int64_t j = segmentStart; j < (int64_t)(segmentStart + numberElements/segPerClient); j++)
-  //     {
-  //       CPPUNIT_ASSERT_EQUAL(dataToWrite->operator[](j - segmentStart), rdma_buffer[j+sizeof(Config::DPI_SEGMENT_HEADER_t)/sizeof(int64_t)]);
-  //     }      
-  //   }
-  //   else //data should be dataToWrite[numberElements/2 -> numberElements]
-  //   {
-  //     for(int64_t j = segmentStart; j < (int64_t)(segmentStart + numberElements/segPerClient); j++)
-  //     {
-  //       CPPUNIT_ASSERT_EQUAL(dataToWrite->operator[](j+numberElements/segPerClient - segmentStart), rdma_buffer[j+sizeof(Config::DPI_SEGMENT_HEADER_t)/sizeof(int64_t)]);
-  //     }
-  //   }
-  // }
   m_nodeServer->localFree(rdma_buffer);
 }
 
+
+
+void IntegrationTestsAppend::SimpleAppendAndConsume_LAT()
+{
+
+  //ARRANGE
+  string bufferName = "buffer1";
+
+  // size_t remoteOffset = 0;
+  size_t memSize = sizeof(int);
+
+  size_t numberSegments = 200;
+  size_t numberElements = numberSegments;
+  BufferHandle *buffHandle = new BufferHandle(bufferName, 1, numberSegments, 1, memSize, BufferHandle::Buffertype::LAT);
+  DPI_DEBUG("Created BufferHandle\n");
+  m_regClient->registerBuffer(buffHandle);
+  DPI_DEBUG("Registered Buffer in Registry\n");
+
+  BufferWriterLat buffWriter(bufferName, m_regClient, Config::DPI_INTERNAL_BUFFER_SIZE);
+
+  for (size_t i = 0; i < numberElements; i++)
+  {
+    CPPUNIT_ASSERT(buffWriter.append((void *)&i, memSize));
+  }
+
+  std::cout << "Finished appending. Closing..." << '\n';
+
+  CPPUNIT_ASSERT(buffWriter.close());
+
+
+  std::cout << "Buffer:" << '\n';
+  auto bufPtr = (int *)m_nodeServer->getBuffer();
+
+  for (size_t i = 0; i < numberElements + (numberSegments * sizeof(Config::DPI_SEGMENT_HEADER_t) / memSize); i++)
+  {
+    std::cout << bufPtr[i] << " ";
+  }
+
+  auto handle_ret = m_regClient->retrieveBuffer(bufferName);
+  std::cout << "Interator creation" << '\n';
+
+  int count = 0;
+  BufferIteratorLat bufferIterator = handle_ret->getIteratorLat((char *)m_nodeServer->getBuffer());
+
+  std::cout << "Interator enters while" << '\n';
+  while (bufferIterator.has_next())
+  {
+    // std::cout << "Interator Segment" << '\n';
+    size_t dataSize;
+    int *data = (int *)bufferIterator.next(dataSize);
+    // std::cout << "next returned data with size: " << dataSize << '\n';
+    for (int i = 0; i < dataSize / memSize; i++, data++)
+    {
+      // std::cout << "data " << *data << '\n';
+      CPPUNIT_ASSERT_EQUAL(count, *data);
+      count++;
+    }
+  }
+  CPPUNIT_ASSERT_EQUAL((int)numberElements, count);
+}
+
+
+void IntegrationTestsAppend::FourAppendersConcurrent_LAT()
+{
+  //ARRANGE
+  string bufferName = "test";
+  int nodeId = 1;
+
+  auto numClients = 4;
+  size_t segsPerRing = 50;  //# of segments in each ring
+  size_t segPerClient = 200; //# of segments each client will write
+  int64_t numberElements = segPerClient;
+  size_t memSize = sizeof(int64_t);
+  std::vector<int64_t> *dataToWrite = new std::vector<int64_t>();
+
+  for (int64_t i = 0; i < numberElements; i++)
+  {
+    dataToWrite->push_back(i);
+  }
+
+  CPPUNIT_ASSERT(m_regClient->registerBuffer(new BufferHandle(bufferName, nodeId, segsPerRing, numClients, memSize, BufferHandle::Buffertype::LAT)));
+
+  BufferWriterClient<int64_t> *client1 = new BufferWriterClient<int64_t>(bufferName, dataToWrite, numClients, BufferHandle::Buffertype::LAT);
+  BufferWriterClient<int64_t> *client2 = new BufferWriterClient<int64_t>(bufferName, dataToWrite, numClients, BufferHandle::Buffertype::LAT);
+  BufferWriterClient<int64_t> *client3 = new BufferWriterClient<int64_t>(bufferName, dataToWrite, numClients, BufferHandle::Buffertype::LAT);
+  BufferWriterClient<int64_t> *client4 = new BufferWriterClient<int64_t>(bufferName, dataToWrite, numClients, BufferHandle::Buffertype::LAT);
+
+  //ACT & ASSERT
+  auto nodeServer = m_nodeServer;
+  auto regClient = m_regClient;
+  size_t segmentsConsumed = 0;
+  std::thread consumer([nodeServer, &bufferName, numClients, &segmentsConsumed, numberElements, segPerClient, regClient]() {
+    auto handle_ret = regClient->retrieveBuffer(bufferName);
+
+    int64_t count = 0;
+    auto bufferIterator = handle_ret->getIteratorLat((char *)nodeServer->getBuffer());
+
+    size_t iterCounter = 0;
+
+    while (bufferIterator.has_next())
+    {
+      std::cout << "Interator Segment" << '\n';
+      size_t dataSize;
+      int64_t *data = (int64_t *)bufferIterator.next(dataSize);
+      int64_t start_counter = (iterCounter / numClients) * (numberElements / segPerClient);
+      for (int64_t i = start_counter; i < ((dataSize   / sizeof(int64_t)) + + start_counter); i++, data++)
+      {
+        std::cout << "data " << *data << '\n';
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Data value did not match", i, *data);
+        count++;
+      }
+      iterCounter++;
+      segmentsConsumed++;
+    }
+
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Number of written elements did not match expected", numberElements * numClients, count); 
+  });
+
+  client1->start();
+  client2->start();
+  client3->start();
+  client4->start();
+
+  client1->join();
+  client2->join();
+  client3->join();
+  client4->join();
+  consumer.join();
+  CPPUNIT_ASSERT_EQUAL_MESSAGE("Consumed number of segments did not match expected", (size_t)segPerClient * 4, (size_t)segmentsConsumed);
+
+}

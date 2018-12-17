@@ -29,11 +29,16 @@ struct BufferHandle
     size_t numberOfAppenders;
     size_t segmentSizes;                      //in bytes (excluding header)
     Buffertype buffertype;
-
+    
     BufferHandle(){};
     BufferHandle(string name, NodeID node_id, size_t segmentsPerWriter, size_t numberOfAppenders, size_t segmentSizes,
      Buffertype buffertype = Buffertype::BW)
         : name(name), node_id(node_id), segmentsPerWriter(segmentsPerWriter), numberOfAppenders(numberOfAppenders), segmentSizes(segmentSizes), buffertype(buffertype){};
+
+    BufferIteratorLat getIteratorLat(char *rdmaBuffer)
+    {
+        return BufferIteratorLat(rdmaBuffer, entrySegments, name);
+    }
 
     BufferIterator getIterator(char *rdmaBuffer)
     {

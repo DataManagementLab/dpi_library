@@ -20,9 +20,9 @@
 #include <atomic>
 
 
-class TestBufferConsumer : public CppUnit::TestFixture
+class TestBufferIterator : public CppUnit::TestFixture
 {
-  DPI_UNIT_TEST_SUITE(TestBufferConsumer);
+  DPI_UNIT_TEST_SUITE(TestBufferIterator);
     DPI_UNIT_TEST(testBufferIteratorFourAppender_Interleaved);
     // DPI_UNIT_TEST(AppenderConsumerBenchmark);
     DPI_UNIT_TEST(testSegmentIterator);

@@ -43,13 +43,12 @@ class MessageTypes
 public:
 
 
-  static Any createDPIAllocSegmentsRequest(const string& bufferName, const size_t segmentsCount, const size_t segmentsSize, const bool newRing)
+  static Any createDPIAllocSegmentsRequest(const string& bufferName, const size_t segmentsCount, const size_t segmentsSize)
   {
     DPIAllocSegmentsRequest allocSegReq;
     allocSegReq.set_name(bufferName);
     allocSegReq.set_segments_count(segmentsCount);
     allocSegReq.set_segments_size(segmentsSize);
-    allocSegReq.set_new_ring(newRing);
     Any anyMessage;
     anyMessage.PackFrom(allocSegReq);
     return anyMessage;
