@@ -28,6 +28,8 @@ class TestBufferConsumer : public CppUnit::TestFixture
     DPI_UNIT_TEST(testSegmentIterator);
     DPI_UNIT_TEST(testBufferIterator);
     DPI_UNIT_TEST(testBufferIteratorFourAppender_NotInterleaved);
+    DPI_UNIT_TEST(testBufferIteratorSegmentsSameSizeAsMsgs_NotInterleaved);
+    DPI_UNIT_TEST(testBufferIteratorFourAppenderSegSizeSameAsMsg_Interleaved);
   DPI_UNIT_TEST_SUITE_END();
 
 public:
@@ -39,7 +41,8 @@ public:
 
   void testBufferIteratorFourAppender_Interleaved();
   void testBufferIteratorFourAppender_NotInterleaved();
-
+  void testBufferIteratorFourAppenderSegSizeSameAsMsg_Interleaved();
+  void testBufferIteratorSegmentsSameSizeAsMsgs_NotInterleaved();
   void testSegmentIterator();
   void testBufferIterator();
 

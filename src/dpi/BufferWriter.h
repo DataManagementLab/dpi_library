@@ -129,14 +129,16 @@ class BufferWriterBW : public BufferWriter
         if (m_localBufferSegment->size < m_sizeUsed + size)
         {
             Logging::debug(__FILE__, __LINE__, "Data does not fit into segment");
-            //The data does not fit into segment, split it up --> write first part --> append the second part
+            //The data does not fit into segment, split it up --> write first part --> write the second part
             size_t firstPartSize = m_localBufferSegment->size - m_sizeUsed;
-
-            if (!writeToSegment(*m_localBufferSegment, m_sizeUsed, firstPartSize, data))
+            if (firstPartSize > 0)
             {
-                return false;
+                if (!writeToSegment(*m_localBufferSegment, m_sizeUsed, firstPartSize, data))
+                {
+                    return false;
+                }
             }
-            m_sizeUsed = m_localBufferSegment->size;
+            m_sizeUsed = m_sizeUsed + firstPartSize;
             getNextSegment();
             m_sizeUsed = 0;
 

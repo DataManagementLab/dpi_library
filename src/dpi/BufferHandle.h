@@ -26,8 +26,8 @@ struct BufferHandle
     NodeID node_id;
     std::vector<BufferSegment> entrySegments; //Each entry in the vector corresponds to one ring for a writer
     size_t segmentsPerWriter;                 //Number of segments in ring that will be created for each writer when createSegmentRingOnBuffer() is called
-    size_t segmentSizes;                      //in bytes (excluding header)
     size_t numberOfAppenders;
+    size_t segmentSizes;                      //in bytes (excluding header)
     Buffertype buffertype;
 
     BufferHandle(){};

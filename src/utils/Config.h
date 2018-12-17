@@ -148,7 +148,7 @@ class Config
     static uint32_t DPI_SEGMENT_SIZE;
 
     /**
-     * @brief Config::DPI_SEGMENT_HEADER_t describes the header of a segmnet
+     * @brief Config::DPI_SEGMENT_HEADER_t describes the header of a segment
      */
     struct DPI_SEGMENT_HEADER_t
     {

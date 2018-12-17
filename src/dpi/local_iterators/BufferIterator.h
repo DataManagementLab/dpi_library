@@ -97,11 +97,11 @@ class BufferIterator
     {
         if ((*pointer_to_iter).prev != (*pointer_to_iter).end)
         {
-            std::cout << "Before updating prev iter: counter: " << (*pointer_to_iter).prev->counter << ", nextSegOffset: " << (*pointer_to_iter).prev->nextSegmentOffset << " flags: " << (*pointer_to_iter).prev->segmentFlags << '\n';
+            // std::cout << "Before updating prev iter: counter: " << (*pointer_to_iter).prev->counter << ", nextSegOffset: " << (*pointer_to_iter).prev->nextSegmentOffset << " flags: " << (*pointer_to_iter).prev->segmentFlags << '\n';
             (*pointer_to_iter).prev->counter = 0;
             (*pointer_to_iter).prev->setConsumable(false);
             (*pointer_to_iter).prev->setWriteable(true);
-            std::cout << "After updating prev iter: counter: " << (*pointer_to_iter).prev->counter << ", nextSegOffset: " << (*pointer_to_iter).prev->nextSegmentOffset << " flags: " << (*pointer_to_iter).prev->segmentFlags << '\n';
+            // std::cout << "After updating prev iter: counter: " << (*pointer_to_iter).prev->counter << ", nextSegOffset: " << (*pointer_to_iter).prev->nextSegmentOffset << " flags: " << (*pointer_to_iter).prev->segmentFlags << '\n';
         }
         else
         {
