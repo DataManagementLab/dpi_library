@@ -165,7 +165,7 @@ class Config
         void setConsumable(bool consumable) { segmentFlags = (consumable ? segmentFlags | 0b0010 : segmentFlags & 0b1101); }
 
         bool isEndSegment() { return (segmentFlags & 0b0100) != 0; }
-        void markEndSegment() { segmentFlags = segmentFlags | 0b0100; }
+        void markEndSegment(bool endSegment = true) { segmentFlags = (endSegment ? segmentFlags | 0b0100 : segmentFlags & 0b1011); }
     };
 
 

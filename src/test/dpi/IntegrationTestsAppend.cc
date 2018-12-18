@@ -64,7 +64,7 @@ void IntegrationTestsAppend::SimpleIntegrationWithAppendInts_BW()
 
   uint32_t numberSegments = 2;
   size_t numberElements = (Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)) / memSize * numberSegments;
-  uint32_t segmentsPerWriter = 2;
+  // uint32_t segmentsPerWriter = 2;
   BufferHandle *buffHandle = new BufferHandle(bufferName, 1,  3, 1, Config::DPI_SEGMENT_SIZE - sizeof(Config::DPI_SEGMENT_HEADER_t)); //Create 1 less segment in ring to test BufferWriterBW creating a segment on the ring
   DPI_DEBUG("Created BufferHandle\n");
   m_regClient->registerBuffer(buffHandle);
@@ -179,7 +179,7 @@ void IntegrationTestsAppend::FourAppendersConcurrent_BW()
     size_t dataSize;
     int64_t *data = (int64_t *)bufferIterator.next(dataSize);
     int64_t start_counter = (iterCounter / numClients) * (numberElements / segPerClient);
-    for (int64_t i = start_counter; i < ((dataSize   / sizeof(int64_t)) + + start_counter); i++, data++)
+    for (int64_t i = start_counter; i < (int64_t)((dataSize   / sizeof(int64_t)) + start_counter); i++, data++)
     {
       CPPUNIT_ASSERT_EQUAL(i, *data);
       count++;
@@ -221,13 +221,13 @@ void IntegrationTestsAppend::SimpleAppendAndConsume_LAT()
   CPPUNIT_ASSERT(buffWriter.close());
 
 
-  std::cout << "Buffer:" << '\n';
-  auto bufPtr = (int *)m_nodeServer->getBuffer();
+  // std::cout << "Buffer:" << '\n';
+  // auto bufPtr = (int *)m_nodeServer->getBuffer();
 
-  for (size_t i = 0; i < numberElements + (numberSegments * sizeof(Config::DPI_SEGMENT_HEADER_t) / memSize); i++)
-  {
-    std::cout << bufPtr[i] << " ";
-  }
+  // for (size_t i = 0; i < numberElements + (numberSegments * sizeof(Config::DPI_SEGMENT_HEADER_t) / memSize); i++)
+  // {
+  //   std::cout << bufPtr[i] << " ";
+  // }
 
   auto handle_ret = m_regClient->retrieveBuffer(bufferName);
   std::cout << "Interator creation" << '\n';
@@ -241,10 +241,9 @@ void IntegrationTestsAppend::SimpleAppendAndConsume_LAT()
     // std::cout << "Interator Segment" << '\n';
     size_t dataSize;
     int *data = (int *)bufferIterator.next(dataSize);
-    // std::cout << "next returned data with size: " << dataSize << '\n';
-    for (int i = 0; i < dataSize / memSize; i++, data++)
+    for (size_t i = 0; i < dataSize / memSize; i++, data++)
     {
-      // std::cout << "data " << *data << '\n';
+      // std::cout << "data " << *data << " size: " << memSize << '\n';
       CPPUNIT_ASSERT_EQUAL(count, *data);
       count++;
     }
@@ -265,6 +264,7 @@ void IntegrationTestsAppend::FourAppendersConcurrent_LAT()
   int64_t numberElements = segPerClient;
   size_t memSize = sizeof(int64_t);
   std::vector<int64_t> *dataToWrite = new std::vector<int64_t>();
+  vector<size_t> countData(numberElements);
 
   for (int64_t i = 0; i < numberElements; i++)
   {
@@ -282,7 +282,7 @@ void IntegrationTestsAppend::FourAppendersConcurrent_LAT()
   auto nodeServer = m_nodeServer;
   auto regClient = m_regClient;
   size_t segmentsConsumed = 0;
-  std::thread consumer([nodeServer, &bufferName, numClients, &segmentsConsumed, numberElements, segPerClient, regClient]() {
+  std::thread consumer([nodeServer, &bufferName, numClients, &segmentsConsumed, numberElements, segPerClient, regClient, &countData]() {
     auto handle_ret = regClient->retrieveBuffer(bufferName);
 
     int64_t count = 0;
@@ -292,14 +292,13 @@ void IntegrationTestsAppend::FourAppendersConcurrent_LAT()
 
     while (bufferIterator.has_next())
     {
-      std::cout << "Interator Segment" << '\n';
+      // std::cout << "Interator Segment" << '\n';
       size_t dataSize;
       int64_t *data = (int64_t *)bufferIterator.next(dataSize);
-      int64_t start_counter = (iterCounter / numClients) * (numberElements / segPerClient);
-      for (int64_t i = start_counter; i < ((dataSize   / sizeof(int64_t)) + + start_counter); i++, data++)
+      int64_t start_counter = (int64_t)(iterCounter / numClients) * (numberElements / segPerClient);
+      for (int64_t i = start_counter; i < (int64_t)((dataSize   / sizeof(int64_t)) + start_counter); i++, data++)
       {
-        std::cout << "data " << *data << '\n';
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Data value did not match", i, *data);
+        countData[i]++;        
         count++;
       }
       iterCounter++;
@@ -319,6 +318,13 @@ void IntegrationTestsAppend::FourAppendersConcurrent_LAT()
   client3->join();
   client4->join();
   consumer.join();
-  CPPUNIT_ASSERT_EQUAL_MESSAGE("Consumed number of segments did not match expected", (size_t)segPerClient * 4, (size_t)segmentsConsumed);
+
+  //Assert each value was read numClients times by consumer
+  for (int64_t i = 0; i < numberElements; i++)
+  {
+    CPPUNIT_ASSERT_EQUAL((size_t)numClients, countData[i]);
+  }
+
+  CPPUNIT_ASSERT_EQUAL_MESSAGE("Consumed number of segments did not match expected", (size_t)segPerClient * numClients, (size_t)segmentsConsumed);
 
 }

@@ -22,8 +22,8 @@
 class IntegrationTestsAppend : public CppUnit::TestFixture
 {
   DPI_UNIT_TEST_SUITE(IntegrationTestsAppend);
-    // DPI_UNIT_TEST(SimpleIntegrationWithAppendInts_BW);
-    // DPI_UNIT_TEST(FourAppendersConcurrent_BW);
+    DPI_UNIT_TEST(SimpleIntegrationWithAppendInts_BW);
+    DPI_UNIT_TEST(FourAppendersConcurrent_BW);
     DPI_UNIT_TEST(SimpleAppendAndConsume_LAT);
     DPI_UNIT_TEST(FourAppendersConcurrent_LAT);
   DPI_UNIT_TEST_SUITE_END();

@@ -55,6 +55,7 @@ public:
             size_t currentSegmentOffset = segment.offset;
             do
             {
+                std::cout << "Reading header on offset: " << currentSegmentOffset << '\n';
                 m_rdmaClient->read(m_handle->node_id, currentSegmentOffset, (void*)(header), sizeof(Config::DPI_SEGMENT_HEADER_t), true);
                 size_t segmentDataSize = header->counter;
                 
@@ -71,7 +72,7 @@ public:
                 }            
                 Logging::debug(__FILE__, __LINE__, "Read data from segment");
                 currentSegmentOffset = header->nextSegmentOffset;
-            } while (currentSegmentOffset != SIZE_MAX && currentSegmentOffset != firstSegmentOffset);
+            } while (!header->isEndSegment());
 
             //Read header of segment
             

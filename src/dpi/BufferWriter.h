@@ -110,18 +110,18 @@ class BufferWriterLat : public BufferWriter
         m_segmentHeader->setWriteable(false);
         m_segmentHeader->setConsumable(true);
         m_segmentHeader->markEndSegment();
-
-        return writeHeaderToRemote();
+        std::cout << "marked end segment on offset: " << lastSegmentOffset << '\n';
+        return writeHeaderToRemote(lastSegmentOffset);
     }
 
-
+//Problem: the last append, will mark the segment as consumable, and the consumer will consume the segment and proceed onto the next segment, when closing the last segment will be marked as end, but the iterator already proceeded.
   private:
 
     bool super_append(void *data, size_t size)
     {
         if (writeableFreeSegments == 0)
         {
-            Logging::debug(__FILE__, __LINE__, "No more segments to write to, reading updated remote counter.");
+            std::cout << "No more segments to write to, reading updated remote counter. curSegOffset: " << currentSegmentOffset << " consumedCnt: " << *consumedCnt << '\n';
             uint64_t consumedCntOld = *consumedCnt;
             while (consumedCntOld == *consumedCnt)
             {
@@ -132,34 +132,24 @@ class BufferWriterLat : public BufferWriter
                 Logging::fatal(__FILE__, __LINE__, "Consumed segments counter rolled over!");
             }
             writeableFreeSegments += *consumedCnt - consumedCntOld;
-            std::cout << "New writeableFreeSegments: " << writeableFreeSegments << '\n';
-            //Shift to new segment
-            currentSegmentOffset = m_segmentHeader->nextSegmentOffset;
-            //Calculate next segment offset
-            // m_segmentHeader->nextSegmentOffset = ??
-            readHeaderFromRemote();
+            std::cout << "New writeableFreeSegments: " << writeableFreeSegments << " - curSegOffset: " << currentSegmentOffset << '\n';
         }
 
-        if (!writeToSegment(size, data))
+        if (!writeToSegment(size, data, (writeableFreeSegments == 1 ? true : false)))
         {
             Logging::error(__FILE__, __LINE__, "BufferWriterBW failed to write to segment");
             return false;
         }
-        --writeableFreeSegments;
 
-        if (writeableFreeSegments != 0)
-        {
-            currentSegmentOffset = m_segmentHeader->nextSegmentOffset;
-            //Calculate next segment offset
-            // m_segmentHeader->nextSegmentOffset = ??
-            readHeaderFromRemote();
-        }
-        
+        --writeableFreeSegments;
+        lastSegmentOffset = currentSegmentOffset;
+        currentSegmentOffset = m_segmentHeader->nextSegmentOffset;
+        readHeaderFromRemote(); //todo: calculate the next offset instead of reading it from header
 
         return true;
     }
 
-    inline bool __attribute__((always_inline)) writeToSegment(size_t size, void *data)
+    inline bool __attribute__((always_inline)) writeToSegment(size_t size, void *data, bool signaled = false)
     {
         //Update header, that will be written along with msg
         m_segmentHeader->counter = size;
@@ -170,7 +160,7 @@ class BufferWriterLat : public BufferWriter
 
         if (size + m_internalBuffer->offset > m_internalBuffer->size)
         {
-            writeHeaderToRemote(); //Writing to the header is signalled, i.e. call only returns when all prior writes are sent
+            // writeHeaderToRemote(); //Writing to the header is signaled, i.e. call only returns when all prior writes are sent
             m_internalBuffer->offset = 0;
         }
         memcpy((void *)((char *)m_internalBuffer->bufferPtr + m_internalBuffer->offset), m_segmentHeader, sizeof(Config::DPI_SEGMENT_HEADER_t));
@@ -179,12 +169,12 @@ class BufferWriterLat : public BufferWriter
         void *bufferTmp = (void *)((char *)m_internalBuffer->bufferPtr + m_internalBuffer->offset);
         m_internalBuffer->offset += size;
 
-        return m_rdmaClient->writeRC(m_handle->node_id, currentSegmentOffset, bufferTmp, size, false);
+        return m_rdmaClient->writeRC(m_handle->node_id, currentSegmentOffset, bufferTmp, size, signaled);
     }
 
-    inline bool __attribute__((always_inline)) writeHeaderToRemote()
+    inline bool __attribute__((always_inline)) writeHeaderToRemote(size_t offset)
     {
-        return m_rdmaClient->writeRC(m_handle->node_id, currentSegmentOffset, (void *)m_segmentHeader, sizeof(Config::DPI_SEGMENT_HEADER_t), true);
+        return m_rdmaClient->writeRC(m_handle->node_id, offset, (void *)m_segmentHeader, sizeof(Config::DPI_SEGMENT_HEADER_t), true);
     }
 
     inline bool __attribute__((always_inline)) readHeaderFromRemote()
@@ -216,6 +206,7 @@ class BufferWriterLat : public BufferWriter
     Config::DPI_SEGMENT_HEADER_t* m_segmentHeader;
     bool deleteRdmaClient = false;
     size_t currentSegmentOffset = 0;
+    size_t lastSegmentOffset = 0;
     uint64_t *consumedCnt = 0;
     uint64_t writeableFreeSegments = 0;
 };
