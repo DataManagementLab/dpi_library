@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../../api/dpi.h"
+#include "../../memory-api/dpi.h"
 #include "../../dpi/RegistryServer.h"
 #include "../../dpi/NodeServer.h"
 

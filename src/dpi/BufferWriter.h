@@ -54,6 +54,12 @@ class BufferWriterLat : public BufferWriter
             return;
         }
 
+        if (m_handle->segmentSizes >= internalBufferSize)
+        {
+            Logging::error(__FILE__, __LINE__, "Internal buffer must be bigger than segment sizes.");
+            return;
+        }
+
         auto entrySegment = &m_handle->entrySegments.front();
         currentSegmentOffset = entrySegment->offset;
         nextSegmentOffset = currentSegmentOffset + m_handle->segmentSizes + sizeof(Config::DPI_SEGMENT_HEADER_t);
@@ -89,31 +95,6 @@ class BufferWriterLat : public BufferWriter
     //data: ptr to data, size: size in bytes. return: true if successful, false otherwise
     bool append(void *data, size_t size)
     {
-        while (size > this->m_internalBuffer->size)
-        {
-            // update size move pointer
-            size = size - this->m_internalBuffer->size;
-            if (!this->super_append(data, this->m_internalBuffer->size))
-                return false;
-            data = ((char *)data + this->m_internalBuffer->size);
-        }
-        return this->super_append(data, size);
-    }
-
-    bool close()
-    {
-        m_segmentHeader->counter = m_handle->segmentSizes;
-        m_segmentHeader->setWriteable(false);
-        m_segmentHeader->setConsumable(true);
-        m_segmentHeader->markEndSegment();
-        std::cout << "marked end segment on offset: " << lastSegmentOffset << '\n';
-        return writeHeaderToRemote(lastSegmentOffset);
-    }
-
-  private:
-
-    bool super_append(void *data, size_t size)
-    {
         if (writeableFreeSegments == 0)
         {
             Logging::debug(__FILE__, __LINE__, "No more segments to write to, reading updated remote counter");
@@ -133,7 +114,6 @@ class BufferWriterLat : public BufferWriter
             }
             Logging::debug(__FILE__, __LINE__, "Read remote counter, new writeableFreeSegments: " + to_string(writeableFreeSegments));
         }
-
 
         //Calculate nextSegmentOffset
         if (segmentIndex == m_handle->segmentsPerWriter - 1)
@@ -158,6 +138,18 @@ class BufferWriterLat : public BufferWriter
         currentSegmentOffset = nextSegmentOffset;
         return true;
     }
+
+    bool close()
+    {
+        m_segmentHeader->counter = m_handle->segmentSizes;
+        m_segmentHeader->setWriteable(false);
+        m_segmentHeader->setConsumable(true);
+        m_segmentHeader->markEndSegment();
+        std::cout << "marked end segment on offset: " << lastSegmentOffset << '\n';
+        return writeHeaderToRemote(lastSegmentOffset);
+    }
+
+  private:
 
     inline bool __attribute__((always_inline)) writeToSegment(size_t size, void *data, bool signaled = false)
     {
