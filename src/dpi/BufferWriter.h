@@ -68,13 +68,13 @@ class BufferWriterLat : public BufferWriter
 
         m_segmentHeader = (Config::DPI_SEGMENT_HEADER_t *)m_rdmaClient->localAlloc(sizeof(Config::DPI_SEGMENT_HEADER_t));
         consumedCnt = (uint64_t *)m_rdmaClient->localAlloc(sizeof(uint64_t));
+        m_internalBuffer = new InternalBuffer(m_rdmaClient->localAlloc(internalBufferSize), internalBufferSize);
 
         //Read header
         readHeaderFromRemote(); 
         readCounterFromRemote();
         writeableFreeSegments = *consumedCnt;
         std::cout << "writeableFreeSegments: " << writeableFreeSegments << '\n';
-        m_internalBuffer = new InternalBuffer(m_rdmaClient->localAlloc(internalBufferSize), internalBufferSize);
     }
     ~BufferWriterLat()
     {
@@ -89,9 +89,6 @@ class BufferWriterLat : public BufferWriter
     //data: ptr to data, size: size in bytes. return: true if successful, false otherwise
     bool append(void *data, size_t size)
     {
-        // if (size > m_handle->segmentSizes)
-        //     return false;
-
         while (size > this->m_internalBuffer->size)
         {
             // update size move pointer
@@ -113,7 +110,6 @@ class BufferWriterLat : public BufferWriter
         return writeHeaderToRemote(lastSegmentOffset);
     }
 
-//Problem: the last append, will mark the segment as consumable, and the consumer will consume the segment and proceed onto the next segment, when closing the last segment will be marked as end, but the iterator already proceeded.
   private:
 
     bool super_append(void *data, size_t size)
@@ -126,16 +122,20 @@ class BufferWriterLat : public BufferWriter
             {
                 readCounterFromRemote();
             }
-            if (*consumedCnt < consumedCntOld) //uint64_t rolled over
+            if (*consumedCnt < consumedCntOld) //uint64_t rolled over (will never happen)
             {
-                Logging::fatal(__FILE__, __LINE__, "Consumed segments counter rolled over!");
+                Logging::debug(__FILE__, __LINE__, "Consumed segments counter rolled over!");
+                writeableFreeSegments += *consumedCnt + (UINT64_MAX - consumedCntOld);
             }
-            writeableFreeSegments += *consumedCnt - consumedCntOld;
+            else
+            {
+                writeableFreeSegments += *consumedCnt - consumedCntOld;
+            }
             Logging::debug(__FILE__, __LINE__, "Read remote counter, new writeableFreeSegments: " + to_string(writeableFreeSegments));
         }
 
 
-        //Set calculate nextSegmentOffset t
+        //Calculate nextSegmentOffset
         if (segmentIndex == m_handle->segmentsPerWriter - 1)
         {
             nextSegmentOffset = m_handle->entrySegments.front().offset;
@@ -205,7 +205,6 @@ class BufferWriterLat : public BufferWriter
             Logging::error(__FILE__, __LINE__, "BufferWriterBW tried to remotely read the consumed segments counter, but failed");
             return false;
         }
-        // std::cout << "Reading counter from remote. offset: " << m_handle->entrySegments[0].offset - sizeof(uint64_t) << " value: " << *consumedCnt << '\n';
         return true;
     }
 

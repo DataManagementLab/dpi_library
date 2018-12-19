@@ -13,7 +13,6 @@
 #include "../../dpi/RegistryClient.h"
 #include "../../dpi/RegistryServer.h"
 #include "../../dpi/BufferWriter.h"
-#include "RegistryClientStub.h"
 
 #include <atomic>
 

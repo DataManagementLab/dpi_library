@@ -86,7 +86,7 @@ public:
     appendBufferReq.set_node_id(handle.node_id);
     appendBufferReq.set_segmentsperwriter(handle.segmentsPerWriter);
     appendBufferReq.set_segmentsizes(handle.segmentSizes);
-    appendBufferReq.set_numberappenders(handle.numberOfAppenders);
+    appendBufferReq.set_numberappenders(handle.numberOfWriters);
     appendBufferReq.set_register_(true);
     appendBufferReq.set_buffertype(handle.buffertype);
 

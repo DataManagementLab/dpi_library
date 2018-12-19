@@ -6,7 +6,6 @@ TestBufferWriter.h
 TestBufferWriter.cc
 IntegrationTestsAppend.h
 IntegrationTestsAppend.cc
-RegistryClientStub.h
 TestBufferIterator.h
 TestBufferIterator.cc
   ) # Adding headers required for portability reasons http://voices.canonical.com/jussi.pakkanen/2013/03/26/a-list-of-common-cmake-antipatterns/
