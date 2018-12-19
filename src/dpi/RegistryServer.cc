@@ -85,6 +85,7 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
                 segmentResp->set_offset(BufferSegment.offset);
                 segmentResp->set_size(BufferSegment.size);
                 retrieveBuffResp.set_segmentsizes(buffHandle->segmentSizes);
+                retrieveBuffResp.set_segmentsperwriter(buffHandle->segmentsPerWriter);
                 retrieveBuffResp.set_buffertype(buffHandle->buffertype);
                 ++numberAppenders;
                 retrieveBuffResp.set_return_(MessageErrors::NO_ERROR);
@@ -101,6 +102,8 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
                 segmentResp->set_offset(BufferSegment.offset);
                 segmentResp->set_size(BufferSegment.size);
             }
+            retrieveBuffResp.set_segmentsizes(buffHandle->segmentSizes);
+            retrieveBuffResp.set_segmentsperwriter(buffHandle->segmentsPerWriter);
             retrieveBuffResp.set_buffertype(buffHandle->buffertype);
             retrieveBuffResp.set_return_(MessageErrors::NO_ERROR);
         }
@@ -131,21 +134,6 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
                 // Creating as many rings as appenders
                 for (size_t i = 0; i < numberAppenders; i++)
                 {
-                    //Create counters
-                    size_t counterOffset = 0;
-                    if(buffHandlePtr->buffertype == BufferHandle::Buffertype::LAT){
-                        if (!m_rdmaClient->remoteAlloc(Config::getIPFromNodeId(buffHandle.node_id), sizeof(uint64_t), counterOffset))
-                        {
-                            registerSuccess = false;
-                            break;
-                        }
-
-                        //Initial counter value = number of segments in ring
-                        *counterRdmaBuf = buffHandle.segmentsPerWriter;
-                        m_rdmaClient->writeRC(buffHandle.node_id, counterOffset, counterRdmaBuf, sizeof(uint64_t), true);
-                        std::cout << "Registry Server created counter, initial value: " << *counterRdmaBuf << " offset: " << counterOffset << '\n';
-                    }
-
                     std::cout << "Register Called: Creating new Ring" << '\n';
                     BufferSegment *segment = createRingOnBuffer(buffHandlePtr);
                     if (segment == nullptr)
@@ -155,8 +143,6 @@ void RegistryServer::handle(Any *anyReq, Any *anyResp)
                     }
 
                     buffHandlePtr->entrySegments.push_back(*segment);
-                    if(buffHandlePtr->buffertype == BufferHandle::Buffertype::LAT)//remove!
-                        assert(segment->offset - sizeof(uint64_t) == counterOffset);
                 }
             }
             
@@ -231,7 +217,7 @@ BufferSegment *RegistryServer::createRingOnBuffer(BufferHandle *bufferHandle)
     string connection = Config::getIPFromNodeId(bufferHandle->node_id);
     size_t fullSegmentSize = bufferHandle->segmentSizes + sizeof(Config::DPI_SEGMENT_HEADER_t);
 
-    if (!m_rdmaClient->remoteAllocSegments(connection, bufferHandle->name, bufferHandle->segmentsPerWriter, fullSegmentSize, offset))
+    if (!m_rdmaClient->remoteAllocSegments(connection, bufferHandle->name, bufferHandle->segmentsPerWriter, fullSegmentSize, offset, bufferHandle->buffertype))
     {
         return nullptr;
     }

@@ -51,7 +51,6 @@ public:
         size_t writeoffset = 0;
         for (BufferSegment &segment : m_handle->entrySegments)
         {
-            size_t firstSegmentOffset = segment.offset;
             size_t currentSegmentOffset = segment.offset;
             do
             {

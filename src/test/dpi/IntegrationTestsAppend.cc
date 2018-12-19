@@ -221,13 +221,13 @@ void IntegrationTestsAppend::SimpleAppendAndConsume_LAT()
   CPPUNIT_ASSERT(buffWriter.close());
 
 
-  // std::cout << "Buffer:" << '\n';
-  // auto bufPtr = (int *)m_nodeServer->getBuffer();
+  std::cout << "Buffer:" << '\n';
+  auto bufPtr = (int *)m_nodeServer->getBuffer();
 
-  // for (size_t i = 0; i < numberElements + (numberSegments * sizeof(Config::DPI_SEGMENT_HEADER_t) / memSize); i++)
-  // {
-  //   std::cout << bufPtr[i] << " ";
-  // }
+  for (size_t i = 0; i < numberElements + (numberSegments * sizeof(Config::DPI_SEGMENT_HEADER_t) / memSize); i++)
+  {
+    std::cout << bufPtr[i] << " ";
+  }
 
   auto handle_ret = m_regClient->retrieveBuffer(bufferName);
   std::cout << "Interator creation" << '\n';

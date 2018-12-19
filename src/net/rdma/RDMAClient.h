@@ -45,7 +45,8 @@ class RDMAClient {
   void* getBuffer(const size_t offset = 0);
 
   // DPI
-  bool remoteAllocSegments(const string& connection, const string& bufferName, const size_t segmentsCount, const size_t fullSegmentsSize, size_t& offset);
+  bool remoteAllocSegments(const string& connection, const string& bufferName, const size_t segmentsCount, 
+                           const size_t fullSegmentsSize, size_t& offset, BufferHandle::Buffertype buffertype = BufferHandle::Buffertype::BW);
 
   // one-sided
   // ip interface

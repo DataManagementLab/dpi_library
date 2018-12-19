@@ -17,12 +17,7 @@ namespace dpi
 class NodeServer : public RDMAServer
 {
   private:
-    //For each buffer, a list of offsets for pointing to the segment in a ring (an offset for each ring).
-    //As the consumer moves around the ring, the corresponding offset is updated to the next segment to be consumed.
-    // unordered_map<string, list<size_t>> ringPosOffsets;
-    // unordered_map<string, list<size_t>::iterator> ringPosOffsetsIter; //Iterator for continuing the iteration of the rings (in each buffer). This gives fairness, so that iterating list in ringPosOffsets, doesn't start from first each time
-    // mutable std::shared_timed_mutex mtx_ringPosOffsets;
-
+  
   public:
     NodeServer(/* args */);
     NodeServer(uint16_t port);
@@ -41,9 +36,24 @@ class NodeServer : public RDMAServer
             size_t segmentsSize = reqMsgUnpacked.segments_size();
             string name = reqMsgUnpacked.name();
             size_t offset = 0;
+            BufferHandle::Buffertype bufferType = static_cast<BufferHandle::Buffertype>(reqMsgUnpacked.buffer_type());
 
             Logging::debug(__FILE__, __LINE__, "Requesting Memory Resource, size: " + to_string(segmentsCount * segmentsSize));
-            respMsgUnpacked.set_return_(requestMemoryResource(segmentsCount * segmentsSize, offset));
+            size_t allocateMemorySize = segmentsCount * segmentsSize;
+            if (bufferType == BufferHandle::Buffertype::LAT)
+            {
+                allocateMemorySize += sizeof(uint64_t); //Add the counter
+            }
+            
+            respMsgUnpacked.set_return_(requestMemoryResource(allocateMemorySize, offset));
+            
+            if (bufferType == BufferHandle::Buffertype::LAT)
+            {
+                uint64_t counter = segmentsCount;
+                memcpy((char *)this->getBuffer() + offset, &counter, sizeof(uint64_t));
+                // std::cout << "Wrote counter on offset: " << offset << " initial value: " << counter << '\n';
+                offset += sizeof(int64_t); //shift the offset past the counter
+            }
             respMsgUnpacked.set_offset(offset);
 
             for (size_t i = 0; i < segmentsCount; i++)
@@ -51,7 +61,7 @@ class NodeServer : public RDMAServer
                 bool lastSegment = i == segmentsCount - 1;
                 size_t nextSegOffset;
                 if (lastSegment)
-                    nextSegOffset = offset; //If reuseSegments is true, point last segment back to first (creating a ring), if not set it to max value
+                    nextSegOffset = offset;
                 else
                     nextSegOffset = offset + (i + 1) * segmentsSize;
 
@@ -59,7 +69,6 @@ class NodeServer : public RDMAServer
                 segmentHeader.counter = 0;
                 segmentHeader.nextSegmentOffset = nextSegOffset;
                 segmentHeader.setWriteable(true);
-
                 //Write the header
                 memcpy((char *)this->getBuffer() + offset + i * segmentsSize, &segmentHeader, sizeof(segmentHeader));
             }
@@ -72,53 +81,6 @@ class NodeServer : public RDMAServer
             RDMAServer::handle(sendMsg, respMsg);
         }
     }
-
-    //Iterator for segment rings
-    //Need pointers(index or offset?) for each writer-specific segment ring, for each buffer????
-
-    //Pros with buffer specific class
-    //Don't need to lock a map of buffers in handle() method
-    //Cons
-    //handle() method can't update the global buffer state --> it can, but then it needs
-
-    //Pros with impl. in NodeServer
-
-    //Cons
-    //Locking?
-    //
-
-    //When
-
-    // Create new message and overwrite the handle() method for modelling the rings
-    //Request msg: segments(header flags), reuse-segments, buffer-name
-    //Response msg: first segment offset, return code
-
-    // if (!m_rdmaClient->remoteAlloc(connection, bufferHandle->segmentsPerWriter * fullSegmentSize, offset))
-    // {
-    //     return nullptr;
-    // }
-
-    // // Write headers to allocated segments
-    // for (size_t i = 0; i < bufferHandle->segmentsPerWriter; i++)
-    // {
-    //     bool lastSegment = i == bufferHandle->segmentsPerWriter-1;
-    //     size_t nextSegOffset;
-    //     if (lastSegment)
-    //         nextSegOffset = (bufferHandle->reuseSegments ? offset : SIZE_MAX); //If reuseSegments is true, point last segment back to first (creating a ring), if not set it to max value
-    //     else
-    //         nextSegOffset = offset + (i+1) * fullSegmentSize;
-
-    //     segmentHeaderBuffer->counter = 0;
-    //     segmentHeaderBuffer->hasFollowSegment = (lastSegment && !bufferHandle->reuseSegments ? 0 : 1);
-    //     segmentHeaderBuffer->nextSegmentOffset = nextSegOffset;
-    //     segmentHeaderBuffer->segmentFlags = 0;
-
-    //     if (!m_rdmaClient->writeRC(bufferHandle->node_id, offset + i * fullSegmentSize, segmentHeaderBuffer, sizeof(*segmentHeaderBuffer), true))
-    //     {
-    //         Logging::error(__FILE__, __LINE__, "RegistryServer: Error occured when writing header to newly created segments on buffer " + bufferHandle->name);
-    //         return nullptr;
-    //     }
-    // }
 };
 
 } // namespace dpi

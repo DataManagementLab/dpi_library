@@ -25,8 +25,5 @@ inline int DPI_Finalize(DPI_Context& context)
     {
         buffer_writer.second->close();
     }
-
-    //todo: discuss how to properly free all allocated memory on all nodes?
-
     return DPI_SUCCESS;
 }

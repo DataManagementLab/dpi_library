@@ -146,7 +146,7 @@ class BufferIteratorLat : public BufferIterator
         
             //Increment the consumed segments counter
             ++(*(uint64_t*) ((*pointer_to_iter).counterOffset + rdmaBufferPtr));
-            // std::cout << "New counter value: " << *(uint64_t*) ((*pointer_to_iter).counterOffset + rdmaBufferPtr) << '\n';
+            // std::cout << "New counter value: " << *(uint64_t*) ((*pointer_to_iter).counterOffset + rdmaBufferPtr) << " counter offset: " << (*pointer_to_iter).counterOffset << '\n';
         }        
     }
 
