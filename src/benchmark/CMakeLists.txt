@@ -3,6 +3,8 @@ set(BENCHMARK_SRC
   DPIAppendBenchmark.cc
   Benchmarks.h
   BenchmarkRunner.h
+  DPILatencyBenchmark.h
+  DPILatencyBenchmark.cc
   
 ) # Adding headers required for portability reasons http://voices.canonical.com/jussi.pakkanen/2013/03/26/a-list-of-common-cmake-antipatterns/
 

@@ -55,6 +55,7 @@ class BufferIterator
                 }
                 else
                 {
+
                     return true;
                 }
             }

@@ -73,13 +73,13 @@ BufferHandle *RegistryClient::retrieveOrJoinBuffer(Any* sendAny, string &name){
 
     if (!this->send(sendAny, &rcvAny))
     {
-        Logging::fatal(__FILE__, __LINE__, "Can not send message");
+        Logging::error(__FILE__, __LINE__, "Can not send message");
         return nullptr;
     }
 
     if (!rcvAny.Is<DPIRetrieveBufferResponse>())
     {
-        Logging::fatal(__FILE__, __LINE__, "Unexpected response");
+        Logging::error(__FILE__, __LINE__, "Unexpected response");
         return nullptr;
     }
 
@@ -88,7 +88,7 @@ BufferHandle *RegistryClient::retrieveOrJoinBuffer(Any* sendAny, string &name){
     rcvAny.UnpackTo(&rtrvBufferResp);
     if (rtrvBufferResp.return_() != MessageErrors::NO_ERROR)
     {
-        Logging::fatal(__FILE__, __LINE__, "Error on server side");
+        Logging::error(__FILE__, __LINE__, "Error on server side");
         return nullptr;
     }
 
@@ -126,13 +126,13 @@ bool RegistryClient::appendOrRetrieveSegment(Any *sendAny)
     Any rcvAny;
     if (!this->send(sendAny, &rcvAny))
     {
-        Logging::fatal(__FILE__, __LINE__, "Can not send message");
+        Logging::error(__FILE__, __LINE__, "Can not send message");
         return false;
     }
 
     if (!rcvAny.Is<DPIAppendBufferResponse>())
     {
-        Logging::fatal(__FILE__, __LINE__, "Unexpected response");
+        Logging::error(__FILE__, __LINE__, "Unexpected response");
         return false;
     }
 
@@ -141,7 +141,7 @@ bool RegistryClient::appendOrRetrieveSegment(Any *sendAny)
     rcvAny.UnpackTo(&appendBufferResp);
     if (appendBufferResp.return_() != MessageErrors::NO_ERROR)
     {
-        Logging::fatal(__FILE__, __LINE__, "Error on server side");
+        Logging::error(__FILE__, __LINE__, "Error on server side");
         return false;
     }
 

@@ -10,5 +10,6 @@
 #define PERFTESTS_H_
 
 #include "DPIAppendBenchmark.h"
+#include "DPILatencyBenchmark.h"
 
 #endif /* PERFTESTS_H_ */
