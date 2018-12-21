@@ -28,11 +28,51 @@ using BWriter = BufferWriterLat;
 using BIter = BufferIteratorLat;
 static string benchmark = "Latency";
 
+class DPILatencyBenchmarkBarrier : public BufferIteratorLat
+{
+
+public:
+
+  DPILatencyBenchmarkBarrier(char *rdmaBufferPtr, std::vector<BufferSegment> &entrySegments, string &bufferName) 
+  : BufferIteratorLat(rdmaBufferPtr, entrySegments, bufferName){};
+
+
+bool create(){return manipulateBarrier(true);}
+bool release(){return manipulateBarrier(false);}
+
+
+private:
+
+  bool manipulateBarrier(bool barrier){
+    {
+        if (segment_iterators.empty())
+        {
+            return false;
+        }
+
+        while (pointer_to_iter == segment_iterators.end())
+        {
+            {
+                if (!(*pointer_to_iter).iter->isConsumable())
+                {
+                    //advance iter to next ring
+                    (*pointer_to_iter).prev->setWriteable(barrier);
+                    pointer_to_iter++;
+                    // std::cout << "Segment in ring was not consumable, advancing" << '\n';
+                }
+            }
+        }
+        return true;
+    }
+  }
+
+};
+
 class DPILatencyBenchmarkThread : public Thread
 {
 
 public:
-  DPILatencyBenchmarkThread(NodeID nodeid, string &conns, size_t size, size_t iter, size_t numberAppenders);
+  DPILatencyBenchmarkThread(NodeID nodeid, string &conns, size_t size, size_t iter, size_t numberAppenders, bool signaled);
   ~DPILatencyBenchmarkThread();
   void run();
   bool ready()
@@ -49,6 +89,7 @@ private:
   void *m_data;
   size_t m_size;
   size_t m_iter;
+  bool m_sendSignaled = false;
   string m_conns;
   NodeID m_nodeId;
   int m_ctr = 0;
@@ -99,13 +140,14 @@ private:
   size_t m_iter;
   size_t m_numThreads;
 
+  bool m_sendSignaled = false;
+
   int numberSegments;
 
   string m_conns;
   string bufferName = "buffer_benchmark";
 
   vector<DPILatencyBenchmarkThread *> m_threads;
-
 
   NodeServer *m_nodeServer;
   RegistryServer *m_regServer;

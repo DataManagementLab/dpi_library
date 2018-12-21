@@ -26,6 +26,7 @@ struct config_t {
   size_t threads = 1;
   size_t data = 2048;
   size_t internalBufSize = Config::DPI_INTERNAL_BUFFER_SIZE;
+  bool signaled = false;
 };
 
 class BenchmarkRunner {
@@ -38,9 +39,9 @@ class BenchmarkRunner {
       struct option long_options[] = { { "number", required_argument, 0, 'n' },
           { "node server", optional_argument, 0, 's' },  { "port",
           optional_argument, 0, 'p' }, {"internal buffer size", optional_argument, 0, 'b'}, { "registry server", optional_argument, 0, 'r'}, {"registry port", optional_argument, 0, 'o'},
-           { "data", optional_argument, 0, 'd' }, {"threads", optional_argument, 0, 't' }, {"iteration", optional_argument, 0, 'i' } };
+           { "data", optional_argument, 0, 'd' }, {"threads", optional_argument, 0, 't' }, {"iteration", optional_argument, 0, 'i' } , {"signaled", optional_argument, 0, 'a' } };
 
-      int c = getopt_long(argc, argv, "n:d:s:t:p:i:r:o:b:", long_options, NULL);
+      int c = getopt_long(argc, argv, "n:d:s:t:p:i:r:o:b:a:", long_options, NULL);
       if (c == -1)
         break;
 
@@ -73,6 +74,16 @@ class BenchmarkRunner {
           break;
        case 'i':
           config.iter = strtoul(optarg, NULL, 0);
+          break;
+        case 'a':
+          std::cout << "signaled " << config.signaled << '\n';
+          size_t val = strtoul(optarg, NULL, 0);
+          if(val){
+              config.signaled = true;
+          }else{
+              config.signaled = false;
+          }
+          std::cout << "signaled " << config.signaled << '\n';
           break;
       }
     }

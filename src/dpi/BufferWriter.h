@@ -29,7 +29,7 @@ struct InternalBuffer
 class BufferWriter
 {
 public:
-    virtual bool append(void *data, size_t size) = 0;
+    virtual bool append(void *data, size_t size, bool signaled = false) = 0;
     virtual bool close() = 0;
 };
 
@@ -93,7 +93,7 @@ class BufferWriterLat : public BufferWriter
     };
 
     //data: ptr to data, size: size in bytes. return: true if successful, false otherwise
-    bool append(void *data, size_t size)
+    bool append(void *data, size_t size, bool signaled = false)
     {
         if (writeableFreeSegments == 0)
         {
@@ -127,7 +127,7 @@ class BufferWriterLat : public BufferWriter
             ++segmentIndex;
         }
 
-        if (!writeToSegment(size, data, (writeableFreeSegments == 1 ? true : false)))
+        if (!writeToSegment(size, data, ((writeableFreeSegments == 1 ? true : false) || signaled )))
         {
             Logging::error(__FILE__, __LINE__, "BufferWriterBW failed to write to segment");
             return false;
@@ -260,7 +260,7 @@ class BufferWriterBW : public BufferWriter
     };
 
     //data: ptr to data, size: size in bytes. return: true if successful, false otherwise
-    bool append(void *data, size_t size)
+    bool append(void *data, size_t size, bool signaled = false)
     {
         // if (size > m_handle->segmentSizes)
         //     return false;

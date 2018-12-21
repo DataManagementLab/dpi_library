@@ -7,15 +7,16 @@ condition_variable DPILatencyBenchmark::waitCv;
 bool DPILatencyBenchmark::signaled;
 
 DPILatencyBenchmarkThread::DPILatencyBenchmarkThread(NodeID nodeid, string &conns,
-                                                     size_t size, size_t iter, size_t numberAppenders)
+                                                     size_t size, size_t iter, size_t numberAppenders, bool signaled)
 {
   m_size = size;
   m_iter = iter;
   m_nodeId = nodeid;
   m_conns = conns;
-
+  m_sendSignaled = signaled;
   std::cout << "/* m_size */" << m_size << '\n';
   std::cout << "/* iterations */" << iter << '\n';
+  std::cout << "Sending Signaled " << m_sendSignaled << '\n';
 
   BufferHandle *buffHandle;
   m_regClient = new RegistryClient();
@@ -56,7 +57,7 @@ void DPILatencyBenchmarkThread::run()
   startTimer();
   for (size_t i = 0; i <= m_iter; i++)
   {
-    m_bufferWriter->append(scratchPad, m_size);
+    m_bufferWriter->append(scratchPad, m_size, m_sendSignaled);
   }
 
   m_bufferWriter->close();
@@ -76,6 +77,8 @@ DPILatencyBenchmark::DPILatencyBenchmark(config_t config, bool isClient)
   Config::DPI_REGISTRY_SERVER = config.registryServer;
   Config::DPI_REGISTRY_PORT = config.registryPort;
   Config::DPI_INTERNAL_BUFFER_SIZE = config.internalBufSize;
+
+  m_sendSignaled = config.signaled;
 
   this->isClient(isClient);
 
@@ -165,11 +168,19 @@ void DPILatencyBenchmark::runServer()
 
   auto handle_ret = m_regClient->retrieveBuffer(bufferName);
 
-  std::cout << "Ready to start Benchmark" << '\n';
+
   BIter bufferIterator = handle_ret->getIteratorLat((char *)m_nodeServer->getBuffer());
+  DPILatencyBenchmarkBarrier barrier((char *)m_nodeServer->getBuffer(), handle_ret->entrySegments,bufferName);
+  
+  barrier.create();
+  std::cout << "Client Barrier created" << '\n';
+  waitForUser();
+  barrier.release();
   int count = 0;
-  bufferIterator.has_next();
   std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
+  // bufferIterator.has_next();
+  // std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
   while (bufferIterator.has_next())
   {
     // std::cout << "Interator Segment" << '\n';
@@ -185,6 +196,8 @@ void DPILatencyBenchmark::runServer()
   std::cout << "Benchmark took " << duration << "microseconds" << std::endl;
   std::cout << "Number of msgs " << count << std::endl;
   std::cout << "Latency " << (double)( (double) duration / (double)count) << std::endl;
+  std::cout << "Mops " << (((double)count) / duration ) << std::endl;
+
 }
 
 void DPILatencyBenchmark::runClient()
@@ -194,7 +207,7 @@ void DPILatencyBenchmark::runClient()
   {
     DPILatencyBenchmarkThread *perfThread = new DPILatencyBenchmarkThread(i, m_conns,
                                                                           m_size,
-                                                                          m_iter, m_numThreads);
+                                                                          m_iter, m_numThreads, m_sendSignaled);
     perfThread->start();
     if (!perfThread->ready())
     {
